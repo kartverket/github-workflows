@@ -12,13 +12,12 @@ on:
       working_directory:
         required: true
         type: string
+      runner:
+        required: true
+        type: string
       project_id:
         type: string
       environment:
-        default: plan
-        type: string
-      runner:
-        required: true
         type: string
       terraform_workspace:
         type: string
