@@ -25,7 +25,48 @@ on:
         type: string
 
 jobs:
+  terraform_check:
+    name: Terraform Validate
+    runs-on: ${{ inputs.runner }}
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform init -backend=false
+
+    - name: Terraform Validate
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
+        terraform validate -no-color | tee $GITHUB_STEP_SUMMARY
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        echo 'Run format check' | tee $GITHUB_STEP_SUMMARY
+        terraform fmt -check -no-color || { echo '
+        FAILURE! The above files are not properly formatted. 
+        Run `terraform fmt` in ${{matrix.directory}}, commit the changed files and push to fix the issue' | tee $GITHUB_STEP_SUMMARY ; exit 1; }
+
   terraform_plan:
+    needs: terraform_check
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
