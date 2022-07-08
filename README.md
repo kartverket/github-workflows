@@ -4,7 +4,7 @@ Shared reusable workflows for GitHub Actions
 ## run-terraform
 This workflow plans and runs terraform to deploy to Kartverket. 
 
-The example below shows two job, one which enables us to reuse variables, and one which enables us to run terraform through the reusable workflow. 
+The code extract below shows two job, one which enables us to reuse variables, and one which enables us to run terraform through the reusable workflow. 
 Note that the setup-env job is required in order to pass values into the reusable workflow, since reusable workflows do not yet support environment variables.
 ```yaml
 env:
@@ -37,7 +37,10 @@ jobs:
       
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@main
     with:
+      runner: atkv1-dev
       environment: dev
+      terraform_workspace: dev
+      terraform_options: -var-file=dev.tfvars
       working_directory: terraform
       workload_identity_provider: ${{ needs.setup-env.outputs.workload_identity_provider }}
       service_account: ${{ needs.setup-env.outputs.service_account }}

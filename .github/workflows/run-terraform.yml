@@ -17,11 +17,18 @@ on:
       environment:
         default: plan
         type: string
+      runner:
+        required: true
+        type: string
+      terraform_workspace:
+        type: string
+      terraform_options:
+        type: string
 
 jobs:
   terraform_plan:
     name: Terraform Plan
-    runs-on: atkv1-${{ inputs.environment }}
+    runs-on: ${{ inputs.runner }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -54,17 +61,15 @@ jobs:
     - name: Terraform Plan
       working-directory: ${{ inputs.working_directory }}
       run: |
-        if [ "${{inputs.environment}}" != "static" ]; then
-          terraform workspace select ${{inputs.environment}}
-          terraform plan -var-file=${{inputs.environment}}.tfvars -input=false -no-color | grep -v 'Refreshing state...' | tee $GITHUB_STEP_SUMMARY
-        else
-          terraform plan -input=false -no-color | grep -v 'Refreshing state...' | tee $GITHUB_STEP_SUMMARY
+        if [ "${{inputs.terraform_workspace}}" != "" ]; then
+          terraform workspace select ${{inputs.terraform_workspace}}
         fi
+        terraform plan ${{inputs.terraform_options}} -input=false -no-color | grep -v 'Refreshing state...' | tee $GITHUB_STEP_SUMMARY
   
   run_terraform:
     needs: terraform_plan
     name: Terraform Apply
-    runs-on: atkv1-${{ inputs.environment }}
+    runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
@@ -99,9 +104,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       working-directory: ${{ inputs.working_directory }}
       run: |
-        if [ "${{inputs.environment}}" != "static" ]; then
-          terraform workspace select ${{inputs.environment}}
-          terraform apply -var-file=${{inputs.environment}}.tfvars -input=false -auto-approve
-        else
-          terraform apply -input=false -auto-approve
+        if [ "${{inputs.terraform_workspace}}" != "" ]; then
+          terraform workspace select ${{inputs.terraform_workspace}}
         fi
+        terraform apply ${{inputs.terraform_options}} -input=false -auto-approve
