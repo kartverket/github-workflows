@@ -46,3 +46,15 @@ jobs:
       service_account: ${{ needs.setup-env.outputs.service_account }}
       project_id: ${{ needs.setup-env.outputs.project_id }}
 ```
+
+### Options
+| Key                        | Type   | Required | Description                                                                                                                                                                                                                    |
+|----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`   |
+| service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
+| runner                     | string | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                         |
+| working_directory          | string | X        | The directory in which to run terraform. The path is relative to the root of the repository.                                                                                                                                   |
+| project_id                 | string |          | The GCP Project ID to use as the "active project" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered.                                             |
+| environment                | string |          | The GitHub environment to use when deploying. See [using environments for deployment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) for more info on this. |
+| terraform_workspace        | string |          | When provided will set a workspace as the active workspace when planning and deploying.                                                                                                                                        |
+| terraform_options          | string |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`                                                                                                                            |
