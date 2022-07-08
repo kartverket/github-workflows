@@ -2,10 +2,11 @@
 Shared reusable workflows for GitHub Actions
 
 ## run-terraform
-This workflow plans and runs terraform to deploy to Kartverket. 
+This workflow plans and applies terraform config to deploy to an environment.
 
 The code extract below shows two job, one which enables us to reuse variables, and one which enables us to run terraform through the reusable workflow. 
-Note that the setup-env job is required in order to pass values into the reusable workflow, since reusable workflows do not yet support environment variables.
+Note that the setup-env job is required in order to pass values into the reusable workflow, since reusable workflows do not yet support fetching environment variables as input.
+
 ```yaml
 env:
   WORKLOAD_IDENTITY_FEDERATION_PROVIDER: X
