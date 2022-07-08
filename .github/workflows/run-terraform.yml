@@ -1,0 +1,107 @@
+name: Run Terraform
+
+on:
+  workflow_call:
+    inputs:
+      workload_identity_provider:
+        required: true
+        type: string
+      service_account:
+        required: true
+        type: string
+      working_directory:
+        required: true
+        type: string
+      project_id:
+        type: string
+      environment:
+        default: plan
+        type: string
+
+jobs:
+  terraform_plan:
+    name: Terraform Plan
+    runs-on: atkv1-${{ inputs.environment }}
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+        project_id: ${{ inputs.project_id }}
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform init
+
+    - name: Terraform Plan
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        if [ "${{inputs.environment}}" != "static" ]; then
+          terraform workspace select ${{inputs.environment}}
+          terraform plan -var-file=${{inputs.environment}}.tfvars -input=false -no-color | grep -v 'Refreshing state...' | tee $GITHUB_STEP_SUMMARY
+        else
+          terraform plan -input=false -no-color | grep -v 'Refreshing state...' | tee $GITHUB_STEP_SUMMARY
+        fi
+  
+  run_terraform:
+    needs: terraform_plan
+    name: Terraform Apply
+    runs-on: atkv1-${{ inputs.environment }}
+    environment: ${{ inputs.environment }}
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+        project_id: ${{ inputs.project_id }}
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform init
+
+    - name: Run Terraform
+      if: github.ref == 'refs/heads/main'
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        if [ "${{inputs.environment}}" != "static" ]; then
+          terraform workspace select ${{inputs.environment}}
+          terraform apply -var-file=${{inputs.environment}}.tfvars -input=false -auto-approve
+        else
+          terraform apply -input=false -auto-approve
+        fi
