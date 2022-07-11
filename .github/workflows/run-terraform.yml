@@ -96,7 +96,7 @@ jobs:
         project_id: ${{ inputs.project_id }}
 
     - name: Authenticate with Kubernetes
-      if: inputs.kubernetes_cluster != ""
+      if: inputs.kubernetes_cluster != ''
       run: gcloud container hub memberships get-credentials ${{ inputs.kubernetes_cluster }} --verbosity debug
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
@@ -145,7 +145,7 @@ jobs:
         project_id: ${{ inputs.project_id }}
 
     - name: Authenticate with Kubernetes
-      if: inputs.kubernetes_cluster != ""
+      if: inputs.kubernetes_cluster != ''
       run: gcloud container hub memberships get-credentials ${{ inputs.kubernetes_cluster }} --verbosity debug
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
