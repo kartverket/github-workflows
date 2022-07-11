@@ -40,6 +40,7 @@ jobs:
     with:
       runner: atkv1-dev
       environment: dev
+      kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
       terraform_options: -var-file=dev.tfvars
       working_directory: terraform
@@ -56,6 +57,7 @@ jobs:
 | runner                     | string | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                         |
 | working_directory          | string | X        | The directory in which to run terraform. The path is relative to the root of the repository.                                                                                                                                   |
 | project_id                 | string |          | The GCP Project ID to use as the "active project" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered.                                             |
+| kubernetes_cluster         | string |          | An optional kubernetes cluster to authenticate to. Note that the project_id must match where the cluster is registered |
 | environment                | string |          | The GitHub environment to use when deploying. See [using environments for deployment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) for more info on this. |
 | terraform_workspace        | string |          | When provided will set a workspace as the active workspace when planning and deploying.                                                                                                                                        |
 | terraform_options          | string |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`                                                                                                                            |

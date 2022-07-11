@@ -19,6 +19,8 @@ on:
         type: string
       environment:
         type: string
+      kubernetes_cluster:
+        type: string
       terraform_workspace:
         type: string
       terraform_options:
@@ -93,6 +95,10 @@ jobs:
         service_account: ${{ inputs.service_account }}
         project_id: ${{ inputs.project_id }}
 
+    - name: Authenticate with Kubernetes
+      if: inputs.kubernetes_cluster != ""
+      run: gcloud container hub memberships get-credentials ${{ inputs.kubernetes_cluster }} --verbosity debug
+
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       working-directory: ${{ inputs.working_directory }}
@@ -137,6 +143,10 @@ jobs:
         workload_identity_provider: ${{ inputs.workload_identity_provider }}
         service_account: ${{ inputs.service_account }}
         project_id: ${{ inputs.project_id }}
+
+    - name: Authenticate with Kubernetes
+      if: inputs.kubernetes_cluster != ""
+      run: gcloud container hub memberships get-credentials ${{ inputs.kubernetes_cluster }} --verbosity debug
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
