@@ -104,7 +104,9 @@ jobs:
         if [ "${{inputs.terraform_workspace}}" != "" ]; then
           terraform workspace select ${{inputs.terraform_workspace}}
         fi
-        terraform plan ${{inputs.terraform_options}} -input=false -no-color | grep -v 'Refreshing state...' | tee $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        terraform plan ${{inputs.terraform_options}} -input=false -no-color | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
   
   run_terraform:
     if: github.ref == 'refs/heads/main'
