@@ -54,16 +54,16 @@ jobs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
-        terraform validate -no-color | tee $GITHUB_STEP_SUMMARY
+        terraform validate -no-color | tee -a $GITHUB_STEP_SUMMARY
 
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
       working-directory: ${{ inputs.working_directory }}
       run: |
-        echo 'Run format check' | tee $GITHUB_STEP_SUMMARY
+        echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
         terraform fmt -check -no-color || { echo '
         FAILURE! The above files are not properly formatted. 
-        Run `terraform fmt` in ${{matrix.directory}}, commit the changed files and push to fix the issue' | tee $GITHUB_STEP_SUMMARY ; exit 1; }
+        Run `terraform fmt` in ${{matrix.directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
   terraform_plan:
     needs: terraform_check
