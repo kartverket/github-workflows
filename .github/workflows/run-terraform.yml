@@ -27,7 +27,6 @@ on:
         type: string
     secrets:
       token:
-        type: string
 
 jobs:
   terraform_check:
