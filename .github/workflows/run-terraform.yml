@@ -25,9 +25,6 @@ on:
         type: string
       terraform_options:
         type: string
-    secrets:
-      GITHUB_TOKEN:
-        type: string
 
 jobs:
   terraform_check:
