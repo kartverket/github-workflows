@@ -70,7 +70,6 @@ jobs:
         Run `terraform fmt` in ${{matrix.directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
   terraform_plan:
-    needs: terraform_check
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
@@ -121,7 +120,7 @@ jobs:
   
   run_terraform:
     if: github.ref == 'refs/heads/main'
-    needs: terraform_plan
+    needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
