@@ -25,6 +25,9 @@ on:
         type: string
       terraform_options:
         type: string
+    secrets:
+      token:
+        type: string
 
 jobs:
   terraform_check:
@@ -78,7 +81,7 @@ jobs:
         shell: bash
 
     env:
-      TF_VAR_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TF_VAR_GITHUB_TOKEN: ${{ secrets.token }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
@@ -130,7 +133,7 @@ jobs:
         shell: bash
 
     env:
-      TF_VAR_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TF_VAR_GITHUB_TOKEN: ${{ secrets.token }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
