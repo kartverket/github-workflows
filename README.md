@@ -26,7 +26,7 @@ jobs:
       project_id: X
 ```
 
-## Passing env vars to run-terraform
+### Passing env vars to run-terraform
 
 Passing environment variables to reusable workflows is not supported by GitHub.
 This is a [requested feature](https://github.community/t/passing-environment-variables-to-reusable-workflow/230456/4).
@@ -74,7 +74,7 @@ jobs:
 </pre></code>
 </details>
 
-## Passing secrets to run-terraform
+### Passing secrets to run-terraform
 
 Secrets should be administered through vault and thus there is no explicit
 support for taking GitHub secrets into the action. GitHub will also stop you
