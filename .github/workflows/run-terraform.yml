@@ -101,7 +101,7 @@ jobs:
 
     - name: Authenticate with Vault
       if: inputs.vault_role != ''
-      uses: kartverket/vault-jwt-auth-action@1.1
+      uses: kartverket/vault-jwt-auth-action@v2
       with:
         vaultaddr: 'https://vault.${{inputs.environment}}.skip.statkart.no'
         path: jwt-${{inputs.environment}}
@@ -159,7 +159,7 @@ jobs:
 
     - name: Authenticate with Vault
       if: inputs.vault_role != ''
-      uses: kartverket/vault-jwt-auth-action@1.1
+      uses: kartverket/vault-jwt-auth-action@v2
       with:
         vaultaddr: 'https://vault.${{inputs.environment}}.skip.statkart.no'
         path: jwt-${{inputs.environment}}
