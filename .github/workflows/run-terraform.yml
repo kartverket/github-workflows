@@ -92,7 +92,7 @@ jobs:
     - name: Fetch Vault token
       id: vaulttoken
       if: inputs.vault_role != ''
-      uses: BardOve/vault-jwt-auth-action@dev-1.0.1
+      uses: esphen/vault-jwt-auth-action@debugging
       with:
         vaultaddr: 'https://vault.${{inputs.environment}}.skip.statkart.no'
         path: jwt-${{inputs.environment}}
@@ -156,7 +156,7 @@ jobs:
     - name: Fetch Vault token
       id: vaulttoken
       if: inputs.vault_role != ''
-      uses: BardOve/vault-jwt-auth-action@dev-1.0.1
+      uses: esphen/vault-jwt-auth-action@debugging
       with:
         vaultaddr: 'https://vault.${{inputs.environment}}.skip.statkart.no'
         path: jwt-${{inputs.environment}}
