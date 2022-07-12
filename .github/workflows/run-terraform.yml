@@ -73,6 +73,10 @@ jobs:
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
+    permissions:
+      contents: read
+      id-token: write
+
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
