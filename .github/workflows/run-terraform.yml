@@ -9,10 +9,10 @@ on:
       service_account:
         required: true
         type: string
-      working_directory:
-        type: string
       runner:
         required: true
+        type: string
+      working_directory:
         type: string
       project_id:
         type: string
