@@ -13,7 +13,7 @@ jobs:
     permissions: 
       id-token: write
       contents: read
-    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@main
+    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2
     with:
       runner: atkv1-dev
       environment: dev
@@ -60,7 +60,7 @@ jobs:
     permissions: 
       id-token: write
       contents: read
-    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@main
+    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2
     with:
       runner: atkv1-dev
       environment: dev
