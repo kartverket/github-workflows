@@ -65,7 +65,7 @@ jobs:
       run: |
         echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
         terraform fmt -check -no-color || { echo '
-        FAILURE! The above files are not properly formatted. 
+        FAILURE! The above files are not properly formatted.
         Run `terraform fmt` in ${{inputs.working_directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
   terraform_plan:
@@ -77,6 +77,9 @@ jobs:
       run:
         shell: bash
 
+    output:
+      exitcode: ${{ steps.plan.outputs.exitcode }}
+
     steps:
     # Checkout the repository to the GitHub Actions runner
     - name: Checkout
@@ -85,9 +88,7 @@ jobs:
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_wrapper: false
-    
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v0
       with:
@@ -114,17 +115,18 @@ jobs:
       run: terraform init
 
     - name: Terraform Plan
+      id: plan
       working-directory: ${{ inputs.working_directory }}
       run: |
         if [ "${{inputs.terraform_workspace}}" != "" ]; then
           terraform workspace select ${{inputs.terraform_workspace}}
         fi
         echo '```' >> $GITHUB_STEP_SUMMARY
-        terraform plan ${{inputs.terraform_options}} -input=false -no-color | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
+        terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-  
+
   run_terraform:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.terraform_plan.outputs.exitcode == 2
     needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
@@ -145,7 +147,7 @@ jobs:
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_wrapper: false
-    
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v0
       with:
