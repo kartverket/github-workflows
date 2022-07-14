@@ -125,13 +125,21 @@ jobs:
     - name: Terraform Plan
       id: plan
       working-directory: ${{ inputs.working_directory }}
+      # Terraform will return exit code 2 when there are changes with -detailed-exitcode
+      # Using default bash shell includes -e which exits script on non-0 exit codes
+      # Override bash shell to allow other exit codes and check manually
+      shell: bash {0} -o pipefail
       run: |
         if [ "${{inputs.terraform_workspace}}" != "" ]; then
           terraform workspace select ${{inputs.terraform_workspace}}
         fi
         echo '```' >> $GITHUB_STEP_SUMMARY
         terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
+        exitcode=$?
         echo '```' >> $GITHUB_STEP_SUMMARY
+        if [ $exitcode > 0 && $exitcode != 2 ]; then
+          exit $exitcode
+        fi
 
   run_terraform:
     if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.exitcode == 2
