@@ -81,21 +81,20 @@ jobs:
         shell: bash
 
     outputs:
-      exitcode: ${{ steps.plan.outputs.exitcode }}
+      planHasChanges: ${{ steps.plan.outputs.planHasChanges }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
     - name: Checkout
       uses: actions/checkout@v3
 
-    # Node is required for terraform_wrapper
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 16
-
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+      # Change to v2.1.0 when released. We require the below fix:
+      # https://github.com/hashicorp/setup-terraform/pull/125
+      uses: hashicorp/setup-terraform@78ea3ac2fbe8fe4dab277d1cbd1e6435a91a49cc
+      with:
+        terraform_wrapper: false
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v0
@@ -137,12 +136,14 @@ jobs:
         terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
         exitcode=$?
         echo '```' >> $GITHUB_STEP_SUMMARY
-        if [[ $exitcode > 0 && $exitcode != 2 ]]; then
+        if [[ $exitcode == 2 ]]; then
+          echo '::set-output name=planHasChanges::true'
+        elif [[ $exitcode > 0 ]]; then
           exit $exitcode
         fi
 
   run_terraform:
-    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.exitcode == '2'
+    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.planHasChanges == 'true'
     needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
