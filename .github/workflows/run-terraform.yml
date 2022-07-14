@@ -142,7 +142,7 @@ jobs:
         fi
 
   run_terraform:
-    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.exitcode == 2
+    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.exitcode == '2'
     needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
