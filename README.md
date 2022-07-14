@@ -35,8 +35,7 @@ provide an output that can be mapped to the arguments of the job.
 
 <details>
 <summary>Click here to see an example of this</summary>
-<code><pre>
-env:
+<code><pre>env:
   WORKLOAD_IDENTITY_FEDERATION_PROVIDER: X
   WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT: X
   PROJECT_ID: X
@@ -70,8 +69,7 @@ jobs:
       working_directory: terraform
       workload_identity_provider: ${{ needs.setup-env.outputs.workload_identity_provider }}
       service_account: ${{ needs.setup-env.outputs.service_account }}
-      project_id: ${{ needs.setup-env.outputs.project_id }}
-</pre></code>
+      project_id: ${{ needs.setup-env.outputs.project_id }}</pre></code>
 </details>
 
 ### Passing secrets to run-terraform
