@@ -80,7 +80,7 @@ jobs:
       run:
         shell: bash
 
-    output:
+    outputs:
       exitcode: ${{ steps.plan.outputs.exitcode }}
 
     steps:
