@@ -10,7 +10,7 @@ This workflow plans and applies terraform config to deploy to an environment.
 jobs:
   dev:
     name: Deploy to dev
-    permissions: 
+    permissions:
       id-token: write
       contents: read
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2
@@ -50,14 +50,14 @@ jobs:
     steps:
       - name: set outputs with default values
         id: set-output
-        run: |    
+        run: |
           echo "::set-output name=workload_identity_provider::${{ env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER }}"
           echo "::set-output name=service_account::${{ env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT }}"
           echo "::set-output name=project_id::${{ env.PROJECT_ID }}"
   dev:
     name: Deploy to dev
     needs: setup-env
-    permissions: 
+    permissions:
       id-token: write
       contents: read
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2
@@ -95,6 +95,7 @@ this role.
 | workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`   |
 | service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
 | runner                     | string | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                         |
+| deploy_on                  | string |          | Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/head/main`.                                                         |
 | working_directory          | string |          | The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository.                                                                                        |
 | project_id                 | string |          | The GCP Project ID to use as the "active project" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered.                                             |
 | kubernetes_cluster         | string |          | An optional kubernetes cluster to authenticate to. Note that the project_id must match where the cluster is registered                                                                                                         |

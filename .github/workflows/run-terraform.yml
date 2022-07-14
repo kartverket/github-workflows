@@ -12,6 +12,9 @@ on:
       runner:
         required: true
         type: string
+      deploy_on:
+        type: string
+        default: 'refs/heads/main'
       working_directory:
         type: string
       project_id:
@@ -126,7 +129,7 @@ jobs:
         echo '```' >> $GITHUB_STEP_SUMMARY
 
   run_terraform:
-    if: github.ref == 'refs/heads/main' && needs.terraform_plan.outputs.exitcode == 2
+    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.exitcode == 2
     needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
