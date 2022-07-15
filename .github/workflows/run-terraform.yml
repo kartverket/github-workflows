@@ -130,7 +130,6 @@ jobs:
 
     # Node is required for terraform_wrapper on-prem
     - uses: actions/setup-node@v3
-      if: startsWith(inputs.runner, 'atkv')
       with:
         node-version: 16
 
