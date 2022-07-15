@@ -231,7 +231,7 @@ jobs:
           let commentBody = comment?.body ?? bodyStartMarker;
           const bodyHasJobInfo = commentBody.includes('<!-- @run-terraform:start:${{ inputs.environment }} -->');
 
-          const exitcode = ${{ needs.terraform_plan.outputs.plan_exitcode }};
+          const exitcode = '${{ needs.terraform_plan.outputs.plan_exitcode }}';
           const action = {
             0: 'No changes, skipping Terraform apply job',
             1: 'Error occured! Aborting',
@@ -239,7 +239,7 @@ jobs:
           }[exitcode] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
           
           const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
-          ## Results for ${{ inputs.environment }} ${exitcode === 2 ? '– `CHANGED`' : ''}
+          ## Results for ${{ inputs.environment }} ${exitcode === '2' ? '– `CHANGED`' : ''}
           #### Terraform Format and Style 🖌 \`${{ needs.terraform_check.outputs.format_outcome }}\`
           #### Terraform Initialization ⚙️ \`${{ needs.terraform_plan.outputs.init_outcome }}\`
           #### Terraform Validation 🤖 \`${{ needs.terraform_check.outputs.validate_outcome }}\`
