@@ -121,6 +121,7 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
+      TF_WORKSPACE: ${{ inputs.terraform_workspace }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
@@ -166,9 +167,6 @@ jobs:
     - name: Terraform Plan
       id: plan
       run: |
-        if [ "${{inputs.terraform_workspace}}" != "" ]; then
-          terraform workspace select ${{inputs.terraform_workspace}}
-        fi
         echo '```' >> $GITHUB_STEP_SUMMARY
         terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
@@ -197,8 +195,6 @@ jobs:
     steps:
     - name: Update Pull Request
       uses: actions/github-script@v6
-      env:
-        PLAN: "terraform\n${{ needs.terraform_plan.outputs.plan_stdout }}"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
@@ -220,14 +216,15 @@ jobs:
           let commentBody = comment?.body ?? bodyStartMarker;
           const bodyHasJobInfo = commentBody.includes(`<!-- @run.terraform:start:${{ inputs.environment}} -->`);
 
+          const exitcode = ${{ needs.terraform_plan.outputs.plan_exitcode }};
           const action = {
             0: 'No changes, skipping Terraform apply job',
             1: 'Error occured! Aborting',
             2: 'Changes detected, running Terraform apply job'
-          }[${{ needs.terraform_plan.outputs.plan_exitcode }}] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
+          }[exitcode] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
           
           const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
-          ## Results for ${{inputs.env}}
+          ## Results for ${{ inputs.environment }} ${exitcode === 2 && '– `CHANGED`'}
           #### Terraform Format and Style 🖌 \`${{ needs.terraform_check.outputs.format_outcome }}\`
           #### Terraform Initialization ⚙️ \`${{ needs.terraform_plan.outputs.init_outcome }}\`
           #### Terraform Validation 🤖 \`${{ needs.terraform_check.outputs.validate_outcome }}\`
@@ -244,7 +241,7 @@ jobs:
           <details><summary>Show Plan</summary>
           
           \`\`\`\n
-          ${process.env.PLAN}
+          ${needs.terraform_plan.outputs.plan_stdout}
           \`\`\`
           
           </details>
@@ -297,6 +294,7 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
+      TF_WORKSPACE: ${{ inputs.terraform_workspace }}
 
     steps:
     # Checkout the repository to the GitHub Actions runner
@@ -341,7 +339,4 @@ jobs:
 
     - name: Run Terraform
       run: |
-        if [ "${{inputs.terraform_workspace}}" != "" ]; then
-          terraform workspace select ${{inputs.terraform_workspace}}
-        fi
         terraform apply -input=false plan-${{ inputs.environment }}.tfplan
