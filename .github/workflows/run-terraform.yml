@@ -214,7 +214,7 @@ jobs:
           const comment = comments.find(({ body }) => body.startsWith(bodyStartMarker));
           const id = comment?.id;
           let commentBody = comment?.body ?? bodyStartMarker;
-          const bodyHasJobInfo = commentBody.includes(`<!-- @run.terraform:start:${{ inputs.environment}} -->`);
+          const bodyHasJobInfo = commentBody.includes('<!-- @run-terraform:start:${{ inputs.environment }} -->');
 
           const exitcode = ${{ needs.terraform_plan.outputs.plan_exitcode }};
           const action = {
@@ -224,7 +224,7 @@ jobs:
           }[exitcode] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
           
           const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
-          ## Results for ${{ inputs.environment }} ${exitcode === 2 && '– `CHANGED`'}
+          ## Results for ${{ inputs.environment }} ${exitcode === 2 ? '– `CHANGED`' : ''}
           #### Terraform Format and Style 🖌 \`${{ needs.terraform_check.outputs.format_outcome }}\`
           #### Terraform Initialization ⚙️ \`${{ needs.terraform_plan.outputs.init_outcome }}\`
           #### Terraform Validation 🤖 \`${{ needs.terraform_check.outputs.validate_outcome }}\`
@@ -255,7 +255,7 @@ jobs:
           if (bodyHasJobInfo) {
             commentBody = commentBody.replace(
               /<!-- @run-terraform:start:${{ inputs.environment }} -->.*<!-- @run-terraform:end:${{ inputs.environment }} -->/s,
-              commentBody,
+              jobBody,
             );
           } else {
             commentBody += '\n' + jobBody;
