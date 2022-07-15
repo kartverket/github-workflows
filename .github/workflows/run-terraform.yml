@@ -103,7 +103,7 @@ jobs:
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
-    # Disallow parallel jobs for same env to allow aquiring state lock
+    # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
     concurrency: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
@@ -128,8 +128,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    # Node is required for terraform_wrapper
+    # Node is required for terraform_wrapper on-prem
     - uses: actions/setup-node@v3
+      if: startsWith(inputs.runner, 'atkv')
       with:
         node-version: 16
 
@@ -168,8 +169,13 @@ jobs:
       id: plan
       run: |
         echo '```' >> $GITHUB_STEP_SUMMARY
-        terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
+        STDOUT=$(terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY)
         echo '```' >> $GITHUB_STEP_SUMMARY
+        # Serialize into single-line string for transfer using outputs
+        STDOUT="${STDOUT//'%'/'%25'}"
+        STDOUT="${STDOUT//$'\n'/'%0A'}"
+        STDOUT="${STDOUT//$'\r'/'%0D'}"
+        echo "::set-output name=stdout::$STDOUT"
 
     - name: Upload Plan Artifact
       uses: actions/upload-artifact@v3
@@ -183,9 +189,6 @@ jobs:
     needs: [terraform_check, terraform_plan]
     name: Update GitHub
     runs-on: ubuntu-latest
-
-    # Disallow parallel jobs for same env to allow aquiring state lock
-    concurrency: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -278,12 +281,15 @@ jobs:
           }
 
   run_terraform:
-    # TODO We need to verify that inputs.deploy_on actually works. Seems to only work with main atm
+    # TODO We need to verify that inputs.deploy_on actually works. Seems to only work on main atm
     if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push'
     needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
+
+    # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
+    concurrency: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
