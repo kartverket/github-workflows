@@ -82,6 +82,10 @@ jobs:
 
     outputs:
       exitcode: ${{ steps.plan.outputs.exitcode }}
+    
+    env:
+      # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
+      TF_IN_AUTOMATION: true
 
     steps:
     # Checkout the repository to the GitHub Actions runner
@@ -154,6 +158,10 @@ jobs:
     defaults:
       run:
         shell: bash
+
+    env:
+      # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
+      TF_IN_AUTOMATION: true
 
     steps:
     # Checkout the repository to the GitHub Actions runner
