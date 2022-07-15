@@ -203,4 +203,6 @@ jobs:
         if [ "${{inputs.terraform_workspace}}" != "" ]; then
           terraform workspace select ${{inputs.terraform_workspace}}
         fi
-        terraform apply ${{inputs.terraform_options}} -input=false -auto-approve plan-${{ inputs.environment }}.tfplan
+        pwd
+        ls -l -R
+        terraform apply ${{inputs.terraform_options}} -input=false -auto-approve "${{ inputs.working_directory }}/plan-${{ inputs.environment }}.tfplan"
