@@ -4,40 +4,52 @@ on:
   workflow_call:
     inputs:
       workload_identity_provider:
+        description: ""
         required: true
         type: string
       service_account:
+        description: ""
         required: true
         type: string
       runner:
+        description: ""
         required: true
         type: string
       deploy_on:
+        description: ""
         required: false
         type: string
         default: 'refs/heads/main'
       working_directory:
+        description: ""
         required: false
         type: string
       project_id:
+        description: ""
         required: false
         type: string
       environment:
+        description: ""
         required: false
         type: string
       kubernetes_cluster:
+        description: ""
         required: false
         type: string
       terraform_workspace:
+        description: ""
         required: false
         type: string
       terraform_options:
+        description: ""
         required: false
         type: string
       vault_role:
+        description: ""
         required: false
         type: string
       add_comment_on_pr:
+        description: ""
         required: false
         type: boolean
         default: true
@@ -178,7 +190,7 @@ jobs:
 
     steps:
     - name: Update Pull Request
-      uses: actions/github-script@6
+      uses: actions/github-script@v6
       env:
         PLAN: "terraform\n${{ needs.terraform_plan.outputs.plan_stdout }}"
       with:
