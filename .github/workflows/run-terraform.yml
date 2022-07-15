@@ -132,14 +132,14 @@ jobs:
           terraform workspace select ${{inputs.terraform_workspace}}
         fi
         echo '```' >> $GITHUB_STEP_SUMMARY
-        terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode -out=plan.tfplan | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
+        terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan | grep -v 'Refreshing state...' | tee -a $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
 
     - name: Upload Plan Artifact
       uses: actions/upload-artifact@v3
       with:
         name: plan-${{ inputs.environment }}.tfplan
-        path: ${{ inputs.working_directory }}/plan.tfplan
+        path: ${{ inputs.working_directory }}/plan-${{ inputs.environment }}.tfplan
         retention-days: 5
 
   run_terraform:
@@ -203,6 +203,4 @@ jobs:
         if [ "${{inputs.terraform_workspace}}" != "" ]; then
           terraform workspace select ${{inputs.terraform_workspace}}
         fi
-        pwd
-        ls -l -R
-        terraform apply ${{inputs.terraform_options}} -input=false -auto-approve "${{ inputs.working_directory }}/plan-${{ inputs.environment }}.tfplan"
+        terraform apply ${{inputs.terraform_options}} -input=false -auto-approve plan-${{ inputs.environment }}.tfplan
