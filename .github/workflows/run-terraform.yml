@@ -34,6 +34,50 @@ on:
         default: true
 
 jobs:
+  terraform_check:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working_directory }}
+
+    outputs:
+      validate_outcome: ${{ steps.validate.outcome }}
+      validate_stdout: ${{ steps.validate.outputs.stdout}}
+      format_outcome: ${{ steps.format.outcome }}
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      run: terraform init -backend=false
+
+    - name: Terraform Validate
+      id: validate
+      continue-on-error: true
+      run: |
+        echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
+        terraform validate -no-color | tee -a $GITHUB_STEP_SUMMARY
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      id: format
+      run: |
+        echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
+        terraform fmt -check -no-color || { echo '
+        FAILURE! The above files are not properly formatted.
+        Run `terraform fmt` in ${{inputs.working_directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
+
   terraform_plan:
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
@@ -42,9 +86,13 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: ${{ inputs.working_directory }}
 
     outputs:
-      exitcode: ${{ steps.plan.outputs.exitcode }}
+      init_outcome: ${{ steps.init.outcome }}
+      plan_exitcode: ${{ steps.plan.outputs.exitcode }}
+      plan_outcome: ${{ steps.plan.outcome }}
+      plan_stdout: ${{ steps.plan.outputs.stdout }}
     
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
@@ -86,33 +134,13 @@ jobs:
         role: ${{inputs.vault_role}}
         certb64: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K'
 
-    - name: Terraform Validate
-      id: validate
-      working-directory: ${{ inputs.working_directory }}
-      continue-on-error: true
-      run: |
-        echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
-        terraform validate -no-color | tee -a $GITHUB_STEP_SUMMARY
-
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
-      working-directory: ${{ inputs.working_directory }}
       run: terraform init
-
-    # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
-      id: fmt
-      working-directory: ${{ inputs.working_directory }}
-      run: |
-        echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
-        terraform fmt -check -no-color || { echo '
-        FAILURE! The above files are not properly formatted.
-        Run `terraform fmt` in ${{inputs.working_directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
     - name: Terraform Plan
       id: plan
-      working-directory: ${{ inputs.working_directory }}
       run: |
         if [ "${{inputs.terraform_workspace}}" != "" ]; then
           terraform workspace select ${{inputs.terraform_workspace}}
@@ -128,11 +156,21 @@ jobs:
         path: ${{ inputs.working_directory }}/plan-${{ inputs.environment }}.tfplan
         retention-days: 5
 
+  update_github:
+    if: ${{ always() && inputs.add_comment_on_pr == 'true' && github.event_name == 'pull_request' }}
+    needs: [terraform_check, terraform_plan]
+    name: Update GitHub
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
     - name: Update Pull Request
       uses: actions/github-script@6
-      if: github.event_name == 'pull_request' && inputs.add_comment_on_pr == 'true'
       env:
-        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        PLAN: "terraform\n${{ needs.terraform_plan.outputs.plan_stdout }}"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
@@ -158,22 +196,22 @@ jobs:
             0: 'No changes, skipping Terraform apply job',
             1: 'Error occured! Aborting',
             2: 'Changes detected, running Terraform apply job'
-          }[${{ steps.plan.exitcode }}] ?? 'Terraform gave an unknown exit code, I don't know what happens next!';
+          }[${{ needs.terraform_plan.outputs.plan_exitcode }}] ?? 'Terraform gave an unknown exit code, I don't know what happens next!';
           
           const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
           ## Results for ${{inputs.env}}
-          #### Terraform Format and Style 🖌 \`${{ steps.fmt.outcome }}\`
-          #### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`
-          #### Terraform Validation 🤖 \`${{ steps.validate.outcome }}\`
+          #### Terraform Format and Style 🖌 \`${{ needs.terraform_check.outputs.format_outcome }}\`
+          #### Terraform Initialization ⚙️ \`${{ needs.terraform_plan.outputs.init_outcome }}\`
+          #### Terraform Validation 🤖 \`${{ needs.terraform_check.outputs.validate_outcome }}\`
           <details><summary>Validation Output</summary>
 
           \`\`\`\n
-          ${{ steps.validate.outputs.stdout }}
+          ${{ needs.terraform_check.outputs.validate_stdout }}
           \`\`\`
 
           </details>
 
-          #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
+          #### Terraform Plan 📖 \`${{ needs.terraform_plan.outputs.plan_outcome }}\`
           
           <details><summary>Show Plan</summary>
           
@@ -213,14 +251,11 @@ jobs:
               body: commentBody
             })
           }
-    
-    - name: Set final result
-      run: check for format, validation or plan errors
 
   run_terraform:
     # TODO We need to verify that inputs.deploy_on actually works. Seems to only work with main atm
-    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.exitcode == '2'
-    needs: terraform_plan
+    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2'
+    needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
@@ -229,6 +264,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: ${{ inputs.working_directory }}
 
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
@@ -273,11 +309,9 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      working-directory: ${{ inputs.working_directory }}
       run: terraform init
 
     - name: Run Terraform
-      working-directory: ${{ inputs.working_directory }}
       run: |
         if [ "${{inputs.terraform_workspace}}" != "" ]; then
           terraform workspace select ${{inputs.terraform_workspace}}
