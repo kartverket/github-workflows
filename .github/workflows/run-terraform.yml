@@ -103,6 +103,9 @@ jobs:
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
+    # Disallow parallel jobs for same env to allow aquiring state lock
+    concurrency: ${{ inputs.environment }}
+
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
@@ -182,6 +185,9 @@ jobs:
     needs: [terraform_check, terraform_plan]
     name: Update GitHub
     runs-on: ubuntu-latest
+
+    # Disallow parallel jobs for same env to allow aquiring state lock
+    concurrency: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
