@@ -264,7 +264,7 @@ jobs:
           #### Next action 🚀
           ${action}
           
-          *Pusher: @${{ github.actor }}, Working Directory: \`${{ inputs.working_directory }}\`, Commit: \`${{ github.sha }}\`, Generated at: \`${new Date().toLocaleString('nb')}\`*
+          *Pusher: @${{ github.actor }}, Working Directory: \`${{ inputs.working_directory }}\`, Commit: ${{ github.sha }}, Generated at: \`${new Date().toLocaleString('nb')}\`*
           <!-- @run-terraform:end:${{ inputs.environment }} -->`;
 
           if (bodyHasJobInfo) {
