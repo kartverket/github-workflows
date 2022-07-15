@@ -169,10 +169,10 @@ jobs:
       run: |
         # 1. Run and send stdout to build log as usual
         STDOUT=$(terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan)
-        echo $STDOUT
+        echo -e $STDOUT
 
         # 2. Remove some github commands and fluff
-        STDOUT="$(echo $STDOUT | sed '/^::/d' | grep -v 'Refreshing state...')"
+        STDOUT="$(echo -e $STDOUT | sed '/^::/d' | grep -v 'Refreshing state...')"
 
         # 3. Serialize into single-line string for transfer using outputs that only support single line
         STDOUT="${STDOUT//'%'/'%25'}"
