@@ -88,7 +88,7 @@ jobs:
       continue-on-error: true
       run: |
         echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
-        terraform validate -no-color | tee -a $GITHUB_STEP_SUMMARY
+        terraform validate -no-color | tee -a $GITHUB_STEP_SUMMARY | sed '/^::/d'
 
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
@@ -180,11 +180,11 @@ jobs:
 
         # 4. Write output and step summary
         echo "::set-output name=stdout::$STDOUT"
-        cat <<EOF
+        cat >> $GITHUB_STEP_SUMMARY <<EOF
         \`\`\`
         ${STDOUT}
         \`\`\`
-        EOF >> $GITHUB_STEP_SUMMARY
+        EOF
 
     - name: Upload Plan Artifact
       uses: actions/upload-artifact@v3
