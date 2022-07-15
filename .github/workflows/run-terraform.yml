@@ -4,52 +4,52 @@ on:
   workflow_call:
     inputs:
       workload_identity_provider:
-        description: ""
+        description: "The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`"
         required: true
         type: string
       service_account:
-        description: ""
+        description: "The GCP service account connected to the identity pool that will be used by Terraform"
         required: true
         type: string
       runner:
-        description: ""
+        description: "The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`"
         required: true
         type: string
       deploy_on:
-        description: ""
+        description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/head/main`"
         required: false
         type: string
         default: 'refs/heads/main'
       working_directory:
-        description: ""
+        description: "The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository"
         required: false
         type: string
       project_id:
-        description: ""
+        description: "The GCP Project ID to use as the \"active project\" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered"
         required: false
         type: string
       environment:
-        description: ""
+        description: "The GitHub environment to use when deploying. See [using environments for deployment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) for more info on this"
         required: false
         type: string
       kubernetes_cluster:
-        description: ""
+        description: "An optional kubernetes cluster to authenticate to. Note that the project_id must match where the cluster is registered"
         required: false
         type: string
       terraform_workspace:
-        description: ""
+        description: "When provided will set a workspace as the active workspace when planning and deploying"
         required: false
         type: string
       terraform_options:
-        description: ""
+        description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`"
         required: false
         type: string
       vault_role:
-        description: ""
+        description: "Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work"
         required: false
         type: string
       add_comment_on_pr:
-        description: ""
+        description: "Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`"
         required: false
         type: boolean
         default: true
@@ -233,13 +233,13 @@ jobs:
 
           const exitcode = '${{ needs.terraform_plan.outputs.plan_exitcode }}';
           const action = {
-            0: 'No changes, skipping Terraform apply job',
-            1: 'Error occured! Aborting',
-            2: 'Changes detected, running Terraform apply job'
+            0: 'No changes detected. Will not run Terraform apply job',
+            1: 'An error occured! Will not run Terraform apply job',
+            2: 'Changes detected. Will run Terraform apply job on merge to ${{ inputs.deploy_on }}'
           }[exitcode] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
           
           const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
-          ## Results for ${{ inputs.environment }} ${exitcode === '2' ? '– `CHANGED`' : ''}
+          ## Results for ${{ inputs.environment }} ${exitcode === '2' ? '– ❗ `CHANGED` ❗' : ''}
           #### Terraform Format and Style 🖌 \`${{ needs.terraform_check.outputs.format_outcome }}\`
           #### Terraform Initialization ⚙️ \`${{ needs.terraform_plan.outputs.init_outcome }}\`
           #### Terraform Validation 🤖 \`${{ needs.terraform_check.outputs.validate_outcome }}\`
@@ -264,7 +264,7 @@ jobs:
           #### Next action 🚀
           ${action}
           
-          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ inputs.working_directory }}\`, Workflow: \`${{ github.workflow }}\`*
+          *Pusher: @${{ github.actor }}, Working Directory: \`${{ inputs.working_directory }}\`, Commit: \`${{ github.sha }}\`, Generated at: \`${new Date().toLocaleString('nb')}\`*
           <!-- @run-terraform:end:${{ inputs.environment }} -->`;
 
           if (bodyHasJobInfo) {
