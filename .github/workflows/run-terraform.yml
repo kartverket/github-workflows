@@ -209,7 +209,7 @@ jobs:
           * <!-- @run-terraform:end:jobid -->
           */
           const bodyStartMarker = '<!-- @run-terraform -->';
-          const comment = commentId ? comments.find(({ body }) => body.startsWith(bodyStartMarker));
+          const comment = comments.find(({ body }) => body.startsWith(bodyStartMarker));
           const id = comment?.id;
           let commentBody = comment.?body ?? bodyStartMarker;
           const bodyHasJobInfo = body.includes(`<!-- @run.terraform:start:${{ inputs.environment}} -->`);
