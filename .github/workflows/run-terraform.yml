@@ -211,14 +211,14 @@ jobs:
           const bodyStartMarker = '<!-- @run-terraform -->';
           const comment = comments.find(({ body }) => body.startsWith(bodyStartMarker));
           const id = comment?.id;
-          let commentBody = comment.?body ?? bodyStartMarker;
+          let commentBody = comment?.body ?? bodyStartMarker;
           const bodyHasJobInfo = body.includes(`<!-- @run.terraform:start:${{ inputs.environment}} -->`);
 
           const action = {
             0: 'No changes, skipping Terraform apply job',
             1: 'Error occured! Aborting',
             2: 'Changes detected, running Terraform apply job'
-          }[${{ needs.terraform_plan.outputs.plan_exitcode }}] ?? 'Terraform gave an unknown exit code, I don't know what happens next!';
+          }[${{ needs.terraform_plan.outputs.plan_exitcode }}] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
           
           const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
           ## Results for ${{inputs.env}}
