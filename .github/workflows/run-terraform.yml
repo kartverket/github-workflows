@@ -241,7 +241,7 @@ jobs:
           <details><summary>Show Plan</summary>
           
           \`\`\`\n
-          ${needs.terraform_plan.outputs.plan_stdout}
+          ${{ needs.terraform_plan.outputs.plan_stdout }}
           \`\`\`
           
           </details>
