@@ -182,9 +182,9 @@ jobs:
         # 4. Write output and step summary
         echo "::set-output name=stdout::$STDOUT"
         cat <<EOF
-        ```
+        \`\`\`
         ${STDOUT}
-        ```
+        \`\`\`
         EOF >> $GITHUB_STEP_SUMMARY
 
     - name: Upload Plan Artifact
