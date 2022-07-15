@@ -202,7 +202,7 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const comments = await github.rest.issues.listComments({
+          const { data: comments } = await github.rest.issues.listComments({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo
