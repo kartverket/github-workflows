@@ -13,23 +13,32 @@ on:
         required: true
         type: string
       deploy_on:
+        required: false
         type: string
         default: 'refs/heads/main'
       working_directory:
+        required: false
         type: string
       project_id:
+        required: false
         type: string
       environment:
+        required: false
         type: string
       kubernetes_cluster:
+        required: false
         type: string
       terraform_workspace:
+        required: false
         type: string
       terraform_options:
+        required: false
         type: string
       vault_role:
+        required: false
         type: string
       add_comment_on_pr:
+        required: false
         type: boolean
         default: true
 
@@ -167,6 +176,7 @@ jobs:
       run:
         shell: bash
 
+    steps:
     - name: Update Pull Request
       uses: actions/github-script@6
       env:
