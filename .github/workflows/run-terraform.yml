@@ -88,7 +88,8 @@ jobs:
       continue-on-error: true
       run: |
         echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
-        terraform validate -no-color | tee -a $GITHUB_STEP_SUMMARY | sed '/^::/d'
+        terraform validate -no-color | tee -a output.txt
+        cat output.txt | sed '/^::/d' >> $GITHUB_STEP_SUMMARY
 
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
@@ -173,18 +174,20 @@ jobs:
         # 2. Remove some github commands and fluff
         STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
 
-        # 3. Serialize into single-line string for transfer using outputs that only support single line
-        STDOUT="${STDOUT//'%'/'%25'}"
-        STDOUT="${STDOUT//$'\n'/'%0A'}"
-        STDOUT="${STDOUT//$'\r'/'%0D'}"
-
-        # 4. Write output and step summary
-        echo "::set-output name=stdout::$STDOUT"
+        # 3. Write to step summary
         cat >> $GITHUB_STEP_SUMMARY <<EOF
         \`\`\`
         ${STDOUT}
         \`\`\`
         EOF
+
+        # 4. Serialize into single-line string for transfer using outputs that only support single line
+        STDOUT="${STDOUT//'%'/'%25'}"
+        STDOUT="${STDOUT//$'\n'/'%0A'}"
+        STDOUT="${STDOUT//$'\r'/'%0D'}"
+
+        # 5. Write output 
+        echo "::set-output name=stdout::$STDOUT"
 
     - name: Upload Plan Artifact
       uses: actions/upload-artifact@v3
