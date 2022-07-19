@@ -29,7 +29,7 @@ jobs:
       pull-requests: write
       # For fetching git repo
       contents: read
-    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2
+    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2.3
     with:
       runner: atkv1-dev
       environment: dev
