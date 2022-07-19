@@ -24,6 +24,7 @@ on:
         description: "The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository"
         required: false
         type: string
+        default: "."
       project_id:
         description: "The GCP Project ID to use as the \"active project\" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered"
         required: false
