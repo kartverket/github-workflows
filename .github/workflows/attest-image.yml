@@ -3,10 +3,7 @@ name: Attest
 on:
   workflow_call:
     inputs:
-      workload_identity_provider:
-        required: true
-        type: string
-      service_account:
+      image_url:
         required: true
         type: string
       runner:
@@ -60,7 +57,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="${{env.ATTESTATION_PROJECT_ID}}" \
-            --artifact-url="${{ env.REGISTRY }}/${{ github.repository }}@${{ steps.build.outputs.digest }}" \
+            --artifact-url="${{ inputs.image_url }}" \
             --attestor="${{env.ATTESTOR_NAME}}" \
             --attestor-project="${{env.ATTESTOR_PROJECT_ID}}" \
             --keyversion-project="${{env.KMS_KEY_PROJECT_ID}}" \
