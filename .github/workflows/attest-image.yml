@@ -1,0 +1,70 @@
+name: Attest
+
+on:
+  workflow_call:
+    inputs:
+      workload_identity_provider:
+        required: true
+        type: string
+      service_account:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      deploy_on:
+        type: string
+        default: 'refs/heads/main'
+      working_directory:
+        type: string
+      project_id:
+        type: string
+      environment:
+        type: string
+      kubernetes_cluster:
+        type: string
+      terraform_workspace:
+        type: string
+      terraform_options:
+        type: string
+      vault_role:
+        type: string
+
+jobs:
+  attest:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # required for authentication to GCP
+      id-token: write
+
+    steps:
+
+      - name: read .env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: .github/workflows/.env.atkv1-dev
+
+      - id: auth
+        name: Authenticate to GCP
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER}}
+          service_account: ${{env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT}}
+          project_id: ${{env.KMS_KEY_PROJECT_ID}}
+
+      # https://cloud.google.com/binary-authorization/docs/making-attestations
+      - name: Perform attestation
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="${{env.ATTESTATION_PROJECT_ID}}" \
+            --artifact-url="${{ env.REGISTRY }}/${{ github.repository }}@${{ steps.build.outputs.digest }}" \
+            --attestor="${{env.ATTESTOR_NAME}}" \
+            --attestor-project="${{env.ATTESTOR_PROJECT_ID}}" \
+            --keyversion-project="${{env.KMS_KEY_PROJECT_ID}}" \
+            --keyversion-location="${{env.KMS_KEY_LOCATION}}" \
+            --keyversion-keyring="${{env.KMS_KEYRING_NAME}}" \
+            --keyversion-key="${{env.KMS_KEY_NAME}}" \
+            --keyversion="${{env.KMS_KEY_VERSION}}"
