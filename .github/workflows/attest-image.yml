@@ -12,20 +12,21 @@ on:
       deploy_on:
         type: string
         default: 'refs/heads/main'
-      working_directory:
-        type: string
       project_id:
         type: string
       environment:
         type: string
-      kubernetes_cluster:
-        type: string
-      terraform_workspace:
-        type: string
-      terraform_options:
-        type: string
-      vault_role:
-        type: string
+
+ #KMS_KEY_PROJECT_ID=skip-dev-7d22
+ #KMS_KEY_LOCATION=europe
+ #KMS_KEYRING_NAME=Dev-attestor-key
+ #KMS_KEY_NAME=Attestor-test-key
+ #KMS_KEY_VERSION=1
+ #ATTESTATION_PROJECT_ID=kubernetes-dev-94b9
+ #ATTESTOR_PROJECT_ID=kubernetes-dev-94b9
+ #ATTESTOR_NAME=Testing-attestor
+ #WORKLOAD_IDENTITY_FEDERATION_PROVIDER=projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
+ #WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT=github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
 
 jobs:
   attest:
@@ -39,10 +40,6 @@ jobs:
 
     steps:
 
-      - name: read .env
-        uses: c-py/action-dotenv-to-setenv@v3
-        with:
-          env-file: .github/workflows/.env.atkv1-dev
 
       - id: auth
         name: Authenticate to GCP
@@ -53,6 +50,7 @@ jobs:
           project_id: ${{env.KMS_KEY_PROJECT_ID}}
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
+      #TODO change all variables to comply with reuseable
       - name: Perform attestation
         run: |
           gcloud beta container binauthz attestations sign-and-create \
