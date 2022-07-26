@@ -3,35 +3,53 @@ name: Attest
 on:
   workflow_call:
     inputs:
+      workload_identity_provider:
+        required: true
+        type: string
+      service_account:
+        required: true
+        type: string
+      attestation_project_id:
+        type: string
       image_url:
+        required: true
+        type: string
+      attestor_name:
+        required: true
+        type: string
+      attestor_project_id:
+        required: true
+        type: string
+      kms_key_project_id:
+        required: true
+        type: string
+      kms_key_location:
+        required: true
+        type: string
+      kms_keyring_name:
+        required: true
+        type: string
+      kms_key_name:
+        required: true
+        type: string
+      kms_key_version:
         required: true
         type: string
       runner:
         required: true
         type: string
+      # remove if unused
       deploy_on:
         type: string
         default: 'refs/heads/main'
-      project_id:
-        type: string
+      # remove if unused
       environment:
         type: string
 
- #KMS_KEY_PROJECT_ID=skip-dev-7d22
- #KMS_KEY_LOCATION=europe
- #KMS_KEYRING_NAME=Dev-attestor-key
- #KMS_KEY_NAME=Attestor-test-key
- #KMS_KEY_VERSION=1
- #ATTESTATION_PROJECT_ID=kubernetes-dev-94b9
- #ATTESTOR_PROJECT_ID=kubernetes-dev-94b9
- #ATTESTOR_NAME=Testing-attestor
- #WORKLOAD_IDENTITY_FEDERATION_PROVIDER=projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
- #WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT=github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
-
 jobs:
   attest:
-
-    runs-on: ubuntu-latest
+    name: Authentication and Attestation
+    runs-on: ${{ inputs.runner }}
     permissions:
       contents: read
       packages: write
@@ -39,27 +57,23 @@ jobs:
       id-token: write
 
     steps:
-
-
-      - id: auth
-        name: Authenticate to GCP
+      - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER}}
-          service_account: ${{env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT}}
-          project_id: ${{env.KMS_KEY_PROJECT_ID}}
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+          attestation_project_id: ${{ inputs.attestation_project_id }}
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
-      #TODO change all variables to comply with reuseable
       - name: Perform attestation
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="${{env.ATTESTATION_PROJECT_ID}}" \
+            --project="${{inputs.attestation_project_id}}" \
             --artifact-url="${{ inputs.image_url }}" \
-            --attestor="${{env.ATTESTOR_NAME}}" \
-            --attestor-project="${{env.ATTESTOR_PROJECT_ID}}" \
-            --keyversion-project="${{env.KMS_KEY_PROJECT_ID}}" \
-            --keyversion-location="${{env.KMS_KEY_LOCATION}}" \
-            --keyversion-keyring="${{env.KMS_KEYRING_NAME}}" \
-            --keyversion-key="${{env.KMS_KEY_NAME}}" \
-            --keyversion="${{env.KMS_KEY_VERSION}}"
+            --attestor="${{inputs.attestor_name}}" \
+            --attestor-project="${{inputs.attestor_project_id}}" \
+            --keyversion-project="${{inputs.kms_key_project_id}}" \
+            --keyversion-location="${{inputs.kms_key_location}}" \
+            --keyversion-keyring="${{inputs.kms_keyring_name}}" \
+            --keyversion-key="${{inputs.kms_key_name}}" \
+            --keyversion="${{inputs.kms_key_version}}"
