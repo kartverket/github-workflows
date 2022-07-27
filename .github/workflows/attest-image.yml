@@ -10,6 +10,7 @@ on:
         required: true
         type: string
       project_id:
+        required: true
         type: string
       image_url:
         required: true
@@ -37,13 +38,6 @@ on:
         type: string
       runner:
         required: true
-        type: string
-      # remove if unused
-      deploy_on:
-        type: string
-        default: 'refs/heads/main'
-      # remove if unused
-      environment:
         type: string
 
 jobs:
@@ -83,3 +77,4 @@ jobs:
             --keyversion-keyring="${{inputs.kms_keyring_name}}" \
             --keyversion-key="${{inputs.kms_key_name}}" \
             --keyversion="${{inputs.kms_key_version}}"
+          echo Attestation succeded
