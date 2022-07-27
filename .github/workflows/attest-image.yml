@@ -62,7 +62,7 @@ jobs:
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
-          attestation_project_id: ${{ inputs.attestation_project_id }}
+          project_id: ${{ inputs.attestation_project_id }}
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
       - name: Perform attestation
