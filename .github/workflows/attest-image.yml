@@ -44,7 +44,7 @@ jobs:
             --project="kubernetes-dev-94b9" \
             --artifact-url="${{ inputs.image_url }}" \
             --attestor="Testing-attestor" \
-            --attestor-project="kubernetes-dev-94b9}" \
+            --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="skip-dev-7d22" \
             --keyversion-location="europe" \
             --keyversion-keyring="Dev-attestor-key" \
