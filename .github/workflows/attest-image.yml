@@ -9,7 +9,7 @@ on:
       service_account:
         required: true
         type: string
-      attestation_project_id:
+      project_id:
         type: string
       image_url:
         required: true
@@ -62,13 +62,13 @@ jobs:
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
-          project_id: ${{ inputs.attestation_project_id }}
+          project_id: ${{ inputs.project_id }}
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
       - name: Perform attestation
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="${{inputs.attestation_project_id}}" \
+            --project="${{inputs.project_id}}" \
             --artifact-url="${{ inputs.image_url }}" \
             --attestor="${{inputs.attestor_name}}" \
             --attestor-project="${{inputs.attestor_project_id}}" \
