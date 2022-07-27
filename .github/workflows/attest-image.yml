@@ -9,34 +9,7 @@ on:
       service_account:
         required: true
         type: string
-      project_id:
-        required: true
-        type: string
       image_url:
-        required: true
-        type: string
-      attestor_name:
-        required: true
-        type: string
-      attestor_project_id:
-        required: true
-        type: string
-      kms_key_project_id:
-        required: true
-        type: string
-      kms_key_location:
-        required: true
-        type: string
-      kms_keyring_name:
-        required: true
-        type: string
-      kms_key_name:
-        required: true
-        type: string
-      kms_key_version:
-        required: true
-        type: string
-      runner:
         required: true
         type: string
 
