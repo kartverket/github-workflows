@@ -43,7 +43,7 @@ on:
 jobs:
   attest:
     name: Authentication and Attestation
-    runs-on: ${{ inputs.runner }}
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
@@ -62,19 +62,32 @@ jobs:
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
-          project_id: ${{ inputs.project_id }}
+          project_id: kubernetes-dev-94b9
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
       - name: Perform attestation
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="${{inputs.project_id}}" \
+            --project="kubernetes-dev-94b9" \
             --artifact-url="${{ inputs.image_url }}" \
-            --attestor="${{inputs.attestor_name}}" \
-            --attestor-project="${{inputs.attestor_project_id}}" \
-            --keyversion-project="${{inputs.kms_key_project_id}}" \
-            --keyversion-location="${{inputs.kms_key_location}}" \
-            --keyversion-keyring="${{inputs.kms_keyring_name}}" \
-            --keyversion-key="${{inputs.kms_key_name}}" \
-            --keyversion="${{inputs.kms_key_version}}"
+            --attestor="Testing-attestor" \
+            --attestor-project="kubernetes-dev-94b9}" \
+            --keyversion-project="skip-dev-7d22" \
+            --keyversion-location="europe" \
+            --keyversion-keyring="Dev-attestor-key" \
+            --keyversion-key="Attestor-test-key" \
+            --keyversion="1"
           echo Attestation succeded
+
+
+# workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
+# service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
+# project_id: kubernetes-dev-94b9
+# image_url: ${{needs.build.outputs.image_url}}
+# attestor_name: Testing-attestor
+# attestor_project_id: kubernetes-dev-94b9
+# kms_key_project_id: skip-dev-7d22
+# kms_key_location: europe
+# kms_keyring_name: Dev-attestor-key
+# kms_key_name: Attestor-test-key
+# kms_key_version: 1
