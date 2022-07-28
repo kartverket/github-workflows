@@ -23,8 +23,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ inputs.image_url }}
-          format: 'template'
-          report: 'sarif'
+          format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           timeout: 15m
