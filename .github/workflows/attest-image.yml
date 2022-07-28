@@ -20,12 +20,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    permissions:
-      contents: read
-      packages: write
-      # required for authentication to GCP
-      id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
