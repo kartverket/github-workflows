@@ -1,0 +1,39 @@
+name: Trivy
+
+on:
+  workflow_call:
+    inputs:
+      # The commit SHA that triggered the workflow run.
+      github_sha:
+        required: true
+        type: string
+
+jobs:
+  trivy-analysis:
+    name: Trivy Analysis
+    runs-on: "ubuntu-18.04"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t docker.io/my-organization/my-app:${{ inputs.github_sha }} .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'docker.io/my-organization/my-app:${{ inputs.github_sha }}'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
