@@ -24,7 +24,7 @@ jobs:
         with:
           image-ref: ${{ inputs.image_url }}
           format: 'template'
-          template: '@/contrib/sarif.tpl'
+          report: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           timeout: 15m
