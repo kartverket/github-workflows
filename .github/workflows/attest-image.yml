@@ -12,10 +12,13 @@ on:
       image_url:
         required: true
         type: string
-
+      run_trivy:
+        required: false
+        type: boolean
+        default: true
 jobs:
-  attest:
-    name: Authentication and Attestation
+  attest-kartverket-kontekst:
+    name: Authentication and Attestation of kartverket context
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,7 +32,6 @@ jobs:
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
-          project_id: kubernetes-dev-94b9
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
       - name: Perform attestation
@@ -46,6 +48,52 @@ jobs:
             --keyversion="1"
           echo Attestation succeded
 
+  attest-trivy:
+    name: Authentication and Attestation of trivy vulnerability scan
+    if: inputs.run_trivy == true
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # https://github.com/aquasecurity/trivy-action
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ inputs.image_url }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          timeout: 15m
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+
+      # https://cloud.google.com/binary-authorization/docs/making-attestations
+      - name: Perform attestation
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="kubernetes-dev-94b9" \
+            --artifact-url="${{ inputs.image_url }}" \
+            --attestor="Testing-attestor" \
+            --attestor-project="kubernetes-dev-94b9" \
+            --keyversion-project="skip-dev-7d22" \
+            --keyversion-location="europe" \
+            --keyversion-keyring="Dev-attestor-key" \
+            --keyversion-key="Attestor-test-key" \
+            --keyversion="1"
+          echo Attestation succeded
 
 # workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
 # service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
