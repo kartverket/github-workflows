@@ -19,7 +19,6 @@ on:
         default: true
 jobs:
   attest-kartverket-kontekst:
-    if: inputs.run_trivy == true
     name: Image in context of kartverket
     runs-on: ubuntu-latest
     defaults:
@@ -48,6 +47,7 @@ jobs:
             --keyversion-keyring="Dev-attestor-key" \
             --keyversion-key="Attestor-test-key" \
             --keyversion="1"
+            --validate
           echo Attestation succeded
 
   attest-trivy:
@@ -83,6 +83,7 @@ jobs:
           service_account: ${{ inputs.service_account }}
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
+      # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
       - name: Perform attestation
         run: |
           gcloud beta container binauthz attestations sign-and-create \
@@ -95,16 +96,5 @@ jobs:
             --keyversion-keyring="Dev-attestor-key" \
             --keyversion-key="Attestor-test-key" \
             --keyversion="1"
+            --validate
           echo Attestation succeded
-
-# workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
-# service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
-# project_id: kubernetes-dev-94b9
-# image_url: ${{needs.build.outputs.image_url}}
-# attestor_name: Testing-attestor
-# attestor_project_id: kubernetes-dev-94b9
-# kms_key_project_id: skip-dev-7d22
-# kms_key_location: europe
-# kms_keyring_name: Dev-attestor-key
-# kms_key_name: Attestor-test-key
-# kms_key_version: 1
