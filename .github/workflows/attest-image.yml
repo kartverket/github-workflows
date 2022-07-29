@@ -19,7 +19,7 @@ on:
         default: true
 jobs:
   attest-kartverket-kontekst:
-    if: inputs.run_trivy == false
+    if: inputs.run_trivy == true
     name: Image in context of kartverket
     runs-on: ubuntu-latest
     defaults:
