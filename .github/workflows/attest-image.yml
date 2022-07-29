@@ -47,7 +47,6 @@ jobs:
             --keyversion-keyring="Dev-attestor-key" \
             --keyversion-key="Attestor-test-key" \
             --keyversion="1"
-            --validate
           echo Attestation succeded
 
   attest-trivy:
@@ -96,5 +95,4 @@ jobs:
             --keyversion-keyring="Dev-attestor-key" \
             --keyversion-key="Attestor-test-key" \
             --keyversion="1"
-            --validate
           echo Attestation succeded
