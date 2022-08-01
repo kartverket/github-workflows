@@ -54,7 +54,7 @@ jobs:
   attest-trivy:
     name: Trivy vulnerability scan
     if: inputs.run_trivy == true
-    runs-on: "ubuntu-18.04"
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
