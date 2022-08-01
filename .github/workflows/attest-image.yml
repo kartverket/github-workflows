@@ -70,7 +70,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-          timeout: 15m
+          timeout: 20m
           security-checks: 'vuln'
 
       - name: Upload Trivy scan results to GitHub Security tab
