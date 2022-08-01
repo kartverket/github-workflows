@@ -21,7 +21,6 @@ on:
 jobs:
   attest-kartverket-kontekst:
     name: Image in context of kartverket
-    needs: attest-trivy
     runs-on: ubuntu-latest
     defaults:
       run:
