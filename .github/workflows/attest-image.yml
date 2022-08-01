@@ -17,12 +17,6 @@ on:
         required: false
         type: boolean
         default: true
-      registry:
-        required: true
-        type: string
-      repository:
-        required: true
-        type: string
 
 jobs:
   attest-kartverket-kontekst:
@@ -72,7 +66,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ inputs.registry }}/${{ inputs.repository }}@${{ inputs.attest-kartverket-kontekst.steps.attest.outputs.digest }}
+          image-ref: ${{ inputs.image_url }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -96,7 +90,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ inputs.registry }}/${{ inputs.repository }}@${{ inputs.attest-kartverket-kontekst.steps.attest.outputs.digest }}" \
+            --artifact-url="${{ inputs.image_url }}" \
             --attestor="Testing-attestor" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="skip-dev-7d22" \
