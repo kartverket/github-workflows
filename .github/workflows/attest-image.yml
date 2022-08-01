@@ -91,7 +91,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ attest-kartverket-kontekst.steps.attest.outputs.digest }}" \
+            --artifact-url="${{ needs.attest-kartverket-kontekst.steps.attest.outputs.digest }}" \
             --attestor="Testing-attestor" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="skip-dev-7d22" \
