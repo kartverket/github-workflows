@@ -38,6 +38,7 @@ jobs:
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
       - name: Perform attestation
+        id: attest
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -89,7 +90,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ inputs.image_url }}" \
+            --artifact-url="${{ attest-kartverket-kontekst.steps.attest.outputs.digest }}" \
             --attestor="Testing-attestor" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="skip-dev-7d22" \
