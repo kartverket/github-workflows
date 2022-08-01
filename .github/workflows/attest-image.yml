@@ -72,7 +72,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.image-url}}
+          image-ref: ${{ inputs.registry }}/${{ inputs.repository }}@${{ inputs.attest-kartverket-kontekst.steps.attest.outputs.digest }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
