@@ -1,4 +1,4 @@
-name: Attest
+name: Attest Build and Trivy Scan
 
 on:
   workflow_call:
@@ -20,7 +20,7 @@ on:
 
 jobs:
   attest-kartverket-kontekst:
-    name: Image in context of kartverket
+    name: Attest that image is in context of kartverket
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,7 +35,7 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
-      # https://cloud.google.com/binary-authorization/docs/making-attestations
+      # Attestor name: Build-kartverket
       - name: Perform attestation
         id: attest
         run: |
@@ -51,10 +51,43 @@ jobs:
             --keyversion="1"
           echo Attestation succeded
 
-  attest-trivy:
-    name: Trivy vulnerability scan
-    if: inputs.run_trivy == true
+  attest-branch:
+    name: Attest that image is on main or master branch
+    if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main' 
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+
+      # Attestor name: Build-master
+      - name: Perform attestation
+        id: attest
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="" \
+            --artifact-url="${{ inputs.image_url }}" \
+            --attestor="" \
+            --attestor-project="" \
+            --keyversion-project="" \
+            --keyversion-location="" \
+            --keyversion-keyring="" \
+            --keyversion-key="" \
+            --keyversion=""
+          echo Attestation succeded
+
+  run-and-attest-trivy:
+    name: Trivy Analysis and Attestation
+    if: inputs.run_trivy == true
+    runs-on: "ubuntu-18.04"
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -74,7 +107,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-          timeout: '30m'
+          timeout: '15m'
           security-checks: 'vuln'
 
       - name: Upload Trivy scan results to GitHub Security tab
@@ -90,17 +123,17 @@ jobs:
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
       # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
-      # HER MAA VI HA EN ANNEN ATTESTOR
+      # Attestor name: Trivy
       - name: Perform attestation
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
+            --project="" \
             --artifact-url="${{ inputs.image_url }}" \
-            --attestor="Testing-attestor" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="skip-dev-7d22" \
-            --keyversion-location="europe" \
-            --keyversion-keyring="Dev-attestor-key" \
-            --keyversion-key="Attestor-test-key" \
-            --keyversion="1"
+            --attestor="" \
+            --attestor-project="" \
+            --keyversion-project="" \
+            --keyversion-location="" \
+            --keyversion-keyring="" \
+            --keyversion-key="" \
+            --keyversion=""
           echo Attestation succeded

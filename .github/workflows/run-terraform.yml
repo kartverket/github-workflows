@@ -29,6 +29,9 @@ on:
         type: string
       vault_role:
         type: string
+      image_url:
+        required: true
+        type: string
 
 jobs:
   terraform_check:
@@ -190,3 +193,54 @@ jobs:
           terraform workspace select ${{inputs.terraform_workspace}}
         fi
         terraform apply ${{inputs.terraform_options}} -input=false -auto-approve
+
+  attest-deploy:
+    name: Attest deply to environment
+    needs: run_terraform
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+
+      # Attestor name: Deploy-Dev
+      - name: Perform attestation deploy to dev
+        id: attest-deploy-dev
+        if: inputs.environment == 'dev'
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="" \
+            --artifact-url="${{ inputs.image_url }}" \
+            --attestor="" \
+            --attestor-project="" \
+            --keyversion-project="" \
+            --keyversion-location="" \
+            --keyversion-keyring="" \
+            --keyversion-key="" \
+            --keyversion=""
+          echo Attestation succeded
+
+      # Attestor name: Deploy-Test
+      - name: Perform attestation deploy to test
+        id: attest-deploy-test
+        if: inputs.environment == 'test'
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="" \
+            --artifact-url="${{ inputs.image_url }}" \
+            --attestor="" \
+            --attestor-project="" \
+            --keyversion-project="" \
+            --keyversion-location="" \
+            --keyversion-keyring="" \
+            --keyversion-key="" \
+            --keyversion=""
+          echo Attestation succeded
