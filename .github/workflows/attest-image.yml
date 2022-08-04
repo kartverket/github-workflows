@@ -42,12 +42,12 @@ jobs:
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
             --artifact-url="${{ inputs.image_url }}" \
-            --attestor="Testing-attestor" \
+            --attestor="Build-Kartverket" \
             --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="skip-dev-7d22" \
-            --keyversion-location="europe" \
-            --keyversion-keyring="Dev-attestor-key" \
-            --keyversion-key="Attestor-test-key" \
+            --keyversion-project="kubernetes-dev-94b9" \
+            --keyversion-location="europe-north1" \
+            --keyversion-keyring="Attestor-Keyring" \
+            --keyversion-key="Build-Kartverket-Key" \
             --keyversion="1"
           echo Attestation succeded
 
