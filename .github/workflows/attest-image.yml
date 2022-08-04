@@ -29,9 +29,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-        # https://github.com/aquasecurity/trivy-action
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+
+      # https://cloud.google.com/binary-authorization/docs/making-attestations
+      - name: Perform attestation
+        id: attest
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="kubernetes-dev-94b9" \
+            --artifact-url="${{ inputs.image_url }}" \
+            --attestor="Testing-attestor" \
+            --attestor-project="kubernetes-dev-94b9" \
+            --keyversion-project="skip-dev-7d22" \
+            --keyversion-location="europe" \
+            --keyversion-keyring="Dev-attestor-key" \
+            --keyversion-key="Attestor-test-key" \
+            --keyversion="1"
+          echo Attestation succeded
+
+  attest-trivy:
+    name: Trivy vulnerability scan
+    if: inputs.run_trivy == true
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # https://github.com/aquasecurity/trivy-action
       - name: Run Trivy vulnerability scanner
-        if: inputs.run_trivy == true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ inputs.image_url }}
@@ -42,7 +78,6 @@ jobs:
           security-checks: 'vuln'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        if: inputs.run_trivy == true
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
@@ -54,8 +89,9 @@ jobs:
           service_account: ${{ inputs.service_account }}
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
+      # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
+      # HER MAA VI HA EN ANNEN ATTESTOR
       - name: Perform attestation
-        id: attest
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
