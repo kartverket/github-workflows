@@ -37,7 +37,7 @@ jobs:
 
       # Attestor name: Build-kartverket
       - name: Perform attestation
-        id: attest
+        id: attest-kartverket-kontekst
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -70,18 +70,18 @@ jobs:
 
       # Attestor name: Build-master
       - name: Perform attestation
-        id: attest
+        id: attest-branch
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="" \
+            --project="kubernetes-dev-94b9" \
             --artifact-url="${{ inputs.image_url }}" \
-            --attestor="" \
-            --attestor-project="" \
-            --keyversion-project="" \
-            --keyversion-location="" \
-            --keyversion-keyring="" \
-            --keyversion-key="" \
-            --keyversion=""
+            --attestor="Build-Master-Branch" \
+            --attestor-project="kubernetes-dev-94b9" \
+            --keyversion-project="kubernetes-dev-94b9" \
+            --keyversion-location="europe-north1" \
+            --keyversion-keyring="Attestor-Keyring" \
+            --keyversion-key="Build-Master-Branch-Key" \
+            --keyversion="1"
           echo Attestation succeded
 
   run-and-attest-trivy:
@@ -123,17 +123,17 @@ jobs:
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
       # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
-      # Attestor name: Trivy
+      # Attestor name: Trivy-Scan
       - name: Perform attestation
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="" \
+            --project="kubernetes-dev-94b9" \
             --artifact-url="${{ inputs.image_url }}" \
-            --attestor="" \
-            --attestor-project="" \
-            --keyversion-project="" \
-            --keyversion-location="" \
-            --keyversion-keyring="" \
-            --keyversion-key="" \
-            --keyversion=""
+            --attestor="Trivy-Scan" \
+            --attestor-project="kubernetes-dev-94b9" \
+            --keyversion-project="kubernetes-dev-94b9" \
+            --keyversion-location="europe-north1" \
+            --keyversion-keyring="Attestor-Keyring" \
+            --keyversion-key="Trivy-Scan-Key" \
+            --keyversion="1"
           echo Attestation succeded
