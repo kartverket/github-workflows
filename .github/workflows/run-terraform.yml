@@ -212,7 +212,7 @@ jobs:
           service_account: ${{ inputs.service_account }}
 
       # Attestor name: Deploy-Dev
-      - name: Perform attestation deploy to dev
+      - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
         if: inputs.environment == 'dev'
         run: |
@@ -229,16 +229,16 @@ jobs:
           echo Attestation succeded
 
       # Attestor name: Deploy-Test
-      - name: Perform attestation deploy to test
+      - name: Perform attestation of deploy to test
         id: attest-deploy-test
         if: inputs.environment == 'test'
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
+            --project="kubernetes-test-94f6" \
             --artifact-url="${{ inputs.image_url }}" \
             --attestor="Deploy-Test" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="kubernetes-dev-94b9" \
+            --attestor-project="kubernetes-test-94f6" \
+            --keyversion-project="kubernetes-test-94f6" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
             --keyversion-key="Deploy-Test-Key" \

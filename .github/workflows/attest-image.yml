@@ -20,7 +20,7 @@ on:
 
 jobs:
   attest-kartverket-kontekst:
-    name: Attest that image is in context of kartverket
+    name: Image in context of kartverket
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,7 +52,7 @@ jobs:
           echo Attestation succeded
 
   attest-branch:
-    name: Attest that image is on main or master branch
+    name: Image is on main or master branch
     if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main' 
     runs-on: ubuntu-latest
     defaults:
