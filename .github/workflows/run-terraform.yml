@@ -30,8 +30,9 @@ on:
       vault_role:
         type: string
       image_url:
-        required: true
+        required: false
         type: string
+        default: 'NA'
 
 jobs:
   terraform_check:
@@ -195,6 +196,7 @@ jobs:
         terraform apply ${{inputs.terraform_options}} -input=false -auto-approve
 
   attest-deploy:
+    if: inputs.image_url != 'NA'
     name: Attest deply to environment
     needs: run_terraform
     runs-on: ubuntu-latest
