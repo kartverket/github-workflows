@@ -211,7 +211,7 @@ jobs:
           gcloud container binauthz attestations list\
           --project="kubernetes-dev-94b9"\
           --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev"\ 
-          --artifact-url=${{inputs.image_url}}
+          --artifact-url="${{inputs.image_url}}"
       - name: Checkout repository
         uses: actions/checkout@v3
 
