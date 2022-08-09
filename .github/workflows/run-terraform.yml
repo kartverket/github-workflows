@@ -29,6 +29,7 @@ on:
         type: string
       vault_role:
         type: string
+      # Docker image name must be fully qualified (e.g.registry/repository@digest)
       image_url:
         required: false
         type: string
@@ -196,14 +197,23 @@ jobs:
         terraform apply ${{inputs.terraform_options}} -input=false -auto-approve
 
   attest-deploy:
-    if: inputs.image_url != ''
+    if: inputs.image_url != ''  
     name: Attest deply to environment
     needs: terraform_plan
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
+    outputs:
+      attested: ${{ steps.is-attested.outputs }}
     steps:
+      - name: Check if allready attested
+        id: is-attested
+        run: |
+          gcloud container binauthz attestations list\
+          --project="kubernetes-dev-94b9"\
+          --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev"\ 
+          --artifact-url=${{inputs.image_url}}
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -216,7 +226,7 @@ jobs:
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: inputs.environment == 'dev'
+        if: inputs.environment == 'dev' && attested.length < 20
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -233,7 +243,7 @@ jobs:
       # Attestor name: Deploy-Test
       - name: Perform attestation of deploy to test
         id: attest-deploy-test
-        if: inputs.environment == 'test'
+        if: inputs.environment == 'test' && attested.length < 20
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-test-94f6" \
