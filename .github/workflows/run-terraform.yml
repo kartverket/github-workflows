@@ -204,8 +204,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    outputs:
-      attested: ${{ steps.is-attested.outputs }}
     steps:
       - name: Check if allready attested
         id: is-attested
@@ -226,7 +224,7 @@ jobs:
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: inputs.environment == 'dev' && attested.length < 20
+        if: inputs.environment == 'dev' && ${{ steps.is-attested.outputs }}.length < 20
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -243,7 +241,7 @@ jobs:
       # Attestor name: Deploy-Test
       - name: Perform attestation of deploy to test
         id: attest-deploy-test
-        if: inputs.environment == 'test' && attested.length < 20
+        if: inputs.environment == 'test' && ${{ steps.is-attested.outputs }}.length < 20
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-test-94f6" \
