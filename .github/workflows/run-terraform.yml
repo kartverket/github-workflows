@@ -198,7 +198,7 @@ jobs:
   attest-deploy:
     if: inputs.image_url != ''
     name: Attest deply to environment
-    needs: run_terraform
+    needs: terraform_plan
     runs-on: ubuntu-latest
     defaults:
       run:
