@@ -204,6 +204,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    outputs:
+      attestation: ${{ steps.get-attestation.outputs.attestation }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -215,14 +217,14 @@ jobs:
           service_account: ${{ inputs.service_account }}
 
       - name: Check if already attested
-        id: is-attested
+        id: get-attestation
         run: |
-          echo "::set-output name=is-attested::$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="${{inputs.image_url}}")\n"
+          echo "::set-output name=attestation::$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="${{inputs.image_url}}")"
 
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: ${{inputs.environment == 'dev' && steps.is-attested.outputs.is-attested.length < 10}}
+        if: ${{inputs.environment == 'dev' && outputs.attestation.length < 10}}
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
