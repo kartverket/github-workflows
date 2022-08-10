@@ -204,8 +204,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    outputs:
-      attestation: ${{ steps.get-attestation.outputs.attestation }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -224,7 +222,7 @@ jobs:
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: inputs.environment == 'dev' && ${{needs.attest-deploy.outputs.attestation}}.length < 10
+        if: inputs.environment == 'dev' && ${{ steps.get-attestation.outputs.attestation }}.length < 10
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
