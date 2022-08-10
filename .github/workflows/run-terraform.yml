@@ -221,7 +221,7 @@ jobs:
 
       - name: echo attestation
         run: |
-          echo "${{ steps.get-attestation.outputs.value }}"
+          echo "${{ steps.get-attestation.outputs.toJSON }}"
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
