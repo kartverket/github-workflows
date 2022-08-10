@@ -220,7 +220,8 @@ jobs:
           echo "::set-output name=attestation::$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="${{inputs.image_url}}")"
 
       - name: echo attestation
-        run: echo ${{ steps.get-attestation.outputs.attestation }}
+        run: |
+          echo "${{ steps.get-attestation.outputs.attestation }}"
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
