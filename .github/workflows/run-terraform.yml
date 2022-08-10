@@ -222,7 +222,7 @@ jobs:
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: inputs.environment == 'dev' && steps.is-attested.outputs.length < 20
+        if: inputs.environment == 'dev' && steps.is-attested.outputs.length < 10
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
