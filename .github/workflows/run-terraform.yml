@@ -217,7 +217,7 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="ghcr.io/kartverket/github-runner@sha256:da550258361abdf9e916ec27e878f75cf72e961ad727919f86b1ebebd1957b6")
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="ghcr.io/kartverket/github-runner@sha256:da550258361abdf9e916ec27e878f75cf72e961ad727919f86b1ebebd1957b6u")
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
           echo "::set-output name=msg::$msg"
 
