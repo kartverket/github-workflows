@@ -223,7 +223,6 @@ jobs:
 
       - name: echo attestation
         run: |
-          echo "${{ fromJSON(steps.get-attestation.outputs.msg) }}"
           echo "${{ fromJSON(steps.get-attestation.outputs.msg).length }}"
       
       # Attestor name: Deploy-Dev
