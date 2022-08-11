@@ -231,8 +231,8 @@ jobs:
           echo "${{ steps.get-attestation.outputs.msg }}"
       
       # Attestor name: Deploy-Dev
-      - name: Perform attestation of deploy to dev
-        id: attest-deploy-dev
+      - name: Perform attestation of deploy to ${{inputs.environment}}
+        id: attest-deploy
         if: steps.get-attestation.outputs.msg < 1000
         run: |
           gcloud beta container binauthz attestations sign-and-create \
