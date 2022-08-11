@@ -218,12 +218,12 @@ jobs:
         id: get-attestation
         run: |
           mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="${{inputs.image_url}}")
-          msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.')
+          msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
           echo "::set-output name=msg::$msg"
 
       - name: echo attestation
         run: |
-          echo "${{ fromJSON(steps.get-attestation.outputs.msg).length }}"
+          echo "${{ fromJSON(steps.get-attestation.outputs.msg)}}"
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
