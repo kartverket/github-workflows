@@ -13,21 +13,29 @@ on:
         required: true
         type: string
       deploy_on:
+        required: false
         type: string
         default: 'refs/heads/main'
       working_directory:
+        required: false
         type: string
       project_id:
+        required: false
         type: string
       environment:
+        required: false
         type: string
       kubernetes_cluster:
+        required: false
         type: string
       terraform_workspace:
+        required: false
         type: string
       terraform_options:
+        required: false
         type: string
       vault_role:
+        required: false
         type: string
       # Docker image name must be fully qualified (e.g.registry/repository@digest)
       image_url:
@@ -197,8 +205,8 @@ jobs:
         terraform apply ${{inputs.terraform_options}} -input=false -auto-approve
 
   attest-deploy:
-    if: inputs.image_url != ''  
-    name: Attest deply to environment
+    if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
+    name: Attest deploy to environment
     needs: terraform_plan
     runs-on: ubuntu-latest
     defaults:
@@ -215,59 +223,26 @@ jobs:
           service_account: ${{ inputs.service_account }}
 
       - name: Check if already attested
-        id: get-attestation-dev
-        if: inputs.environment == 'dev'
+        id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="${{inputs.image_url}}")
+          mystr=$(gcloud container binauthz attestations list --project="${{inputs.project_id}}" --attestor="projects/${{inputs.project_id}}/attestors/Deploy-${{inputs.environment}}" --artifact-url="${{inputs.image_url}}")
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
           echo "::set-output name=msg::$msg"
-
-      - name: echo attestation
-        run: |
-          echo "${{ steps.get-attestation-dev.outputs.msg }}"
-
-      - name: Check if already attested
-        id: get-attestation-test
-        if: inputs.environment == 'test'
-        run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-test-94f6" --attestor="projects/kubernetes-test-94f6/attestors/Deploy-"Test"" --artifact-url="${{inputs.image_url}}")
-          msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
-          echo "::set-output name=msg::$msg"
-
-      - name: echo attestation
-        run: |
-          echo "${{ steps.get-attestation-test.outputs.msg }}"
+          echo "${{ steps.get-attestation.outputs.msg }}"
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: inputs.environment == 'dev' && !(steps.get-attestation-dev.outputs.msg > 1000)
+        if: steps.get-attestation.outputs.msg < 1000
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
+            --project="${{inputs.project_id}}" \
             --artifact-url="${{ inputs.image_url }}" \
-            --attestor="Deploy-Dev" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="kubernetes-dev-94b9" \
+            --attestor="Deploy-${{inputs.environment}}" \
+            --attestor-project="${{inputs.project_id}}" \
+            --keyversion-project="${{inputs.project_id}}" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Deploy-Dev-Key" \
-            --keyversion="1"
-          echo Attestation succeded
-
-      # Attestor name: Deploy-Test
-      - name: Perform attestation of deploy to test
-        id: attest-deploy-test
-        if: inputs.environment == 'test' && !(steps.get-attestation-test.outputs.msg > 1000)
-        run: |
-          gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-test-94f6" \
-            --artifact-url="${{ inputs.image_url }}" \
-            --attestor="Deploy-Test" \
-            --attestor-project="kubernetes-test-94f6" \
-            --keyversion-project="kubernetes-test-94f6" \
-            --keyversion-location="europe-north1" \
-            --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Deploy-Test-Key" \
+            --keyversion-key="Deploy-${{inputs.environment}}-Key" \
             --keyversion="1"
           echo Attestation succeded
