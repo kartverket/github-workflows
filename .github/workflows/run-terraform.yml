@@ -215,7 +215,8 @@ jobs:
           service_account: ${{ inputs.service_account }}
 
       - name: Check if already attested
-        id: get-attestation
+        id: get-attestation-dev
+        if: inputs.environment == 'dev'
         run: |
           mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="${{inputs.image_url}}")
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
@@ -223,12 +224,24 @@ jobs:
 
       - name: echo attestation
         run: |
-          echo "${{ steps.get-attestation.outputs.msg }}"
+          echo "${{ steps.get-attestation-dev.outputs.msg }}"
+
+      - name: Check if already attested
+        id: get-attestation-test
+        if: inputs.environment == 'test'
+        run: |
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-test-94f6" --attestor="projects/kubernetes-test-94f6/attestors/Deploy-"Test"" --artifact-url="${{inputs.image_url}}")
+          msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
+          echo "::set-output name=msg::$msg"
+
+      - name: echo attestation
+        run: |
+          echo "${{ steps.get-attestation-test.outputs.msg }}"
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: inputs.environment == 'dev' && !(steps.get-attestation.outputs.msg > 1000)
+        if: inputs.environment == 'dev' && !(steps.get-attestation-dev.outputs.msg > 1000)
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -245,7 +258,7 @@ jobs:
       # Attestor name: Deploy-Test
       - name: Perform attestation of deploy to test
         id: attest-deploy-test
-        if: inputs.environment == 'test' && !(steps.get-attestation.outputs.msg > 1000)
+        if: inputs.environment == 'test' && !(steps.get-attestation-test.outputs.msg > 1000)
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-test-94f6" \
