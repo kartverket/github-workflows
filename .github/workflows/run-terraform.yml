@@ -207,7 +207,7 @@ jobs:
   attest-deploy:
     if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
     name: Attest deploy to environment
-    needs: terraform_plan
+    needs: run_terraform
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -233,6 +233,7 @@ jobs:
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to ${{inputs.environment}}
         id: attest-deploy
+        # TODO: Come up with a better if check
         if: steps.get-attestation.outputs.msg < 1000
         run: |
           gcloud beta container binauthz attestations sign-and-create \
