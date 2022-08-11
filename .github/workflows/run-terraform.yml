@@ -217,7 +217,7 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="ghcr.io/kartverket/github-runner@sha256:f14cc3067c6b075894a365bffa7012fdb4e978318975f4ce9cefcca393ce9ffe")
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Dev" --artifact-url="${{inputs.image_url}}")
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
           echo "::set-output name=msg::$msg"
 
@@ -228,7 +228,7 @@ jobs:
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to dev
         id: attest-deploy-dev
-        if: inputs.environment == 'nope' && steps.get-attestation.outputs.msg < 30
+        if: inputs.environment == 'dev' && !(steps.get-attestation.outputs.msg > 1000)
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -245,7 +245,7 @@ jobs:
       # Attestor name: Deploy-Test
       - name: Perform attestation of deploy to test
         id: attest-deploy-test
-        if: inputs.environment == 'nope' && ${{ steps.is-attested.outputs }}.length < 20
+        if: inputs.environment == 'test' && !(steps.get-attestation.outputs.msg > 1000)
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-test-94f6" \
