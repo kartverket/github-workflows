@@ -232,7 +232,7 @@ jobs:
           echo "${{ steps.get-digest.outputs.msg }}"
 
       - name: Get image digestttt 
-        id: get-digest
+        id: get-digestt
         run: |
           gh api \
             -H "Accept: application/vnd.github+json" \
