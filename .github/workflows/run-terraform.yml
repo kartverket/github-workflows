@@ -231,6 +231,15 @@ jobs:
           echo "::set-output name=msg::$msg"
           echo "${{ steps.get-digest.outputs.msg }}"
 
+      - name: Get image digestttt 
+        id: get-digest
+        run: |
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            /orgs/ORG/packages/container/github-runner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check if already attested
         id: get-attestation
         run: |
