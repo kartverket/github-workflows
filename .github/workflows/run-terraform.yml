@@ -236,7 +236,7 @@ jobs:
         run: |
           gh api \
             -H "Accept: application/vnd.github+json" \
-            /orgs/kartverket/packages/container/github-runner/versions/1153328
+            /orgs/kartverket/packages/container/github-runner
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
