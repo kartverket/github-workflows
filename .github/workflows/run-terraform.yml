@@ -225,6 +225,7 @@ jobs:
       - name: Get image digest 
         id: get-digest
         run: |
+          docker pull ${{ inputs.image_url}}
           mystr=$(docker inspect ${{ inputs.image_url}})
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.')
           echo "::set-output name=msg::$msg"
