@@ -9,18 +9,18 @@ on:
       service_account:
         required: true
         type: string
-      image_url:
+      image_tag_url:
         required: false
         type: string
         default: ''
     outputs:
-      image_url_with_digest: 
+      image_digest_url: 
         description: "Image URL with sha digest"
-        value: ${{ jobs.get-digest.outputs.output1 }}
+        value: ${{ jobs.get-image-digest-url.outputs.output1 }}
 
 
 jobs:
-  get-digest:
+  get-image-digest-url:
     name: Get Image Digest
     runs-on: ubuntu-latest
     outputs: 
@@ -46,7 +46,3 @@ jobs:
           msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=msg::$msg"
 
-      - name: Get image digest 
-        id: get-digestt
-        run: |
-          echo "${{steps.pull-inspect-image.outputs.msg}}"
