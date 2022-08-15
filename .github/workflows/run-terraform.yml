@@ -229,7 +229,7 @@ jobs:
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=msg::$msg"
           echo "${{ steps.get-attestation.outputs.msg }}"
-          echo "${{ $mystr }}"
+          echo "$mystr"
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to ${{inputs.environment}}
