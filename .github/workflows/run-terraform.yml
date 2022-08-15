@@ -240,7 +240,7 @@ jobs:
       - name: Perform attestation of deploy to ${{inputs.environment}}
         id: attest-deploy
         # TODO: Come up with a better if check
-        if: startsWith('${{steps.get-attestation.outputs.msg}}', 'Listed') && endsWith('${{steps.get-attestation.outputs.msg}}', 'items.')
+        if: startsWith(${{steps.get-attestation.outputs.msg}}, 'Listed') && endsWith(${{steps.get-attestation.outputs.msg}}, 'items.')
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="${{inputs.project_id}}" \
