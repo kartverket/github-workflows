@@ -18,6 +18,8 @@ jobs:
   get-digest:
     name: Get Image Digest
     runs-on: ubuntu-latest
+    outputs: 
+      image_url_with_digest: ${{ steps.pull-inspect-image.outputs.msg }}
     defaults:
       run:
         shell: bash
@@ -38,14 +40,8 @@ jobs:
           mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_url}})
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.')
           echo "::set-output name=msg::$msg"
-          echo "${{ steps.pull-inspect-image.outputs.msg }}"
 
       - name: Get image digest 
         id: get-digest
         run: |
           echo ${{ steps.pull-inspect-image.outputs.msg }}
-          gh api \
-            -H "Accept: application/vnd.github+json" \
-            /orgs/kartverket/packages/container/github-runner/versions
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
