@@ -13,6 +13,9 @@ on:
         required: false
         type: string
         default: ''
+    outputs:
+      image_url_with_digest: ${{ jobs.get-digest.outputs.image_url_with_digest }}
+
 
 jobs:
   get-digest:
