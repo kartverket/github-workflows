@@ -14,7 +14,9 @@ on:
         type: string
         default: ''
     outputs:
-      image_url_with_digest: ${{ jobs.get-digest.outputs.image_url_with_digest }}
+      image_url_with_digest: 
+        description: "Image URL with sha digest"
+        value: ${{ jobs.get-digest.outputs.output1 }}
 
 
 jobs:
@@ -22,7 +24,7 @@ jobs:
     name: Get Image Digest
     runs-on: ubuntu-latest
     outputs: 
-      image_url_with_digest: ${{ steps.pull-inspect-image.outputs.msg }}
+      output1: ${{ steps.pull-inspect-image.outputs.msg }}
     defaults:
       run:
         shell: bash
