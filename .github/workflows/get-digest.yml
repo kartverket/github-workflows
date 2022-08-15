@@ -17,6 +17,7 @@ on:
       image_url_with_digest: 
         description: "Image URL with sha digest"
         value: ${{ jobs.get-digest.outputs.output1 }}
+        type: string
 
 
 jobs:
