@@ -41,8 +41,8 @@ jobs:
       - name: Pull and inspect image
         id: pull-inspect-image
         run: |
-          docker pull ${{ inputs.image_url}}
-          mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_url}})
+          docker pull ${{ inputs.image_tag_url}}
+          mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_tag_url}})
           msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=msg::$msg"
 
