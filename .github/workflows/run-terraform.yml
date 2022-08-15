@@ -222,24 +222,6 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
-      - name: Get image digest 
-        id: get-digest
-        run: |
-          docker pull ${{ inputs.image_url}}
-          mystr=$(docker inspect ${{ inputs.image_url}})
-          msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.')
-          echo "::set-output name=msg::$msg"
-          echo "${{ steps.get-digest.outputs.msg }}"
-
-      - name: Get image digestttt 
-        id: get-digestt
-        run: |
-          gh api \
-            -H "Accept: application/vnd.github+json" \
-            /orgs/kartverket/packages/container/github-runner/versions
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Check if already attested
         id: get-attestation
         run: |
