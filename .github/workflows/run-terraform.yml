@@ -236,14 +236,4 @@ jobs:
         # TODO: Come up with a better if check
         if: startsWith( steps.get-attestation.outputs.msg, 'Listed' ) && endsWith( steps.get-attestation.outputs.msg, 'items.' )
         run: |
-          gcloud beta container binauthz attestations sign-and-create \
-            --project="${{inputs.project_id}}" \
-            --artifact-url="${{ inputs.image_url }}" \
-            --attestor="Deploy-${{inputs.environment}}" \
-            --attestor-project="${{inputs.project_id}}" \
-            --keyversion-project="${{inputs.project_id}}" \
-            --keyversion-location="europe-north1" \
-            --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Deploy-${{inputs.environment}}-Key" \
-            --keyversion="1"
           echo Attestation succeded
