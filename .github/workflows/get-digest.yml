@@ -43,6 +43,7 @@ jobs:
       - name: Get image digest 
         id: get-digest
         run: |
+          echo "${{ steps.get-digest.outputs.msg }}"
           gh api \
             -H "Accept: application/vnd.github+json" \
             /orgs/kartverket/packages/container/github-runner/versions
