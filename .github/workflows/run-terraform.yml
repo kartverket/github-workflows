@@ -232,7 +232,7 @@ jobs:
       - name: Echo 
         id: echoo
         run: |
-          echo ${{ steps.get-attestation.outputs.msg }}
+          echo ${{ steps.get-attestation.outputs.msg }};
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to ${{inputs.environment}}
