@@ -35,8 +35,7 @@ jobs:
         id: pull-inspect-image
         run: |
           docker pull ${{ inputs.image_url}}
-          mystr=$(docker inspect ${{ inputs.image_url}})
-          echo "${{ steps.pull-inspect-image.outputs.digest }}"
+          mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_url}})
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.')
           echo "::set-output name=msg::$msg"
           echo "${{ steps.get-digest.outputs.msg }}"
