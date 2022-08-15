@@ -226,7 +226,7 @@ jobs:
         id: get-attestation
         run: |
           mystr=$(gcloud container binauthz attestations list --project="${{inputs.project_id}}" --attestor="projects/${{inputs.project_id}}/attestors/Deploy-${{inputs.environment}}" --artifact-url="${{inputs.image_url}}")
-          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          msg=$(printf '%s' $mystr | jq --raw-input --slurp '. | length')
           echo "::set-output name=msg::$msg"
           echo "${{ steps.get-attestation.outputs.msg }}"
           echo "$mystr"
@@ -240,7 +240,7 @@ jobs:
       - name: Perform attestation of deploy to ${{inputs.environment}}
         id: attest-deploy
         # TODO: Come up with a better if check
-        if: startsWith(${{steps.get-attestation.outputs.msg}}, 'Listed') && endsWith(${{steps.get-attestation.outputs.msg}}, 'items.')
+        if: steps.get-attestation.outputs.msg < 1000
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="${{inputs.project_id}}" \
