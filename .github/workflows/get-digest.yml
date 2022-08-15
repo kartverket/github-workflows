@@ -31,17 +31,18 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
-      - name: Get image digest 
-        id: get-digest
+      - name: Pull and inspect image
+        id: pull-inspect-image
         run: |
           docker pull ${{ inputs.image_url}}
           mystr=$(docker inspect ${{ inputs.image_url}})
+          echo "${{ steps.pull-inspect-image.outputs.digest }}"
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.')
           echo "::set-output name=msg::$msg"
           echo "${{ steps.get-digest.outputs.msg }}"
 
-      - name: Get image digestttt 
-        id: get-digestt
+      - name: Get image digest 
+        id: get-digest
         run: |
           gh api \
             -H "Accept: application/vnd.github+json" \
