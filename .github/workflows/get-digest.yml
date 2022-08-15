@@ -1,0 +1,50 @@
+name: Run Terraform
+
+on:
+  workflow_call:
+    inputs:
+      workload_identity_provider:
+        required: true
+        type: string
+      service_account:
+        required: true
+        type: string
+      image_url:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  get-digest:
+    name: Get Image Digest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+
+      - name: Get image digest 
+        id: get-digest
+        run: |
+          docker pull ${{ inputs.image_url}}
+          mystr=$(docker inspect ${{ inputs.image_url}})
+          msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '.')
+          echo "::set-output name=msg::$msg"
+          echo "${{ steps.get-digest.outputs.msg }}"
+
+      - name: Get image digestttt 
+        id: get-digestt
+        run: |
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            /orgs/kartverket/packages/container/github-runner/versions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
