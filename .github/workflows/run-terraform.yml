@@ -228,7 +228,6 @@ jobs:
           mystr=$(gcloud container binauthz attestations list --project="${{inputs.project_id}}" --attestor="projects/${{inputs.project_id}}/attestors/Deploy-${{inputs.environment}}" --artifact-url="${{inputs.image_url}}")
           msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=msg::$msg"
-          echo "$msg"
 
       - name: Echo 
         id: echoo
