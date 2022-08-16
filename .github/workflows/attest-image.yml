@@ -31,9 +31,17 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
+      - name: Check if already attested
+        id: get-attestation
+        run: |
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{inputs.image_url}}")
+          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=msg::$msg"
+
       # Attestor name: Build-kartverket
       - name: Perform attestation
         id: attest-kartverket-kontekst
+        if: steps.get-attestation.outputs.msg == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -64,9 +72,17 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
+      - name: Check if already attested
+        id: get-attestation
+        run: |
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{inputs.image_url}}")
+          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=msg::$msg"
+
       # Attestor name: Build-master
       - name: Perform attestation
         id: attest-branch
+        if: steps.get-attestation.outputs.msg == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
