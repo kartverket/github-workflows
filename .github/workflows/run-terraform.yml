@@ -225,20 +225,20 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="${{inputs.project_id}}" --attestor="projects/${{inputs.project_id}}/attestors/Deploy-${{inputs.environment}}" --artifact-url="${{inputs.image_url}}");
-          msg=$(printf %s $mystr | jq --raw-input --slurp '.' --join-output);
-          echo "::set-output name=msg::$msg";
+          mystr=$(gcloud container binauthz attestations list --project="${{inputs.project_id}}" --attestor="projects/${{inputs.project_id}}/attestors/Deploy-${{inputs.environment}}" --artifact-url="${{inputs.image_url}}")
+          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=msg::$msg"
 
       - name: Echo 
         id: echoo
         run: |
-          echo ${{ steps.get-attestation.outputs.msg }};
+          echo ${{ steps.get-attestation.outputs.msg }}
       
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to ${{inputs.environment}}
         id: attest-deploy
         # TODO: Come up with a better if check
-        if: ${{startsWith(steps.get-attestation.outputs.msg, 'Listed')}}
+        if: steps.get-attestation.outputs.msg == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="${{inputs.project_id}}" \
