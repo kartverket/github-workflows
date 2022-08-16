@@ -13,10 +13,6 @@ on:
       image_url:
         required: true
         type: string
-      run_trivy:
-        required: false
-        type: boolean
-        default: true
 
 jobs:
   attest-kartverket-kontekst:

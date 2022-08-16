@@ -4,7 +4,10 @@ Shared reusable workflows for GitHub Actions
 
 ## run-terraform
 
-This workflow plans and applies terraform config to deploy to an environment.
+This workflow plans and applies terraform config to deploy to an environment. 
+If an image_url is provided, the workflow performs binary attestation on the image.
+Note that for an image to be deployed to the test and prod environments (i.e. test and prod kubernetes clusters) 
+it will need to be attested in this manner. 
 
 ```yaml
 jobs:
@@ -101,4 +104,44 @@ this role.
 | vault_role                 | string |          | Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work.                                                                                                       |
 | terraform_workspace        | string |          | When provided will set a workspace as the active workspace when planning and deploying.                                                                                                                                        |
 | terraform_options          | string |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`                                                                                                                            |
-| image_url                  | string |          | The Docker image url must be of the form (e.g.registry/repository:tag)                                                                                                                            |
+| image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
+
+## attest-image
+
+This workflow performs binary attestation on built image. 
+The workflow is meant to be called following the build of an image. 
+Note the format of the image_url parameter.  
+
+```yaml
+jobs:
+  build: 
+    ...
+
+  auth-attest:
+    needs: [build]
+    name: Authentication and Attestation
+    permissions:
+      contents: read
+      packages: write
+      # required for authentication to GCP
+      id-token: write
+      actions: read
+      security-events: write
+      statuses: write
+    uses: kartverket/github-workflows/.github/workflows/attest-image.yml@skip-262-add-binary-authorization-workflow
+    with:
+      workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
+      service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
+      image_url: ${{needs.build.outputs.image_url}}
+```
+
+### Options
+
+| Key                        | Type   | Required | Description                                                                                                                                                                                                                    |
+|----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`   |
+| service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
+| image_url                  | string |          | The Docker image url must be of the form registry/repository@digest.                                                                                                                            |
+
+## run-trivy
+TODO
