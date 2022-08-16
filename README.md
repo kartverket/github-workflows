@@ -108,7 +108,8 @@ this role.
 
 ## attest-image
 
-This workflow performs binary attestation on built image. 
+This workflow performs binary attestation on a built image. 
+It attests both that the image has been build in context of Kartverket and that the image is on main/master branch. 
 The workflow is meant to be called following the build of an image. 
 Note the format of the image_url parameter.  
 
