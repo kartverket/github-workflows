@@ -59,15 +59,6 @@ on:
         required: false
         type: boolean
         default: true
-      vault_role:
-        description: "Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work"
-        required: false
-        type: string
-      add_comment_on_pr:
-        description: "Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`"
-        required: false
-        type: boolean
-        default: true
 
 jobs:
   terraform_check:
