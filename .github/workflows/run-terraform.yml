@@ -106,7 +106,7 @@ jobs:
         FAILURE! The above files are not properly formatted.
         Run `terraform fmt` in ${{inputs.working_directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
-  plan_terraform:
+  terraform_plan:
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
