@@ -145,4 +145,4 @@ jobs:
 | image_url                  | string |          | The Docker image url must be of the form registry/repository@digest.                                                                                                                            |
 
 ## run-trivy
-TODO
+???
