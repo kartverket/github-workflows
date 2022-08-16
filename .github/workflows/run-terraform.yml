@@ -222,10 +222,18 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
+      - name: Get Image Digest URL from Image Tag URL
+        id: image-digest-url
+        run: |
+          docker pull ${{ inputs.image_url}}
+          mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_url}})
+          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=image_url::$msg"
+
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="${{inputs.project_id}}" --attestor="projects/${{inputs.project_id}}/attestors/Deploy-${{inputs.environment}}" --artifact-url="${{inputs.image_url}}")
+          mystr=$(gcloud container binauthz attestations list --project="${{inputs.project_id}}" --attestor="projects/${{inputs.project_id}}/attestors/Deploy-${{inputs.environment}}" --artifact-url="${{steps.image-digest-url.outputs.image_url}}")
           msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=msg::$msg"
       
@@ -236,13 +244,13 @@ jobs:
         if: steps.get-attestation.outputs.msg == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="${{inputs.project_id}}" \
-            --artifact-url="${{ inputs.image_url }}" \
-            --attestor="Deploy-${{inputs.environment}}" \
-            --attestor-project="${{inputs.project_id}}" \
-            --keyversion-project="${{inputs.project_id}}" \
+            --project="${{ inputs.project_id }}" \
+            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
+            --attestor="Deploy-${{ inputs.environment }}" \
+            --attestor-project="${{ inputs.project_id }}" \
+            --keyversion-project="${{ inputs.project_id }}" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Deploy-${{inputs.environment}}-Key" \
+            --keyversion-key="Deploy-${{ inputs.environment }}-Key" \
             --keyversion="1"
           echo Attestation succeded
