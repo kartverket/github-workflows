@@ -106,6 +106,7 @@ this role.
 | terraform_options          | string |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`                                                                                                                            |
 | image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
 
+
 ## attest-image
 
 This workflow performs binary attestation on built image. 
@@ -142,6 +143,7 @@ jobs:
 | workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`   |
 | service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
 | image_url                  | string |          | The Docker image url must be of the form registry/repository@digest.                                                                                                                            |
+
 
 ## run-trivy
 TODO
