@@ -84,7 +84,7 @@ jobs:
         FAILURE! The above files are not properly formatted.
         Run `terraform fmt` in ${{inputs.working_directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
-  terraform_plan:
+  plan_terraform:
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
@@ -149,8 +149,8 @@ jobs:
         echo '```' >> $GITHUB_STEP_SUMMARY
 
   run_terraform:
-    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.exitcode == '2'
-    needs: [terraform_check, terraform_plan]
+    if: github.ref == inputs.deploy_on && needs.plan_terraform.outputs.exitcode == '2'
+    needs: [terraform_check, plan_terraform]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
@@ -207,7 +207,7 @@ jobs:
   attest-deploy:
     if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
     name: Attest deploy to environment
-    needs: terraform_plan
+    needs: run_terraform
     runs-on: ubuntu-latest
     defaults:
       run:
