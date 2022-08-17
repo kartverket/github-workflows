@@ -49,6 +49,11 @@ on:
         description: "Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work"
         required: false
         type: string
+      image_url:
+        description: "Setting an image_url of the form registry/repository:tag enables the binary attestation of that image."
+        required: false
+        type: string
+        default: ''
       add_comment_on_pr:
         description: "Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`"
         required: false
@@ -99,7 +104,7 @@ jobs:
         echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
         terraform fmt -check -no-color || { echo '
         FAILURE! The above files are not properly formatted.
-        Run `terraform fmt` in ${{inputs.working_directory}}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
+        Run `terraform fmt` in ${{ inputs.working_directory }}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
   terraform_plan:
     name: Terraform Plan
@@ -156,9 +161,9 @@ jobs:
       if: inputs.vault_role != ''
       uses: kartverket/vault-jwt-auth-action@v2
       with:
-        vaultaddr: 'https://vault.${{inputs.environment}}.skip.statkart.no'
-        path: jwt-${{inputs.environment}}
-        role: ${{inputs.vault_role}}
+        vaultaddr: 'https://vault.${{ inputs.environment }}.skip.statkart.no'
+        path: jwt-${{ inputs.environment }}
+        role: ${{ inputs.vault_role }}
         certb64: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K'
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
@@ -170,7 +175,7 @@ jobs:
       id: plan
       run: |
         # 1. Run and send stdout to build log as usual
-        terraform plan ${{inputs.terraform_options}} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan | tee output.txt
+        terraform plan ${{ inputs.terraform_options }} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan | tee output.txt
 
         # 2. Remove some github commands and fluff
         STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
@@ -341,9 +346,9 @@ jobs:
       if: inputs.vault_role != ''
       uses: kartverket/vault-jwt-auth-action@v2
       with:
-        vaultaddr: 'https://vault.${{inputs.environment}}.skip.statkart.no'
-        path: jwt-${{inputs.environment}}
-        role: ${{inputs.vault_role}}
+        vaultaddr: 'https://vault.${{ inputs.environment }}.skip.statkart.no'
+        path: jwt-${{ inputs.environment }}
+        role: ${{ inputs.vault_role }}
         certb64: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K'
 
     - name: Download Plan Artifact
@@ -359,3 +364,54 @@ jobs:
     - name: Run Terraform
       run: |
         terraform apply -input=false plan-${{ inputs.environment }}.tfplan
+
+  attest-deploy:
+    if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
+    name: Attest deploy to environment
+    needs: run_terraform
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+
+      - name: Get Image Digest URL from Image Tag URL
+        id: image-digest-url
+        run: |
+          docker pull ${{ inputs.image_url}}
+          mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_url}})
+          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=image_url::$msg"
+
+      - name: Check if already attested
+        id: get-attestation
+        run: |
+          mystr=$(gcloud container binauthz attestations list --project="${{ inputs.project_id }}" --attestor="projects/${{ inputs.project_id }}/attestors/Deploy-${{ inputs.environment }}" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=msg::$msg"
+      
+      # Attestor name: Deploy-Dev
+      - name: Perform attestation of deploy to ${{inputs.environment}}
+        id: attest-deploy
+        # Note: msg is an empty string when no attestation is done
+        if: steps.get-attestation.outputs.msg == ''
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="${{ inputs.project_id }}" \
+            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
+            --attestor="Deploy-${{ inputs.environment }}" \
+            --attestor-project="${{ inputs.project_id }}" \
+            --keyversion-project="${{ inputs.project_id }}" \
+            --keyversion-location="europe-north1" \
+            --keyversion-keyring="Attestor-Keyring" \
+            --keyversion-key="Deploy-${{ inputs.environment }}-Key" \
+            --keyversion="1"
+          echo Attestation succeded
