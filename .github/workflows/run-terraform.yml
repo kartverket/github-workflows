@@ -85,10 +85,29 @@ jobs:
     # Checkout the repository to the GitHub Actions runner
     - name: Checkout
       uses: actions/checkout@v3
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+        project_id: ${{ inputs.project_id }}
+
+    - name: Generate terraform backend variables
+      if: inputs.bucket != ''
+      run: |
+        cat <<EOF >> backend.tfbackend
+        bucket="${{ inputs.bucket }}"
+        EOF
     
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init
+      run: |
+        if [ "${{ inputs.bucket }}" = "" ]; then
+          terraform init
+        else
+          terraform init -backend-config=backend.tfbackend
+        fi
 
     - name: Terraform Validate
       id: validate
