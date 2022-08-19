@@ -60,7 +60,7 @@ on:
         type: boolean
         default: true
       bucket:
-        description: "..."
+        description: "An optional Cloud Storage bucket to use."
         required: false
         type: string
         default: ''
