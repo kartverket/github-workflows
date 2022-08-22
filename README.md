@@ -42,6 +42,7 @@ jobs:
       service_account: X
       project_id: X
       image_url: <registry>/<repository>:<tag>
+      bucket: X
 ```
 
 ### Passing env vars to run-terraform
@@ -121,6 +122,7 @@ this role.
 | terraform_options          | string  |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`                                                                                                                            |
 | add_comment_on_pr          | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                     |
 | image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
+| bucket                  | string |          | An optional Cloud Storage bucket.                                                                                                                             |
 
 ## attest-image
 
