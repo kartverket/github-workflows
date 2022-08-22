@@ -420,7 +420,7 @@ jobs:
     - name: Terraform Destroy
       if: inputs.destroy == true
       id: destroy
-      run: terraform destroy -auto-approve ${{ inputs.terraform_options }}
+      run: terraform destroy -auto-approve -input=false
     
     - name: Run Terraform
       if: inputs.deploy == true
