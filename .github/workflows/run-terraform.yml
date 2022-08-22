@@ -136,7 +136,7 @@ jobs:
         FAILURE! The above files are not properly formatted.
         Run `terraform fmt` in ${{ inputs.working_directory }}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
-    # Run terraform destroy if 'destroy' is set to true
+    # Run terraform destroy on push to main if 'destroy' is set to true
     - name: Terraform Destroy
       if: inputs.destroy == true && github.ref == inputs.deploy_on && github.event_name == 'push'
       id: destroy
