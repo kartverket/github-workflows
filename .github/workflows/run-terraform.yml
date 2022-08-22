@@ -65,7 +65,7 @@ on:
         type: string
         default: ''
       deploy:
-        description: "An optional boolean that deploys terraform. Defaults to true"
+        description: "An optional boolean which runs runs terraform apply when set to true. Defaults to true"
         required: false
         type: boolean
         default: true
