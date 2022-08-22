@@ -344,7 +344,7 @@ jobs:
 
   run_terraform:
     # TODO We need to verify that inputs.deploy_on actually works. Seems to only work on main atm
-    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push' && inputs.deploy == true
+    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push'
     needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
@@ -424,6 +424,7 @@ jobs:
       run: terraform destroy -auto-approve
     
     - name: Run Terraform
+      if: inputs.deploy == true
       run: |
         terraform apply -input=false plan-${{ inputs.environment }}.tfplan
 
