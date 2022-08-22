@@ -30,7 +30,7 @@ jobs:
       pull-requests: write
       # For fetching git repo
       contents: read
-    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2.3
+    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2.6
     with:
       runner: atkv1-dev
       environment: dev
@@ -124,7 +124,7 @@ this role.
 | image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
 | bucket                  | string |          | An optional Cloud Storage bucket.                                                                                                                             |
 
-## attest-image
+## post-build-attest
 
 This workflow performs binary attestation on a built image. 
 Note the format of the image_url parameter. 
@@ -152,7 +152,7 @@ jobs:
       actions: read
       security-events: write
       statuses: write
-    uses: kartverket/github-workflows/.github/workflows/attest-image.yml@skip-262-add-binary-authorization-workflow
+    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@v2.6
     with:
       workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
       service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
