@@ -43,6 +43,8 @@ jobs:
       project_id: X
       image_url: <registry>/<repository>:<tag>
       bucket: X
+      deploy: X
+      destroy: X
 ```
 
 ### Passing env vars to run-terraform
@@ -123,6 +125,8 @@ this role.
 | add_comment_on_pr          | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                     |
 | image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
 | bucket                  | string |          | An optional Cloud Storage bucket.                                                                                                                             |
+| deploy                  | boolean |          | An optional boolean that determins whether terraform will be deployed. Defaults to 'true'.                                                                                                                             |
+| destroy                  | boolean |          | An optional boolean that determins whether terraform will be destroyed. Defaults to 'false'.                                                                                                                             |
 
 ## attest-image
 
