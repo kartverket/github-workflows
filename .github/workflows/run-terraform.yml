@@ -138,7 +138,6 @@ jobs:
 
   terraform_plan:
     name: Terraform Plan
-    if: inputs.deploy == true
     needs: terraform_check
     runs-on: ${{ inputs.runner }}
 
