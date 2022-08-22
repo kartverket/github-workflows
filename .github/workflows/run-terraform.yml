@@ -64,6 +64,16 @@ on:
         required: false
         type: string
         default: ''
+      deploy:
+        description: "An optional boolean that deploys terraform. Defaults to true"
+        required: false
+        type: boolean
+        default: true
+      destroy:
+        description: "An optional boolean which runs terraform destroy when set to true. Defaluts to false"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   terraform_check:
@@ -126,8 +136,16 @@ jobs:
         FAILURE! The above files are not properly formatted.
         Run `terraform fmt` in ${{ inputs.working_directory }}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
+    # Run terraform destroy if 'destroy' is set to true
+    - name: Terraform Destroy
+      if: inputs.destroy == true
+      id: destroy
+      run: terraform destroy -auto-approve
+
   terraform_plan:
     name: Terraform Plan
+    if: inputs.deploy == true
+    needs: terraform_check
     runs-on: ${{ inputs.runner }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
@@ -332,7 +350,7 @@ jobs:
 
   run_terraform:
     # TODO We need to verify that inputs.deploy_on actually works. Seems to only work on main atm
-    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push'
+    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push' && inputs.deploy == true
     needs: [terraform_check, terraform_plan]
     name: Terraform Apply
     runs-on: ${{ inputs.runner }}
