@@ -138,7 +138,7 @@ jobs:
 
     # Run terraform destroy if 'destroy' is set to true
     - name: Terraform Destroy
-      if: inputs.destroy == true
+      if: inputs.destroy == true && github.ref == inputs.deploy_on && github.event_name == 'push'
       id: destroy
       run: terraform destroy -auto-approve
 
