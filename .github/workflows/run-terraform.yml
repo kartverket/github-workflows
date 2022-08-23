@@ -76,10 +76,53 @@ on:
         default: false
 
 jobs:
+  terraform_destroy:
+    name: Terraform Destroy
+    if: inputs.destroy == true
+    runs-on: ubuntu-latest
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+          project_id: ${{ inputs.project_id }}
+
+      - name: Generate terraform backend variables
+        if: inputs.bucket != ''
+        run: |
+          cat <<EOF >> backend.tfbackend
+          bucket="${{ inputs.bucket }}"
+          EOF
+      
+      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        run: |
+          if [ "${{ inputs.bucket }}" = "" ]; then
+            terraform init -backend=false
+          else
+            terraform init -backend-config=backend.tfbackend
+          fi
+
+      # Run terraform destroy on push to main if 'destroy' is set to true
+      - name: Terraform Destroy
+        id: destroy
+        run: terraform destroy -auto-approve -input=false
+
   terraform_check:
     name: Terraform Validate
+    if: ${{ always() && inputs.deploy == true }}
+    needs: terraform_destroy
     runs-on: ubuntu-latest
-
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
@@ -135,7 +178,7 @@ jobs:
         terraform fmt -check -no-color || { echo '
         FAILURE! The above files are not properly formatted.
         Run `terraform fmt` in ${{ inputs.working_directory }}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
-
+  
   terraform_plan:
     name: Terraform Plan
     needs: terraform_check
@@ -345,7 +388,7 @@ jobs:
     # TODO We need to verify that inputs.deploy_on actually works. Seems to only work on main atm
     if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push'
     needs: [terraform_check, terraform_plan]
-    name: Terraform Apply and/or Destroy
+    name: Terraform Apply
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
 
@@ -415,20 +458,13 @@ jobs:
         else
           terraform init -backend-config=backend.tfbackend
         fi
-
-    # Run terraform destroy on push to main if 'destroy' is set to true
-    - name: Terraform Destroy
-      if: inputs.destroy == true
-      id: destroy
-      run: terraform destroy -auto-approve -input=false
     
     - name: Run Terraform
-      if: inputs.deploy == true
       run: |
         terraform apply -input=false plan-${{ inputs.environment }}.tfplan
 
   attest-deploy:
-    if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
+    if: inputs.deploy == true && inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
     name: Attest deploy to environment
     needs: run_terraform
     runs-on: ubuntu-latest
