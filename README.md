@@ -31,7 +31,7 @@ jobs:
       pull-requests: write
       # For fetching git repo
       contents: read
-    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<latest release>
+    uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
     with:
       runner: atkv1-dev
       environment: dev
@@ -157,7 +157,7 @@ jobs:
       actions: read
       security-events: write
       statuses: write
-    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<latest release>
+    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
     with:
       workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
       service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
