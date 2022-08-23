@@ -114,7 +114,7 @@ jobs:
     - name: Terraform Init
       run: |
         if [ "${{ inputs.bucket }}" = "" ]; then
-          terraform init
+          terraform init -backend=false
         else
           terraform init -backend-config=backend.tfbackend
         fi
