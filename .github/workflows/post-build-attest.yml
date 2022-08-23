@@ -1,4 +1,4 @@
-name: Attest Build
+name: Post Build Attestation
 
 on:
   workflow_call:

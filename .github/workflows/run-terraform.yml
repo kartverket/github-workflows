@@ -345,7 +345,7 @@ jobs:
     # TODO We need to verify that inputs.deploy_on actually works. Seems to only work on main atm
     if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push'
     needs: [terraform_check, terraform_plan]
-    name: Terraform Apply
+    name: Terraform Apply and/or Destroy
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
 
