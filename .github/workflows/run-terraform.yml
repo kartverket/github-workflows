@@ -178,7 +178,7 @@ jobs:
         terraform fmt -check -no-color || { echo '
         FAILURE! The above files are not properly formatted.
         Run `terraform fmt` in ${{ inputs.working_directory }}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
-  
+
   terraform_plan:
     name: Terraform Plan
     needs: terraform_check
