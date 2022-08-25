@@ -80,11 +80,20 @@ jobs:
     name: Terraform Destroy
     if: inputs.destroy == true
     runs-on: ubuntu-latest
+    # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
+    concurrency: ${{ inputs.environment }}
+
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
         working-directory: ${{ inputs.working_directory }}
+
+    env:
+      # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
+      TF_IN_AUTOMATION: true
+      TF_WORKSPACE: ${{ inputs.terraform_workspace }}
+    
     steps:
     # Checkout the repository to the GitHub Actions runner
       - name: Checkout
