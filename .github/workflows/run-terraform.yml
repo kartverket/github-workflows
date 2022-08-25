@@ -116,7 +116,7 @@ jobs:
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
         id: destroy
-        run: terraform destroy -auto-approve -input=false
+        run: terraform destroy -input=false -auto-approve
 
   terraform_check:
     name: Terraform Validate
