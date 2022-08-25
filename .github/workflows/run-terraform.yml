@@ -82,6 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
     concurrency: ${{ inputs.environment }}
+    environment: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
