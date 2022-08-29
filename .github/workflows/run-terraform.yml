@@ -132,7 +132,6 @@ jobs:
 
   terraform_plan:
     name: Terraform Plan
-    needs: terraform_check
     runs-on: ${{ inputs.runner }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
@@ -202,12 +201,20 @@ jobs:
     - name: Terraform Init
       id: init
       run: |
-        if [ "${{inputs.bucket}}" = "" ]; then
+        if [ "${{ inputs.bucket }}" = "" ]; then
           terraform init
         else
           terraform init -backend-config=backend.tfbackend
         fi
 
+     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      run: |
+        if [ "${{ inputs.bucket }}" = "" ]; then
+          terraform init -backend=false
+        else
+          terraform init -backend-config=backend.tfbackend
+        fi
     - name: Terraform Plan
       id: plan
       run: |
