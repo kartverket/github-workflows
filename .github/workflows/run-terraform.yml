@@ -94,6 +94,13 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v0
+      with:
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+        project_id: ${{ inputs.project_id }}
+        
     - name: Generate terraform backend variables
       if: inputs.bucket != ''
       run: |
@@ -201,7 +208,7 @@ jobs:
       run: |
         if [[ "${{ inputs.bucket }}" == "" ]]
         then
-          terraform init ${{ inputs.terraform_options }}
+          terraform init
         else
           terraform init -backend-config=backend.tfbackend
         fi
