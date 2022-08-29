@@ -100,7 +100,7 @@ jobs:
         workload_identity_provider: ${{ inputs.workload_identity_provider }}
         service_account: ${{ inputs.service_account }}
         project_id: ${{ inputs.project_id }}
-        
+
     - name: Generate terraform backend variables
       if: inputs.bucket != ''
       run: |
@@ -208,7 +208,7 @@ jobs:
       run: |
         if [[ "${{ inputs.bucket }}" == "" ]]
         then
-          terraform init
+          terraform init ${{ inputs.terraform_options }}
         else
           terraform init -backend-config=backend.tfbackend
         fi
