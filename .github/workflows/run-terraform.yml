@@ -45,6 +45,10 @@ on:
         description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`"
         required: false
         type: string
+      terraform_backend_config:
+        description: "Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`"
+        required: false
+        type: string
       vault_role:
         description: "Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work"
         required: false
@@ -63,11 +67,7 @@ on:
         description: "An optional Cloud Storage bucket to use."
         required: false
         type: string
-        default: ''
-      terraform_backend_config:
-        description: "Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`"
-        required: false
-        type: string
+        default: '' 
       destroy:
         description: "An optional boolean which runs terraform destroy when set to true. Defaluts to false"
         required: false
@@ -105,23 +105,9 @@ jobs:
         service_account: ${{ inputs.service_account }}
         project_id: ${{ inputs.project_id }}
 
-#   - name: Generate terraform backend variables
-#     if: inputs.bucket != ''
-#     run: |
-#       cat <<EOF >> backend.tfbackend
-#       bucket="${{ inputs.bucket }}"
-#       EOF
-#   
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      id: init
-      run: |
-        if [[ "${{ inputs.terraform_backend_config }}" == "" ]]
-        then
-          terraform init 
-        else
-          terraform init ${{ inputs.terraform_backend_config }}
-        fi
+      run: terraform init -backend=false
 
     - name: Terraform Validate
       id: validate
@@ -199,13 +185,6 @@ jobs:
         path: jwt-${{ inputs.environment }}
         role: ${{ inputs.vault_role }}
         certb64: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K'
-
-#   - name: Generate terraform backend variables
-#     if: inputs.bucket != ''
-#     run: |
-#       cat <<EOF >> backend.tfbackend
-#       bucket="${{ inputs.bucket }}"
-#       EOF
     
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
@@ -403,25 +382,18 @@ jobs:
       with:
         name: plan-${{ inputs.environment }}.tfplan
         path: ${{ inputs.working_directory }}
-
-    - name: Generate terraform backend variables
-      if: inputs.bucket != ''
-      run: |
-        cat <<EOF >> backend.tfbackend
-        bucket="${{ inputs.bucket }}"
-        EOF
     
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       run: |
-        if [ "${{ inputs.bucket }}" == "" ]
+        if [[ "${{ inputs.terraform_backend_config }}" == "" ]]
         then
-          terraform init
+          terraform init 
         else
-          terraform init -backend-config=backend.tfbackend
+          terraform init ${{ inputs.terraform_backend_config }}
         fi
     
-     # Run terraform destroy on push to main if 'destroy' is set to true
+    # Run terraform destroy on push to main if 'destroy' is set to true
     - name: Terraform Destroy
       if: inputs.destroy == true
       id: destroy
