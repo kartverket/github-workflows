@@ -189,13 +189,7 @@ jobs:
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
-      run: |
-        if [[ "${{ inputs.terraform_backend_config }}" == "" ]]
-        then
-          terraform init 
-        else
-          terraform init ${{ inputs.terraform_backend_config }}
-        fi
+      run: terraform init ${{ inputs.terraform_backend_config }}
 
     - name: Terraform Plan
       id: plan
@@ -385,13 +379,7 @@ jobs:
     
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: |
-        if [[ "${{ inputs.terraform_backend_config }}" == "" ]]
-        then
-          terraform init 
-        else
-          terraform init ${{ inputs.terraform_backend_config }}
-        fi
+      run: terraform init ${{ inputs.terraform_backend_config }}
     
     # Run terraform destroy on push to main if 'destroy' is set to true
     - name: Terraform Destroy
