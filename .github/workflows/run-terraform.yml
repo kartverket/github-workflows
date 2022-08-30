@@ -63,11 +63,6 @@ on:
         required: false
         type: boolean
         default: true
-      bucket:
-        description: "An optional Cloud Storage bucket to use."
-        required: false
-        type: string
-        default: '' 
       destroy:
         description: "An optional boolean which runs terraform destroy when set to true. Defaluts to false"
         required: false
