@@ -93,6 +93,7 @@ jobs:
       service_account: ${{ needs.setup-env.outputs.service_account }}
       project_id: ${{ needs.setup-env.outputs.project_id }}</pre></code>
 </details>
+<br />
 
 ### Passing secrets to run-terraform
 
@@ -107,6 +108,8 @@ fetch secrets required at deploy-time.
 
 Each repo needs its own unique `vault_role`. Contact SKIP if you do not have
 this role.
+<br />
+<br />
 
 ### Options
 
@@ -128,6 +131,26 @@ this role.
 | image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
 | bucket                  | string |          | An optional Cloud Storage bucket.                                                                                                                             |
 | destroy                  | boolean |          | An optional boolean that determins whether terraform will be destroyed. Defaults to 'false'.                                                                                                                             |
+<br />
+
+### Common errors:
+
+```
+> Run terraform destroy -var-file=atkv1-dev.tfvars -var=GIT_COMMIT=XXXXX -replace=XXXX.XXXX -auto-approve
+╷
+│ Error: Unsupported plan mode
+│ 
+│ Forcing resource instance replacement (with -replace=...) is allowed only
+│ in normal planning mode.
+╵
+Error: Process completed with exit code 1.
+```
+<details>
+<summary>Solution</summary>
+<br>
+The replace flag is not a supported option in terraform destroy. Remove the -replace flag from terraform_options to complete destroy. Add it back once destroy is finished.
+</details>
+<br />
 
 ## post-build-attest
 
