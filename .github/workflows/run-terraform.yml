@@ -42,7 +42,11 @@ on:
         required: false
         type: string
       terraform_options:
-        description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars`"
+        description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-replace=<resource>.<resource name>`"
+        required: false
+        type: string
+      terraform_backend_config:
+        description: "Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`"
         required: false
         type: string
       vault_role:
@@ -59,16 +63,6 @@ on:
         required: false
         type: boolean
         default: true
-      bucket:
-        description: "An optional Cloud Storage bucket to use."
-        required: false
-        type: string
-        default: ''
-      deploy:
-        description: "An optional boolean which runs runs terraform apply when set to true. Defaults to true"
-        required: false
-        type: boolean
-        default: true
       destroy:
         description: "An optional boolean which runs terraform destroy when set to true. Defaluts to false"
         required: false
@@ -79,7 +73,6 @@ jobs:
   terraform_check:
     name: Terraform Validate
     runs-on: ubuntu-latest
-
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
@@ -96,6 +89,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v0
       with:
@@ -103,21 +100,9 @@ jobs:
         service_account: ${{ inputs.service_account }}
         project_id: ${{ inputs.project_id }}
 
-    - name: Generate terraform backend variables
-      if: inputs.bucket != ''
-      run: |
-        cat <<EOF >> backend.tfbackend
-        bucket="${{ inputs.bucket }}"
-        EOF
-    
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: |
-        if [ "${{ inputs.bucket }}" = "" ]; then
-          terraform init -backend=false
-        else
-          terraform init -backend-config=backend.tfbackend
-        fi
+      run: terraform init -backend=false
 
     - name: Terraform Validate
       id: validate
@@ -138,7 +123,6 @@ jobs:
 
   terraform_plan:
     name: Terraform Plan
-    needs: terraform_check
     runs-on: ${{ inputs.runner }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
@@ -196,23 +180,11 @@ jobs:
         path: jwt-${{ inputs.environment }}
         role: ${{ inputs.vault_role }}
         certb64: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K'
-
-    - name: Generate terraform backend variables
-      if: inputs.bucket != ''
-      run: |
-        cat <<EOF >> backend.tfbackend
-        bucket="${{ inputs.bucket }}"
-        EOF
     
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
-      run: |
-        if [ "${{inputs.bucket}}" = "" ]; then
-          terraform init
-        else
-          terraform init -backend-config=backend.tfbackend
-        fi
+      run: terraform init ${{ inputs.terraform_backend_config }}
 
     - name: Terraform Plan
       id: plan
@@ -343,9 +315,9 @@ jobs:
 
   run_terraform:
     # TODO We need to verify that inputs.deploy_on actually works. Seems to only work on main atm
-    if: github.ref == inputs.deploy_on && needs.terraform_plan.outputs.plan_exitcode == '2' && github.event_name == 'push'
     needs: [terraform_check, terraform_plan]
-    name: Terraform Apply and/or Destroy
+    if: github.ref == inputs.deploy_on && github.event_name == 'push' && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
+    name: Terraform Apply or Destroy
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
 
@@ -399,31 +371,19 @@ jobs:
       with:
         name: plan-${{ inputs.environment }}.tfplan
         path: ${{ inputs.working_directory }}
-
-    - name: Generate terraform backend variables
-      if: inputs.bucket != ''
-      run: |
-        cat <<EOF >> backend.tfbackend
-        bucket="${{ inputs.bucket }}"
-        EOF
     
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: |
-        if [ "${{ inputs.bucket }}" = "" ]; then
-          terraform init
-        else
-          terraform init -backend-config=backend.tfbackend
-        fi
-
+      run: terraform init ${{ inputs.terraform_backend_config }}
+    
     # Run terraform destroy on push to main if 'destroy' is set to true
     - name: Terraform Destroy
       if: inputs.destroy == true
       id: destroy
-      run: terraform destroy -auto-approve -input=false
-    
+      run: terraform destroy ${{ inputs.terraform_options }} -auto-approve
+
     - name: Run Terraform
-      if: inputs.deploy == true
+      if: inputs.destroy == false
       run: |
         terraform apply -input=false plan-${{ inputs.environment }}.tfplan
 
