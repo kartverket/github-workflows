@@ -42,7 +42,7 @@ on:
         required: false
         type: string
       terraform_options:
-        description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-replace=<resource>.<resource name>`"
+        description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
         required: false
         type: string
       terraform_backend_config:

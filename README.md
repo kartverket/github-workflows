@@ -124,30 +124,11 @@ this role.
 | environment                | string  |          | The GitHub environment to use when deploying. See [using environments for deployment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) for more info on this. |
 | vault_role                 | string  |          | Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work.                                                                                                       |
 | terraform_workspace        | string  |          | When provided will set a workspace as the active workspace when planning and deploying.                                                                                                                                        |
-| terraform_options          | string  |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and and `-replace=<resource>.<resource name>`"                                                                                                                            |
+| terraform_options          | string  |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"                                                                                                                            |
 | terraform_backend_config         | string  |          | Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`. The `dev.gcs.tfbackend` file must contain the `bucket` variable, and can contain a variety of other variables such as `prefix`.                                                                                                                           |
 | add_comment_on_pr          | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                     |
 | image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
 | destroy                  | boolean |          | An optional boolean that determins whether terraform will be destroyed. Defaults to 'false'.                                                                                                                             |
-<br />
-
-### Common errors:
-
-```
-> Run terraform destroy -var-file=atkv1-dev.tfvars -var=GIT_COMMIT=XXXXX -replace=XXXX.XXXX -auto-approve
-╷
-│ Error: Unsupported plan mode
-│ 
-│ Forcing resource instance replacement (with -replace=...) is allowed only
-│ in normal planning mode.
-╵
-Error: Process completed with exit code 1.
-```
-<details>
-<summary>Solution</summary>
-<br>
-The replace flag is not a supported option in terraform destroy. Remove the -replace flag from terraform_options to complete destroy. Add it back once destroy is finished.
-</details>
 <br />
 
 ## post-build-attest
