@@ -42,7 +42,7 @@ jobs:
           echo "$mysha"
           remtag=${a%:*}
           echo "$remtag"
-          msg="{$remtag}@{$mysha}"
+          msg="$remtag@$mysha"
           echo "::set-output name=image_url::$msg"
       
       - name: Check if already attested
