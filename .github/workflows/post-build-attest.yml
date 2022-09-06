@@ -38,6 +38,7 @@ jobs:
         id: image-digest-url
         run: |
           mysha=$(docker manifest inspect ${{ inputs.image_url_tag }} -v | jq -r .Descriptor.digest)
+          echo "$mysha"
           remtag=${${{ inputs.image_url_tag }}%:*}
           echo "$remtag"
           msg="$remtag$mysha"
