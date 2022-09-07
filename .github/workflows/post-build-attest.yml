@@ -34,7 +34,7 @@ jobs:
       
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
-        if: regexall( "*:*" , inputs.image_url_tag) > 0
+        if: length(regexall( "*:*" , inputs.image_url_tag)) > 0
         run: |
           a=${{ inputs.image_url_tag }}
           mysha=$(docker manifest inspect $a -v | jq -r .Descriptor.digest)
