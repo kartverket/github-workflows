@@ -35,14 +35,14 @@ jobs:
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
-          if [[ "${{inputs.image_url_tag}}" == *":"* ]] 
+          if [[ "${{inputs.image_url_tag}}" == *"@"* ]] 
           then
+            msg="${{ inputs.image_url_tag }}"
+          else
             a=${{ inputs.image_url_tag }}
             mysha=$(docker manifest inspect $a -v | jq -r .Descriptor.digest)
             remtag=${a%:*}
             msg="${remtag}@${mysha}"
-          else
-            msg="${{ inputs.image_url_tag }}"
           fi
           echo "::set-output name=image_url::$msg"
       
