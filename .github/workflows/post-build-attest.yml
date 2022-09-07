@@ -34,12 +34,16 @@ jobs:
       
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
-        if: contains( inputs.image_url_tag, ':' )
         run: |
-          a=${{ inputs.image_url_tag }}
-          mysha=$(docker manifest inspect $a -v | jq -r .Descriptor.digest)
-          remtag=${a%:*}
-          msg="${remtag}@${mysha}"
+          if [[ "${{inputs.image_url_tag}}" == *":"* ]] 
+          then
+            a=${{ inputs.image_url_tag }}
+            mysha=$(docker manifest inspect $a -v | jq -r .Descriptor.digest)
+            remtag=${a%:*}
+            msg="${remtag}@${mysha}"
+          else
+            msg="${{ inputs.image_url_tag }}"
+          fi
           echo "::set-output name=image_url::$msg"
       
       - name: Check if already attested
