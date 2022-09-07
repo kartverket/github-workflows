@@ -54,7 +54,7 @@ on:
         required: false
         type: string
       image_url:
-        description: "Setting an image_url of the form registry/repository:tag enables the binary attestation of that image."
+        description: "Setting an image_url of the form registry/repository:tag or registry/repository@digest enables the binary attestation of that image."
         required: false
         type: string
         default: ''
@@ -408,9 +408,17 @@ jobs:
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
-          docker pull ${{ inputs.image_url}}
-          mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_url}})
-          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
+          # If image_url = registry/repository@digest
+          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          then
+            msg="${{ inputs.image_url }}"
+          else
+            # Convert registry/repository:tag to registry/repository@digest
+            a=${{ inputs.image_url }}
+            mysha=$(docker manifest inspect $a -v | jq -r .Descriptor.digest)
+            b=${a%:*}
+            msg="${b}@${mysha}"
+          fi
           echo "::set-output name=image_url::$msg"
 
       - name: Check if already attested
