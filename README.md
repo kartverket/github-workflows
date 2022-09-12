@@ -161,9 +161,9 @@ jobs:
       statuses: write
     uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
     with:
-      workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
-      service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
-      image_url: ${{needs.build.outputs.image_url}}
+      workload_identity_provider: x
+      service_account: x
+      image_url: ${{ needs.build.outputs.image_url }}
 ```
 
 ### Options
