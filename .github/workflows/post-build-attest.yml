@@ -22,6 +22,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    outputs: 
+      image_url: ${{ steps.image-digest-url.outputs.image_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -92,7 +94,7 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ inputs.image_url }}")
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ needs.attest-kartverket-kontekst.outputs.image_url }}")
           msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=msg::$msg"
 
@@ -103,7 +105,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ inputs.image_url }}" \
+            --artifact-url="${{ needs.attest-kartverket-kontekst.outputs.image_url }}" \
             --attestor="Build-Master-Branch" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="kubernetes-dev-94b9" \
