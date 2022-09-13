@@ -64,32 +64,32 @@ jobs:
           fi
           echo "::set-output name=image_url::$msg"
 
-      - name: Check if already attested
-        id: get-attestation
-        run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
-          msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
-          echo "::set-output name=msg::$msg"
-          echo "${{ steps.get-attestation.outputs.msg }}"
+#     - name: Check if already attested
+#       id: get-attestation
+#       run: |
+#         mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+#         msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
+#         echo "::set-output name=msg::$msg"
+#         echo "${{ steps.get-attestation.outputs.msg }}"
 
-      # https://cloud.google.com/binary-authorization/docs/making-attestations
-      # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
-      # Attestor name: Trivy-Scan
-      - name: Perform attestation
-        # TODO: Come up with a better if check
-        if: steps.get-attestation.outputs.msg < 1000
-        run: |
-          gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
-            --attestor="Trivy-Scan" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="kubernetes-dev-94b9" \
-            --keyversion-location="europe-north1" \
-            --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Trivy-Scan-Key" \
-            --keyversion="1"
-          echo Attestation succeded
+#     # https://cloud.google.com/binary-authorization/docs/making-attestations
+#     # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
+#     # Attestor name: Trivy-Scan
+#     - name: Perform attestation
+#       # TODO: Come up with a better if check
+#       if: steps.get-attestation.outputs.msg < 1000
+#       run: |
+#         gcloud beta container binauthz attestations sign-and-create \
+#           --project="kubernetes-dev-94b9" \
+#           --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
+#           --attestor="Trivy-Scan" \
+#           --attestor-project="kubernetes-dev-94b9" \
+#           --keyversion-project="kubernetes-dev-94b9" \
+#           --keyversion-location="europe-north1" \
+#           --keyversion-keyring="Attestor-Keyring" \
+#           --keyversion-key="Trivy-Scan-Key" \
+#           --keyversion="1"
+#         echo Attestation succeded
 
   tfsec-pr-comments:
     name: tfsec PR commenter
