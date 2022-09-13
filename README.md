@@ -175,4 +175,32 @@ jobs:
 | image_url                  | string |          | The Docker image url must be of the form registry/repository@digest.                                                                                                                            |
 
 ## run-trivy
-TBA
+This workflow runs TFSec, a static analysis security scanner for your Terraform code.
+
+### Features
+- Runs TFSec
+- Create binary attestation if TFSec does not result in _high_ or _critical_ errors......   
+- The PR Commenter action will process a Pull request and add comments to any areas of the change which fail the tfsec checks.
+
+### Example
+```yaml
+jobs:
+  build: 
+    ...
+
+  tfsec:
+    needs: [build]
+    name: TFSec
+    permissions:
+      contents: read
+      packages: write
+      # required for authentication to GCP
+      id-token: write
+      actions: read
+      security-events: write
+    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
+    with:
+      workload_identity_provider: x
+      service_account: x
+      image_url: ${{needs.build.outputs.image_url}}
+```
