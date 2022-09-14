@@ -411,15 +411,15 @@ jobs:
           # If image_url = registry/repository@digest
           if [[ "${{inputs.image_url}}" == *"@"* ]] 
           then
-            msg="${{ inputs.image_url }}"
+            image_digest_url="${{ inputs.image_url }}"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            a=${{ inputs.image_url }}
-            mysha=$(docker manifest inspect $a -v | jq -r .Descriptor.digest)
-            b=${a%:*}
-            msg="${b}@${mysha}"
+            image_tag_url=${{ inputs.image_url }}
+            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
+            base_image_url=${image_tag_url%:*}
+            image_digest_url="${base_image_url}@${digest}"
           fi
-          echo "::set-output name=image_url::$msg"
+          echo "::set-output name=image_url::$image_digest_url"
 
       - name: Check if already attested
         id: get-attestation
