@@ -55,14 +55,14 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
-          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=msg::$msg"
+          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=attestation::$attestationoutput"
 
       # Attestor name: Build-kartverket
       - name: Perform attestation
         id: attest-kartverket-kontekst
-        if: steps.get-attestation.outputs.msg == ''
+        if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
@@ -96,9 +96,9 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ needs.attest-kartverket-kontekst.outputs.image_url }}")
-          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=msg::$msg"
+          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ needs.attest-kartverket-kontekst.outputs.image_url }}")
+          attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=attestation::$attestationoutput"
 
       # Attestor name: Build-master
       - name: Perform attestation
