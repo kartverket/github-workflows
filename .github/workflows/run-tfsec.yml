@@ -37,6 +37,7 @@ jobs:
         uses: aquasecurity/tfsec-sarif-action@9a83b5c3524f825c020e356335855741fd02745f
         with:
           sarif_file: tfsec.sarif
+          tfsec_args: --
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
@@ -45,8 +46,8 @@ jobs:
 
       - name: print Results
         run: |
-          echo ${{ steps.tfsec.outputs.sarif_file }}
-          
+          echo ${{ tfsec.sarif }}
+
 #     - name: Authenticate with Google Cloud
 #       uses: google-github-actions/auth@v0
 #       with:
@@ -96,21 +97,21 @@ jobs:
 #           --keyversion="1"
 #         echo Attestation succeded
 
-  tfsec-pr-comments:
-    name: tfsec PR commenter
-    runs-on: ubuntu-latest
-    needs: tfsec
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
+# tfsec-pr-comments:
+#   name: tfsec PR commenter
+#   runs-on: ubuntu-latest
+#   needs: tfsec
+#   # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+#   defaults:
+#     run:
+#       shell: bash
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+#   steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v3
 
-      - name: tfsec
-        uses: aquasecurity/tfsec-pr-commenter-action@v1.2.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          github_event_path: ${{ secrets.GITHUB_EVENT_PATH }}
+#     - name: tfsec
+#       uses: aquasecurity/tfsec-pr-commenter-action@v1.2.0
+#       with:
+#         github_token: ${{ secrets.GITHUB_TOKEN }}
+#         github_event_path: ${{ secrets.GITHUB_EVENT_PATH }}
