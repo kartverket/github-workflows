@@ -45,7 +45,9 @@ jobs:
 
       - name: print Results
         run: |
-          curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts
+          myjson=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts)
+          echo $mystr
+          check=any(.myjson[]; . == "HIGH")
 
 #     - name: Authenticate with Google Cloud
 #       uses: google-github-actions/auth@v0
