@@ -45,11 +45,8 @@ jobs:
 
       - name: print Results
         run: |
-          curl \
-          -H "Accept: application/vnd.github+json" \ 
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts
-          
+          curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts
+
 #     - name: Authenticate with Google Cloud
 #       uses: google-github-actions/auth@v0
 #       with:
