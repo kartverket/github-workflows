@@ -1,4 +1,4 @@
-name: TFSec
+name: Security Scans (Trivy and TFSec)
 
 on:
   workflow_call:
@@ -43,7 +43,41 @@ jobs:
         with:
           sarif_file: tfsec.sarif
 
-      - name: print Results
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ inputs.image_url }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          timeout: '15m'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  attest:
+    name: Attest Github Security Code Scanning
+    needs: [tfsec, trivy]
+    runs-on: ubuntu-latest
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check for Critical and High Severity
         run: |
           curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq '.[].rule.security_severity_level'
 
