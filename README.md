@@ -174,7 +174,7 @@ jobs:
 | service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
 | image_url                  | string |          | The Docker image url must be of the form registry/repository@digest.                                                                                                                            |
 
-## run-trivy
+## run-tfsec
 This workflow runs TFSec, a static analysis security scanner for your Terraform code.
 
 ### Features
@@ -198,7 +198,7 @@ jobs:
       id-token: write
       actions: read
       security-events: write
-    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
+    uses: kartverket/github-workflows/.github/workflows/run-tfsec.yml@<release tag>
     with:
       workload_identity_provider: x
       service_account: x
