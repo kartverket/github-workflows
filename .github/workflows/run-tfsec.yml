@@ -73,7 +73,10 @@ jobs:
     steps:
       - name: Check for Critical and High Severity
         run: |
-          curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -r '.[].rule | select(.security_severity_level | startswith('high'))'
+          array = curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -r '.[].rule.security_severity_level'
+          if [[ " ${array[*]} " =~ "high" ]]; then
+            echo true
+          fi
 
 #     - name: Authenticate with Google Cloud
 #       uses: google-github-actions/auth@v0
