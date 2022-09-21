@@ -74,9 +74,14 @@ jobs:
       - name: Check for Critical and High Severity
         run: |
           array=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -r '.[].rule.security_severity_level')
+          echo $array
           if [[ ${array}[*] =~ "high" ]]; then
             echo true
           fi
+          if [[ !${array}[*] =~ "high" ]]; then
+            echo false
+          fi
+
 
 #     - name: Authenticate with Google Cloud
 #       uses: google-github-actions/auth@v0
