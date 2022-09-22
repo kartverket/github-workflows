@@ -80,17 +80,18 @@ jobs:
         id: severity_check
         run: |
           severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
+          echo $severity_check
           echo "::set-output name=severity_check::$severity_check"
 
       - name: Authenticate with Google Cloud
-        if: ${{ steps.severity_check.outputs.severity_check }} == true
+        if: steps.severity_check.outputs.severity_check == 'false'
         uses: google-github-actions/auth@v0
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
       
       - name: Get Image Digest URL from Image Tag URL
-        if: ${{ steps.severity_check.outputs.severity_check }} == true
+        if: steps.severity_check.outputs.severity_check == 'false'
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
