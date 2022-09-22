@@ -72,6 +72,9 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
     # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
       - name: Check for Critical and High Severity
         id: severity_check
