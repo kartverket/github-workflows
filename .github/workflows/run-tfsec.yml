@@ -73,7 +73,7 @@ jobs:
     steps:
       - name: Check for Critical and High Severity
         run: |
-          curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | contains ("high") or contains ("critical")] | any'
+          curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any'
           
 #         # jq -r '.[].rule.security_severity_level')
 #         if [[ ${array}[*] =~ "high" ]]; then
