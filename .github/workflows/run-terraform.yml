@@ -70,32 +70,6 @@ on:
         default: false
 
 jobs:
-  attest-trivy:
-    # TODO We need to verify that inputs.deploy_on actually works. Seems to only work on main atm
-    if: github.ref == inputs.deploy_on && github.event_name == 'push' && inputs.environment == 'prod'
-    name: Terraform Apply or Destroy
-    runs-on: ${{ inputs.runner }}
-    environment: ${{ inputs.environment }}
-
-    # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
-    concurrency: ${{ inputs.environment }}
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ inputs.working_directory }}
-
-    env:
-      # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
-      TF_IN_AUTOMATION: true
-      TF_WORKSPACE: ${{ inputs.terraform_workspace }}
-
-    steps:
-      - name:
-        ### TODO
-
-
   terraform_check:
     name: Terraform Validate
     runs-on: ubuntu-latest

@@ -52,56 +52,59 @@ jobs:
       run:
         shell: bash
     steps:
+    # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
       - name: Check for Critical and High Severity
+        id: severity_check
         run: |
-          curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -r '.[].rule.security_severity_level'
+          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
+          echo "::set-output name=severity_check::$severity_check"
 
-#     - name: Authenticate with Google Cloud
-#       uses: google-github-actions/auth@v0
-#       with:
-#         workload_identity_provider: ${{ inputs.workload_identity_provider }}
-#         service_account: ${{ inputs.service_account }}
+      - name: Authenticate with Google Cloud
+        if: ${{ steps.severity_check.outputs.severity_check }} == false
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ inputs.workload_identity_provider }}
+          service_account: ${{ inputs.service_account }}
+      
+      - name: Get Image Digest URL from Image Tag URL
+        if: ${{ steps.severity_check.outputs.severity_check }} == false
+        id: image-digest-url
+        run: |
+          # If image_url = registry/repository@digest
+          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          then
+            image_digest_url="${{ inputs.image_url }}"
+          else
+            # Convert registry/repository:tag to registry/repository@digest
+            image_tag_url=${{ inputs.image_url }}
+            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
+            base_image_url=${image_tag_url%:*}
+            image_digest_url="${base_image_url}@${digest}"
+          fi
+          echo "::set-output name=image_url::$image_digest_url"
 
-#     - name: Get Image Digest URL from Image Tag URL
-#       id: image-digest-url
-#       run: |
-#         # If image_url = registry/repository@digest
-#         if [[ "${{ inputs.image_url}}" == *"@"* ]] 
-#         then
-#           msg="${{ inputs.image_url }}"
-#         else
-#           # Convert registry/repository:tag to registry/repository@digest
-#           a=${{ inputs.image_url }}
-#           mysha=$(docker manifest inspect $a -v | jq -r .Descriptor.digest)
-#           b=${a%:*}
-#           msg="${b}@${mysha}"
-#         fi
-#         echo "::set-output name=image_url::$msg"
-
+# TODO: make attestor      
 #     - name: Check if already attested
+#       if: ${{ steps.severity_check.outputs.severity_check }} == false
 #       id: get-attestation
 #       run: |
-#         mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
-#         msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
-#         echo "::set-output name=msg::$msg"
-#         echo "${{ steps.get-attestation.outputs.msg }}"
-
-#     # https://cloud.google.com/binary-authorization/docs/making-attestations
-#     # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
-#     # Attestor name: Trivy-Scan
+#         attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+#         attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
+#         echo "::set-output name=attestation::$attestationoutput"
+#     
+#     # Attestor name: TFSec
 #     - name: Perform attestation
-#       # TODO: Come up with a better if check
-#       if: steps.get-attestation.outputs.msg < 1000
+#       id: attest-kartverket-kontekst
+#       if: steps.get-attestation.outputs.attestation == '' && steps.severity_check.outputs.severity_check == false
 #       run: |
 #         gcloud beta container binauthz attestations sign-and-create \
 #           --project="kubernetes-dev-94b9" \
 #           --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
-#           --attestor="Trivy-Scan" \
+#           --attestor="Build-Kartverket" \
 #           --attestor-project="kubernetes-dev-94b9" \
 #           --keyversion-project="kubernetes-dev-94b9" \
 #           --keyversion-location="europe-north1" \
 #           --keyversion-keyring="Attestor-Keyring" \
-#           --keyversion-key="Trivy-Scan-Key" \
+#           --keyversion-key="Build-Kartverket-Key" \
 #           --keyversion="1"
 #         echo Attestation succeded
-
