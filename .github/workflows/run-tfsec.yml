@@ -74,7 +74,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
     # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
       - name: Check for Critical and High Severity
         id: severity_check
@@ -83,14 +83,14 @@ jobs:
           echo "::set-output name=severity_check::$severity_check"
 
       - name: Authenticate with Google Cloud
-        if: ${{ steps.severity_check.outputs.severity_check }} == false
+        if: ${{ steps.severity_check.outputs.severity_check }} == true
         uses: google-github-actions/auth@v0
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
       
       - name: Get Image Digest URL from Image Tag URL
-        if: ${{ steps.severity_check.outputs.severity_check }} == false
+        if: ${{ steps.severity_check.outputs.severity_check }} == true
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
