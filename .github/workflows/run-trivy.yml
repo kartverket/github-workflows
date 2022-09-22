@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
     # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
       - name: Check for Critical and High Severity
         id: severity_check
@@ -63,14 +63,14 @@ jobs:
           echo "::set-output name=severity_check::$severity_check"
 
       - name: Authenticate with Google Cloud
-        if: ${{ steps.severity_check.outputs.severity_check }} == false
+        if: steps.severity_check.outputs.severity_check == 'false'
         uses: google-github-actions/auth@v0
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
       
       - name: Get Image Digest URL from Image Tag URL
-        if: ${{ steps.severity_check.outputs.severity_check }} == false
+        if: steps.severity_check.outputs.severity_check == 'false'
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
@@ -88,7 +88,7 @@ jobs:
 
 # TODO: make attestor      
 #     - name: Check if already attested
-#       if: ${{ steps.severity_check.outputs.severity_check }} == false
+#       if: steps.severity_check.outputs.severity_check == 'false'
 #       id: get-attestation
 #       run: |
 #         attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
@@ -98,7 +98,7 @@ jobs:
 #     # Attestor name: TFSec
 #     - name: Perform attestation
 #       id: attest-kartverket-kontekst
-#       if: steps.get-attestation.outputs.attestation == '' && steps.severity_check.outputs.severity_check == false
+#       if: steps.get-attestation.outputs.attestation == '' && steps.severity_check.outputs.severity_check == 'false'
 #       run: |
 #         gcloud beta container binauthz attestations sign-and-create \
 #           --project="kubernetes-dev-94b9" \
