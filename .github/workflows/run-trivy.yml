@@ -61,6 +61,12 @@ jobs:
         run: |
           severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
           echo "::set-output name=severity_check::$severity_check"
+          if [[ $severity_check == 'true' ]]
+          then
+            echo "Error: High or critical vulnerabilities detected. Go to the Checks-tab on your pull-request or the Code Scanning section of the Github Security-tab to review these vulnerabilities."
+            exit 1
+          fi
+      
 
       - name: Authenticate with Google Cloud
         if: steps.severity_check.outputs.severity_check == 'false'
