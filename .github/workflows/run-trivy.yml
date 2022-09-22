@@ -63,7 +63,7 @@ jobs:
           echo "::set-output name=severity_check::$severity_check"
           if [[ $severity_check == 'true' ]]
           then
-            echo "Error: High or critical vulnerabilities detected. Go to the Checks-tab on your pull-request or the Code Scanning section of the Github Security-tab to review these vulnerabilities."
+            echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab or the Checks-tab on your pull-request to review these vulnerabilities."
             exit 1
           fi
       
