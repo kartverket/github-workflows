@@ -93,6 +93,7 @@ jobs:
           then
             # Convert registry/repository@digest to registry/repository:tag
             image_digest_url=${{ inputs.image_url }}
+            docker manifest inspect $image_digest_url
             tag=$(docker manifest inspect $image_digest_url --verbose | jq -r .Descriptor)
             echo "TAG: $tag"
             base_image_url=${image_digest_url%:*}
