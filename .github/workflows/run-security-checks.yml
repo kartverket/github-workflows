@@ -1,4 +1,4 @@
-name: TFSec
+name: Security Checks (TFSec and Trivy)
 
 on:
   workflow_call:
@@ -16,17 +16,27 @@ on:
         description: "The GCP service account connected to the identity pool that will be used by Terraform"
         required: true
         type: string
+      trivy:
+        description: "A boolean which determins whether or not trivy vulnerability scan will be run. Defaults to true"
+        required: false
+        default: true
+        type: string
+      tfsec:
+        description: "A boolean which determins whether or not TFSec security scan will be run. Defaults to true"
+        required: false
+        default: true
+        type: string
+
 
 jobs:
   tfsec:
     name: Run TFSec Code Scan
+    if: inputs.tfsec == 'true'
     runs-on: ubuntu-latest
-
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
-
     steps:
     # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
@@ -62,6 +72,49 @@ jobs:
 #       with:
 #         github_token: ${{ secrets.GITHUB_TOKEN }}
 #         github_event_path: ${{ secrets.GITHUB_EVENT_PATH }}
+
+  trivy:
+    name: Trivy
+    if: inputs.trivy == 'true'
+    runs-on: ubuntu-latest
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get Image Tag URL from Image Digest URL 
+        id: image-digest-url
+        run: |
+          # If image_url = registry/repository@digest
+          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          then
+            # Convert registry/repository@digest to registry/repository:tag
+            image_digest_url=${{ inputs.image_url }}
+            tag=$(docker manifest inspect $image_digest_url -v | jq -r .Descriptor.tag)
+            base_image_url=${image_digest_url%:*}
+            echo $base_image_url
+            image_tag_url="${base_image_url}:${tag}"
+          else
+            image_tag_url="${{ inputs.image_url }}"
+          fi
+          echo "::set-output name=image_url::$image_tag_url"
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.image-digest-url.outputs.image_url }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          timeout: '15m'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   attest:
     name: Attest Github Security Code Scanning
