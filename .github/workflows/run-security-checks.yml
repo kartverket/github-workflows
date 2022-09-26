@@ -102,19 +102,19 @@ jobs:
           fi
           echo "::set-output name=image_url::$image_tag_url"
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ steps.image-digest-url.outputs.image_url }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-          timeout: '15m'
+#     - name: Run Trivy vulnerability scanner
+#       uses: aquasecurity/trivy-action@master
+#       with:
+#         image-ref: ${{ steps.image-digest-url.outputs.image_url }}
+#         format: 'sarif'
+#         output: 'trivy-results.sarif'
+#         severity: 'CRITICAL,HIGH'
+#         timeout: '15m'
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
+#     - name: Upload Trivy scan results to GitHub Security tab
+#       uses: github/codeql-action/upload-sarif@v2
+#       with:
+#         sarif_file: 'trivy-results.sarif'
 
   attest:
     name: Attest Github Security Code Scanning
