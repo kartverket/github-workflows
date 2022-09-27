@@ -75,7 +75,8 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == 'true' && github.ref == inputs.deploy_on && github.event_name == 'push'
+    if: inputs.trivy == 'true' 
+    # && github.ref == inputs.deploy_on && github.event_name == 'push'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -134,6 +135,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+    # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
+      - name: Check for Critical and High Severity
+        id: severity_check
+        run: |
+          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
+          echo "::set-output name=severity_check::$severity_check"
+          if [[ $severity_check == 'true' ]]
+          then
+            echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities."
+            exit 1
+          fi
+
       - name: Authenticate with Google Cloud
         if: steps.severity_check.outputs.severity_check == 'false'
         uses: google-github-actions/auth@v0
@@ -157,18 +170,6 @@ jobs:
             image_digest_url="${base_image_url}@${digest}"
           fi
           echo "::set-output name=image_url::$image_digest_url"
-
-    # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
-      - name: Check for Critical and High Severity
-        id: severity_check
-        run: |
-          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
-          echo "::set-output name=severity_check::$severity_check"
-          if [[ $severity_check == 'true' ]]
-          then
-            echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities."
-            exit 1
-          fi
 
 # TODO: make TFSec attestor        
 #     - name: Check if already attested
