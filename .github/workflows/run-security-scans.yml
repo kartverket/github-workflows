@@ -55,7 +55,7 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == 'true' github.ref == inputs.deploy_on && github.event_name == 'push'
+    if: inputs.trivy == 'true' && github.ref == inputs.deploy_on && github.event_name == 'push'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
