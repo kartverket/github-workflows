@@ -124,7 +124,7 @@ jobs:
 
   attest:
     name: Attest Github Security Code Scanning
-    needs: [tfsec]
+    needs: [tfsec, trivy]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -142,6 +142,7 @@ jobs:
           service_account: ${{ inputs.service_account }}
       
       - name: Get Image Digest URL from Image Tag URL
+        if: steps.severity_check.outputs.severity_check == 'false'
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
