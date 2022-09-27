@@ -1,4 +1,4 @@
-name: Security Checks (TFSec and Trivy)
+name: Security Scans
 
 on:
   workflow_call:
@@ -30,7 +30,7 @@ on:
 
 jobs:
   tfsec:
-    name: Run TFSec Code Scan
+    name: TFSec
     if: inputs.tfsec == 'true'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
@@ -53,61 +53,18 @@ jobs:
         with:
           sarif_file: tfsec.sarif
 
-# TODO: Would be a great addition if it worked
-# tfsec-pr-comments:
-#   name: tfsec PR commenter
-#   runs-on: ubuntu-latest
-#   needs: tfsec
-#   # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-#   defaults:
-#     run:
-#       shell: bash
-
-#   steps:
-#     - name: Checkout repository
-#       uses: actions/checkout@v3
-
-#     - name: tfsec
-#       uses: aquasecurity/tfsec-pr-commenter-action@v1.2.0
-#       with:
-#         github_token: ${{ secrets.GITHUB_TOKEN }}
-#         github_event_path: ${{ secrets.GITHUB_EVENT_PATH }}
-
   trivy:
     name: Trivy
-    if: inputs.trivy == 'true' 
-    # && github.ref == inputs.deploy_on && github.event_name == 'push'
+    if: inputs.trivy == 'true' github.ref == inputs.deploy_on && github.event_name == 'push'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
     steps:
+    # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
         uses: actions/checkout@v3
-
-# TODO: Make it possible to get image tag url from image digest url
-#     - name: Get Image Tag URL from Image Digest URL 
-#       id: image-digest-url
-#       run: |
-#         # If image_url = registry/repository@digest
-#         if [[ "${{inputs.image_url}}" == *"@"* ]] 
-#         then
-#           # Convert registry/repository@digest to registry/repository:tag
-#           image_digest_url=${{ inputs.image_url }}
-#           tag=$(docker manifest inspect $image_digest_url --verbose | jq -r .Descriptor)
-#           echo "TAG: $tag"
-#           base_image_url=${image_digest_url%:*}
-#           echo $base_image_url
-#           image_tag_url="${base_image_url}:${tag}"
-#         else
-#           image_tag_url="${{ inputs.image_url }}"
-#         fi
-#         echo "::set-output name=image_url::$image_tag_url"
-
-## NOTE TO SELF.. 
-## (1) TRIVY FUNKER IKKE MED IMAGE DIGEST URL
-## (2) ETT IMAGE VIL IKKE BLI PUSHET TIL HVOR ENN FØR BRANCHEN MERGES... SMH 
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -123,7 +80,7 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  check:
+  check-github-security:
     name: Check Github Security Code Scanning
     if: ${{ always() }}
     needs: [ tfsec, trivy ]
@@ -133,6 +90,7 @@ jobs:
       run:
         shell: bash
     steps:
+    # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -141,7 +99,6 @@ jobs:
         id: severity_check
         run: |
           severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
-          echo "::set-output name=severity_check::$severity_check"
           if [[ $severity_check == 'true' ]]
           then
             echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities."
@@ -150,37 +107,24 @@ jobs:
 
   attest:
     name: Attest Github Security Code Scanning
-    needs: [ tfsec, trivy, check ]
+    needs: [ check-github-security ]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
     steps:
+      # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
 
-    # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
-      - name: Check for Critical and High Severity
-        id: severity_check
-        run: |
-          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
-          echo "::set-output name=severity_check::$severity_check"
-          if [[ $severity_check == 'true' ]]
-          then
-            echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities."
-            exit 1
-          fi
-
       - name: Authenticate with Google Cloud
-        if: steps.severity_check.outputs.severity_check == 'false'
         uses: google-github-actions/auth@v0
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
       
       - name: Get Image Digest URL from Image Tag URL
-        if: steps.severity_check.outputs.severity_check == 'false'
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
@@ -196,28 +140,26 @@ jobs:
           fi
           echo "::set-output name=image_url::$image_digest_url"
 
-# TODO: make TFSec attestor        
-#     - name: Check if already attested
-#       if: steps.severity_check.outputs.severity_check == 'false'
-#       id: get-attestation
-#       run: |
-#         attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
-#         attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-#         echo "::set-output name=attestation::$attestationoutput"
-#     
-#     # Attestor name: TFSec
-#     - name: Perform attestation
-#       id: attest-kartverket-kontekst
-#       if: steps.get-attestation.outputs.attestation == '' && steps.severity_check.outputs.severity_check == 'false'
-#       run: |
-#         gcloud beta container binauthz attestations sign-and-create \
-#           --project="kubernetes-dev-94b9" \
-#           --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
-#           --attestor="Build-Kartverket" \
-#           --attestor-project="kubernetes-dev-94b9" \
-#           --keyversion-project="kubernetes-dev-94b9" \
-#           --keyversion-location="europe-north1" \
-#           --keyversion-keyring="Attestor-Keyring" \
-#           --keyversion-key="Build-Kartverket-Key" \
-#           --keyversion="1"
-#         echo Attestation succeded
+# TODO: make security attestor        
+      - name: Check if already attested
+        id: get-attestation
+        run: |
+          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=attestation::$attestationoutput"
+      
+      # Attestor name: Security
+      - name: Perform attestation
+        id: attest-kartverket-kontekst
+        run: |
+          gcloud beta container binauthz attestations sign-and-create \
+            --project="kubernetes-dev-94b9" \
+            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
+            --attestor="Build-Kartverket" \
+            --attestor-project="kubernetes-dev-94b9" \
+            --keyversion-project="kubernetes-dev-94b9" \
+            --keyversion-location="europe-north1" \
+            --keyversion-keyring="Attestor-Keyring" \
+            --keyversion-key="Build-Kartverket-Key" \
+            --keyversion="1"
+          echo Attestation succeded

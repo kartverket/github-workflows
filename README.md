@@ -174,13 +174,16 @@ jobs:
 | service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
 | image_url                  | string |          | The Docker image url must be of the form registry/repository@digest.                                                                                                                            |
 
-## run-tfsec
-This workflow runs TFSec, a static analysis security scanner for your Terraform code.
+## run-security-scans
+This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found. 
 
 ### Features
-- Runs TFSec
-- Create binary attestation if TFSec does not result in _high_ or _critical_ errors......   
-- The PR Commenter action will process a Pull request and add comments to any areas of the change which fail the tfsec checks.
+- Runs Trivy, a comprehensive security scanner, on push to main branch.
+- Runs TFSec, a static analysis security scanner for your Terraform code.
+- Creates a binary attestation on the supplied image if there are no _high_ or _critical_ errors in Github Security Code Scanning.  
+
+### Requirements
+- Code Scanning must be appropriatly set up for the scans in the Github Security tab.
 
 ### Example
 ```yaml
@@ -190,7 +193,7 @@ jobs:
 
   tfsec:
     needs: [build]
-    name: TFSec
+    name: Security Check
     permissions:
       contents: read
       packages: write
@@ -198,9 +201,11 @@ jobs:
       id-token: write
       actions: read
       security-events: write
-    uses: kartverket/github-workflows/.github/workflows/run-tfsec.yml@<release tag>
+    uses: kartverket/github-workflows/.github/workflows/run-security-scans.yml@<release tag>
     with:
       workload_identity_provider: x
       service_account: x
-      image_url: ${{needs.build.outputs.image_url}}
+      image_url: ${{needs.build.outputs.image_url}} # format: registry/repository:tag
+      trivy: <optional>
+      tfsec: <optional>
 ```
