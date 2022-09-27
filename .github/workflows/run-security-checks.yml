@@ -75,7 +75,7 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == 'true'
+    if: inputs.trivy == 'true' && github.ref == inputs.deploy_on && github.event_name == 'push'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -103,6 +103,10 @@ jobs:
 #           image_tag_url="${{ inputs.image_url }}"
 #         fi
 #         echo "::set-output name=image_url::$image_tag_url"
+
+## NOTE TO SELF.. 
+## (1) TRIVY FUNKER IKKE MED IMAGE DIGEST URL
+## (2) ETT IMAGE VIL IKKE BLI PUSHET TIL HVOR ENN FØR BRANCHEN MERGES... SMH 
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -158,7 +162,7 @@ jobs:
       - name: Check for Critical and High Severity
         id: severity_check
         run: |
-          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/kartverket/github-runner/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
+          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
           echo "::set-output name=severity_check::$severity_check"
           if [[ $severity_check == 'true' ]]
           then
