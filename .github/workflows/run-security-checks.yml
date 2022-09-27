@@ -123,9 +123,34 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
+  check:
+    name: Check Github Security Code Scanning
+    if: ${{ always() }}
+    needs: [ tfsec, trivy ]
+    runs-on: ubuntu-latest
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+    # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
+      - name: Check for Critical and High Severity
+        id: severity_check
+        run: |
+          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq -e '[.[].rule.security_severity_level | select( . != null) | contains ("high") or contains ("critical")] | any')
+          echo "::set-output name=severity_check::$severity_check"
+          if [[ $severity_check == 'true' ]]
+          then
+            echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities."
+            exit 1
+          fi
+
   attest:
     name: Attest Github Security Code Scanning
-    needs: [tfsec, trivy]
+    needs: [ tfsec, trivy, check ]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
