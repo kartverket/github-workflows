@@ -54,7 +54,7 @@ on:
         required: false
         type: string
       image_url:
-        description: "Setting an image_url of the form registry/repository:tag enables the binary attestation of that image."
+        description: "Setting an image_url of the form registry/repository:tag or registry/repository@digest enables the binary attestation of that image."
         required: false
         type: string
         default: ''

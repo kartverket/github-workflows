@@ -43,8 +43,8 @@ jobs:
       workload_identity_provider: X
       service_account: X
       project_id: X
-      image_url: <registry>/<repository>:<tag>
-      destroy: <optional>
+      image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
+      destroy: <optional boolean>
 ```
 
 ### Passing env vars to run-terraform
@@ -127,7 +127,7 @@ this role.
 | terraform_options          | string  |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=image=<imageURL>`"                                                                                                                            |
 | terraform_backend_config         | string  |          | Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`. The `dev.gcs.tfbackend` file must contain the `bucket` variable, and can contain a variety of other variables such as `prefix`.                                                                                                                           |
 | add_comment_on_pr          | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                     |
-| image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form registry/repository:tag                                                                                                                            |
+| image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                            |
 | destroy                  | boolean |          | An optional boolean that determins whether terraform will be destroyed. Defaults to 'false'.                                                                                                                             |
 <br />
 
@@ -161,9 +161,9 @@ jobs:
       statuses: write
     uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
     with:
-      workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
-      service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
-      image_url: ${{needs.build.outputs.image_url}} # the image created by build job
+      workload_identity_provider: x
+      service_account: x
+      image_url: ${{ needs.build.outputs.image_url }} # the image created by build job
 ```
 
 ### Options
@@ -172,7 +172,7 @@ jobs:
 |----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`   |
 | service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
-| image_url                  | string |          | The Docker image url must be of the form registry/repository@digest.                                                                                                                            |
+| image_url                  | string |          | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                            |
 
 ## run-security-scans
 This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found. 
