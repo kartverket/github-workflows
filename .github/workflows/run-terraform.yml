@@ -389,7 +389,7 @@ jobs:
 
   attest-deploy:
     if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
-    name: Attest deploy to environment
+    name: Attest deploy to ${{ inputs.environment }}
     needs: run_terraform
     runs-on: ubuntu-latest
     defaults:
@@ -413,18 +413,16 @@ jobs:
           msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=image_url::$msg"
 
-      - name: Check if already attested
+      - name: Check if already attested by Deploy-${{ inputs.environment }} attestor
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="${{ inputs.project_id }}" --attestor="projects/${{ inputs.project_id }}/attestors/Deploy-${{ inputs.environment }}" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
-          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=msg::$msg"
+          attestation=$(gcloud container binauthz attestations list --project="${{ inputs.project_id }}" --attestor="projects/${{ inputs.project_id }}/attestors/Deploy-${{ inputs.environment }}" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
+          echo "::set-output name=attestation::$attestationoutput"
       
-      # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to ${{inputs.environment}}
         id: attest-deploy
-        # Note: msg is an empty string when no attestation is done
-        if: steps.get-attestation.outputs.msg == ''
+        if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="${{ inputs.project_id }}" \
