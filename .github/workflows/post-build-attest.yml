@@ -31,10 +31,26 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
+      - name: Get Image Digest URL from Image Tag URL
+        id: image-digest-url
+        run: |
+          # If image_url = registry/repository@digest
+          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          then
+            image_digest_url="${{ inputs.image_url }}"
+          else
+            # Convert registry/repository:tag to registry/repository@digest
+            image_tag_url=${{ inputs.image_url }}
+            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
+            base_image_url=${image_tag_url%:*}
+            image_digest_url="${base_image_url}@${digest}"
+          fi
+          echo "::set-output name=image_url::$image_digest_url"
+
       - name: Check if already attested by Build-Kartverket attestor
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ inputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=attestation::$attestationoutput"
 
@@ -44,7 +60,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ inputs.image_url }}" \
+            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="Build-Kartverket" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="kubernetes-dev-94b9" \
@@ -71,10 +87,26 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
+      - name: Get Image Digest URL from Image Tag URL
+        id: image-digest-url
+        run: |
+          # If image_url = registry/repository@digest
+          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          then
+            image_digest_url="${{ inputs.image_url }}"
+          else
+            # Convert registry/repository:tag to registry/repository@digest
+            image_tag_url=${{ inputs.image_url }}
+            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
+            base_image_url=${image_tag_url%:*}
+            image_digest_url="${base_image_url}@${digest}"
+          fi
+          echo "::set-output name=image_url::$image_digest_url"
+      
       - name: Check if already attested by Build-Master-Branch attestor
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ inputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=attestation::$attestationoutput"
 
@@ -84,7 +116,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ inputs.image_url }}" \
+            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="Build-Master-Branch" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="kubernetes-dev-94b9" \

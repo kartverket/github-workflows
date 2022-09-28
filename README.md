@@ -148,9 +148,9 @@ jobs:
   build: 
     ...
 
-  auth-attest:
+  post-build-attest:
     needs: [build]
-    name: Authentication and Attestation
+    name: Authentication and Attestation of Build
     permissions:
       contents: read
       packages: write
@@ -163,7 +163,7 @@ jobs:
     with:
       workload_identity_provider: projects/214581028419/locations/global/workloadIdentityPools/github-runner-deploy-pool/providers/github-provider
       service_account: github-runner-deploy@skip-dev-7d22.iam.gserviceaccount.com
-      image_url: ${{needs.build.outputs.image_url}}
+      image_url: ${{needs.build.outputs.image_url}} # the image created by build job
 ```
 
 ### Options
@@ -189,11 +189,20 @@ This workflow runs security scans and performs binary attestation if no _high_ o
 ```yaml
 jobs:
   build: 
-    ...
+    # build image
 
-  tfsec:
+  post-build-attest:
+    # call to post-build-attest.yml with build image
+
+  dev:
+    # call to run-terraform.yml for dev environment
+  
+  test:
+    # call to run-terraform.yml for test environment
+
+  security-scans:
     needs: [build]
-    name: Security Check
+    name: Security Scans
     permissions:
       contents: read
       packages: write
@@ -205,7 +214,11 @@ jobs:
     with:
       workload_identity_provider: x
       service_account: x
-      image_url: ${{needs.build.outputs.image_url}} # format: registry/repository:tag
+      image_url: <registry>/<repository>:<tag>
       trivy: <optional>
       tfsec: <optional>
+  
+  prod:
+    dev:
+    # call to run-terraform.yml for prod environment
 ```

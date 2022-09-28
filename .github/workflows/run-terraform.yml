@@ -408,10 +408,18 @@ jobs:
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
-          docker pull ${{ inputs.image_url}}
-          mystr=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ inputs.image_url}})
-          msg=$(printf '%s' $mystr | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=image_url::$msg"
+          # If image_url = registry/repository@digest
+          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          then
+            image_digest_url="${{ inputs.image_url }}"
+          else
+            # Convert registry/repository:tag to registry/repository@digest
+            image_tag_url=${{ inputs.image_url }}
+            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
+            base_image_url=${image_tag_url%:*}
+            image_digest_url="${base_image_url}@${digest}"
+          fi
+          echo "::set-output name=image_url::$image_digest_url"
 
       - name: Check if already attested by Deploy-${{ inputs.environment }} attestor
         id: get-attestation
