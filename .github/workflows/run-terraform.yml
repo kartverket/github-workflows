@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       deploy_on:
-        description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/head/main`"
+        description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`"
         required: false
         type: string
         default: 'refs/heads/main'
