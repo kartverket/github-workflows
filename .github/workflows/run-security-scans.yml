@@ -16,6 +16,11 @@ on:
         description: "The GCP service account connected to the identity pool that will be used by Terraform"
         required: true
         type: string
+      deploy_on:
+        description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/head/main`"
+        required: false
+        type: string
+        default: 'refs/heads/main'
       trivy:
         description: "A boolean which determins whether or not trivy vulnerability scan will be run. Defaults to true"
         required: false
@@ -75,6 +80,11 @@ jobs:
           severity: 'CRITICAL,HIGH'
           timeout: '15m'
 
+# To run a dependency scan use trivy fs
+# simultaneously run a scan for vulnerabilities and misconfigurations by adding --security-checks vuln,config.
+
+# By adding --severity HIGH,CRITICAL to the command we can filter results.
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
@@ -100,14 +110,14 @@ jobs:
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
-          echo "::set-output name=image_url::$image_digest_url"
+          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
         
       - name: Check if already attested by Trivy-Scan attestor
         id: get-attestation
         run: |
           attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Trivy-Scan" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=attestation::$attestationoutput"
+          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
       
       - name: Perform Trivy-Scan attestation
         id: attest-kartverket-kontekst
@@ -183,14 +193,14 @@ jobs:
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
-          echo "::set-output name=image_url::$image_digest_url"
+          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
         
       - name: Check if already attested by Security-Scan attestor
         id: get-attestation
         run: |
           attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Security-Scan" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=attestation::$attestationoutput"
+          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
       
       - name: Perform Security-Scan attestation
         id: attest-kartverket-kontekst
