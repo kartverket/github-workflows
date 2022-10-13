@@ -217,6 +217,10 @@ jobs:
         path: ${{ inputs.working_directory }}/plan-${{ inputs.environment }}.tfplan
         retention-days: 5
 
+    - name: echo plan
+      run: |
+        echo "${{ steps.plan.outputs.stdout }}"
+
   update_github:
     if: ${{ always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request' }}
     needs: [terraform_check, terraform_plan]
