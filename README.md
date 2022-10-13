@@ -38,7 +38,7 @@ jobs:
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
       terraform_options: -var-file=dev.tfvars
-      terraform_backend_config: -backend-config=dev.gcs.tfbackend
+      terraform_init_options: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       workload_identity_provider: X
       service_account: X
@@ -125,7 +125,7 @@ this role.
 | vault_role                 | string  |          | Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work.                                                                                                       |
 | terraform_workspace        | string  |          | When provided will set a workspace as the active workspace when planning and deploying.                                                                                                                                        |
 | terraform_options          | string  |          | Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=image=<imageURL>`"                                                                                                                            |
-| terraform_backend_config         | string  |          | Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`. The `dev.gcs.tfbackend` file must contain the `bucket` variable, and can contain a variety of other variables such as `prefix`.                                                                                                                           |
+| terraform_init_options         | string  |          | Any additional terraform options to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`". Useful for defining a `bucket` and `prefix` variables used for configuring the gcs (Google Cloud Storage bucket) backend. |
 | add_comment_on_pr          | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                     |
 | image_url                  | string |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                            |
 | destroy                  | boolean |          | An optional boolean that determins whether terraform will be destroyed. Defaults to 'false'.                                                                                                                             |

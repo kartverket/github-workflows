@@ -45,8 +45,8 @@ on:
         description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
         required: false
         type: string
-      terraform_backend_config:
-        description: "Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`"
+      terraform_init_options:
+        description: "Any additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
         required: false
         type: string
       vault_role:
@@ -184,7 +184,7 @@ jobs:
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
       id: init
-      run: terraform init ${{ inputs.terraform_backend_config }}
+      run: terraform init ${{ inputs.terraform_init_options }}
 
     - name: Terraform Plan
       id: plan
@@ -374,7 +374,7 @@ jobs:
     
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init ${{ inputs.terraform_backend_config }}
+      run: terraform init ${{ inputs.terraform_init_options }}
     
     # Run terraform destroy on push to main if 'destroy' is set to true
     - name: Terraform Destroy
