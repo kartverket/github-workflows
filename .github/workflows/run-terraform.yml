@@ -201,14 +201,20 @@ jobs:
         ${STDOUT}
         \`\`\`
         EOF
+ 
+        # 4. Sanitize string for when it is injected into js template string later
+        # Sanitize ` into \`
+        STDOUT="${STDOUT//\`/'\`'}"
+        # Sanitize ${} into \${}
+        STDOUT="${STDOUT//\${/'\${'}"
 
-        # 4. Serialize into single-line string for transfer using outputs that only support single line
+        # 5. Serialize into single-line string for transfer using outputs that only support single line
         STDOUT="${STDOUT//'%'/'%25'}"
         STDOUT="${STDOUT//$'\n'/'%0A'}"
         STDOUT="${STDOUT//$'\r'/'%0D'}"
 
-        # 5. Write output 
-        echo "::set-output name=stdout::$STDOUT"
+        # 6. Write output 
+        echo "stdout=$STDOUT" >> $GITHUB_OUTPUT
 
     - name: Upload Plan Artifact
       uses: actions/upload-artifact@v3
@@ -296,6 +302,10 @@ jobs:
           } else {
             commentBody += '\n' + jobBody;
           }
+
+          commentBody = commentBody
+            .replaceAll("%0A", "\n")
+            .replaceAll("%0D", "\n");
 
           if (id) {
             github.rest.issues.updateComment({
