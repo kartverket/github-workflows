@@ -204,9 +204,9 @@ jobs:
  
         # 4. Sanitize string for when it is injected into js template string later
         # Sanitize ` into \`
-        STDOUT="${STDOUT//\`/'\\`'}"
+        STDOUT="${STDOUT//\`/'\\\\`'}"
         # Sanitize ${} into \${}
-        STDOUT="${STDOUT//\${/'\\${'}"
+        STDOUT="${STDOUT//\${/'\\\\${'}"
 
         # 5. Serialize into single-line string for transfer using outputs that only support single line
         STDOUT="${STDOUT//'%'/'%25'}"
