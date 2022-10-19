@@ -303,6 +303,10 @@ jobs:
             commentBody += '\n' + jobBody;
           }
 
+          commentBody = commentBody
+            .replaceAll("%0A", "\n")
+            .replaceAll("%0D", "\n");
+
           if (id) {
             github.rest.issues.updateComment({
               comment_id: id,
