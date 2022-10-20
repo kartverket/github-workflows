@@ -385,9 +385,6 @@ jobs:
           name: plan-${{ inputs.environment }}.tfplan
           path: ${{ inputs.working_directory }}
 
-      - name: Select/Create Terraform Workspace
-        run: terraform workspace select $TF_WORKSPACE || terraform workspace new $TF_WORKSPACE
-
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
         run: terraform init ${{ inputs.terraform_backend_config }}
