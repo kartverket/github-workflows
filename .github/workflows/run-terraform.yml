@@ -115,11 +115,13 @@ jobs:
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
       id: format
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working_directory }}
       run: |
         echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
         terraform fmt -check -no-color || { echo '
         FAILURE! The above files are not properly formatted.
-        Run `terraform fmt` in ${{ inputs.working_directory }}, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
+        Run `terraform fmt` in $WORKING_DIRECTORY, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
   terraform_plan:
     name: Terraform Plan
@@ -170,7 +172,9 @@ jobs:
 
     - name: Authenticate with Kubernetes
       if: inputs.kubernetes_cluster != ''
-      run: gcloud container hub memberships get-credentials ${{ inputs.kubernetes_cluster }} --verbosity debug
+      env:
+        KUBERNETES_CLUSTER: ${{ inputs.kubernetes_cluster }}
+      run: gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug
 
     - name: Authenticate with Vault
       if: inputs.vault_role != ''
@@ -188,9 +192,11 @@ jobs:
 
     - name: Terraform Plan
       id: plan
+      env:
+        ENV: ${{ inputs.environment }}
       run: |
         # 1. Run and send stdout to build log as usual
-        terraform plan ${{ inputs.terraform_options }} -input=false -no-color -detailed-exitcode -out=plan-${{ inputs.environment }}.tfplan | tee output.txt
+        terraform plan ${{ inputs.terraform_options }} -input=false -no-color -detailed-exitcode -out=plan-$ENV.tfplan | tee output.txt
 
         # 2. Remove some github commands and fluff
         STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
@@ -384,7 +390,9 @@ jobs:
 
     - name: Authenticate with Kubernetes
       if: inputs.kubernetes_cluster != ''
-      run: gcloud container hub memberships get-credentials ${{ inputs.kubernetes_cluster }} --verbosity debug
+      env:
+        KUBERNETES_CLUSTER: ${{ inputs.kubernetes_cluster }}
+      run: gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug
 
     - name: Authenticate with Vault
       if: inputs.vault_role != ''
@@ -413,8 +421,10 @@ jobs:
 
     - name: Run Terraform
       if: inputs.destroy == false
+      env:
+        ENV: ${{ inputs.environment }}
       run: |
-        terraform apply -input=false plan-${{ inputs.environment }}.tfplan
+        terraform apply -input=false plan-$ENV.tfplan
 
   attest-deploy:
     if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
@@ -436,14 +446,16 @@ jobs:
 
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
+        env:
+          IMAGE_URL: ${{ inputs.image_url }}
         run: |
           # If image_url = registry/repository@digest
-          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          if [[ "$IMAGE_URL" == *"@"* ]] 
           then
-            image_digest_url="${{ inputs.image_url }}"
+            image_digest_url="$IMAGE_URL"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=${{ inputs.image_url }}
+            image_tag_url=$IMAGE_URL
             digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
@@ -452,8 +464,11 @@ jobs:
 
       - name: Check if already attested
         id: get-attestation
+        env:
+          ENV: ${{ inputs.env }}
+          PROJECT_ID: ${{ inputs.project_id }}
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="${{ inputs.project_id }}" --attestor="projects/${{ inputs.project_id }}/attestors/Deploy-${{ inputs.environment }}" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="$PROJECT_ID" --attestor="projects/$PROJECT_ID/attestors/Deploy-$ENV" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "::set-output name=attestation::$attestationoutput"
       
@@ -462,15 +477,18 @@ jobs:
         id: attest-deploy
         # Note: msg is an empty string when no attestation is done
         if: steps.get-attestation.outputs.attestation == ''
+        env:
+          ENV: ${{ inputs.env }}
+          PROJECT_ID: ${{ inputs.project_id }}
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="${{ inputs.project_id }}" \
+            --project="$PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
-            --attestor="Deploy-${{ inputs.environment }}" \
-            --attestor-project="${{ inputs.project_id }}" \
-            --keyversion-project="${{ inputs.project_id }}" \
+            --attestor="Deploy-$ENV" \
+            --attestor-project="$PROJECT_ID" \
+            --keyversion-project="$PROJECT_ID" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Deploy-${{ inputs.environment }}-Key" \
+            --keyversion-key="Deploy-$ENV-Key" \
             --keyversion="1"
           echo Attestation succeded
