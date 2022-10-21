@@ -275,13 +275,13 @@ jobs:
           const comment = comments.find(({ body }) => body.startsWith(bodyStartMarker));
           const id = comment?.id;
           let commentBody = comment?.body ?? bodyStartMarker;
-          const bodyHasJobInfo = commentBody.includes('<!-- @run-terraform:start:${ENV} -->');
+          const bodyHasJobInfo = commentBody.includes(`<!-- @run-terraform:start:${ENV} -->`);
 
           const exitcode = PLAN_EXITCODE;
           const action = {
             0: 'No changes detected. Will not run Terraform apply job',
             1: 'An error occured! Will not run Terraform apply job',
-            2: 'Changes detected. Will run Terraform apply job on merge to ${DEPLOY_ON}'
+            2: `Changes detected. Will run Terraform apply job on merge to ${DEPLOY_ON}`
           }[exitcode] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
           
           const jobBody = `<!-- @run-terraform:start:${ENV} -->
@@ -315,7 +315,7 @@ jobs:
 
           if (bodyHasJobInfo) {
             commentBody = commentBody.replace(
-              /<!-- @run-terraform:start:${ENV} -->.*<!-- @run-terraform:end:${ENV} -->/s,
+              new RegExp(`<!-- @run-terraform:start:${ENV} -->.*<!-- @run-terraform:end:${ENV} -->`, 's'),
               jobBody,
             );
           } else {
