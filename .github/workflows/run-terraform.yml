@@ -201,19 +201,13 @@ jobs:
         ${STDOUT}
         \`\`\`
         EOF
- 
-        # 4. Sanitize string for when it is injected into js template string later
-        # Sanitize ` into \`
-        STDOUT="${STDOUT//\`/'\`'}"
-        # Sanitize ${} into \${}
-        STDOUT="${STDOUT//\${/'\${'}"
 
-        # 5. Serialize into single-line string for transfer using outputs that only support single line
+        # 4. Serialize into single-line string for transfer using outputs that only support single line
         STDOUT="${STDOUT//'%'/'%25'}"
         STDOUT="${STDOUT//$'\n'/'%0A'}"
         STDOUT="${STDOUT//$'\r'/'%0D'}"
 
-        # 6. Write output 
+        # 5. Write output 
         echo "stdout=$STDOUT" >> $GITHUB_OUTPUT
 
     - name: Upload Plan Artifact
@@ -237,6 +231,18 @@ jobs:
     steps:
     - name: Update Pull Request
       uses: actions/github-script@v6
+      env:
+        # Passing via env vars to sanitize untrusted inputs
+        ENV: ${{ inputs.environment }}
+        PLAN_EXITCODE: ${{ needs.terraform_plan.outputs.plan_exitcode }}
+        DEPLOY_ON: ${{ inputs.deploy_on }}
+        VALIDATE_OUTPUT: ${{ needs.terraform_check.outputs.validate_stdout }}
+        PLAN_OUTPUT: ${{ needs.terraform_plan.outputs.plan_stdout }}
+        FORMAT_OUTCOME: ${{ needs.terraform_check.outputs.format_outcome }}
+        INIT_OUTCOME: ${{ needs.terraform_plan.outputs.init_outcome }}
+        VALIDATE_OUTCOME: ${{ needs.terraform_check.outputs.validate_outcome }}
+        PLAN_OUTCOME: ${{ needs.terraform_plan.outputs.plan_outcome }}
+        WORKING_DIRECTORY: ${{ inputs.working_directory }}
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
@@ -245,6 +251,19 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo
           });
+
+          const {
+            ENV,
+            PLAN_EXITCODE,
+            DEPLOY_ON,
+            VALIDATE_OUTPUT,
+            PLAN_OUTPUT,
+            FORMAT_OUTCOME,
+            INIT_OUTCOME,
+            VALIDATE_OUTCOME,
+            PLAN_OUTCOME,
+            WORKING_DIRECTORY,
+          } = process.env;
 
           /* Body is in the format of
           * <!-- @run-terraform -->
@@ -256,34 +275,34 @@ jobs:
           const comment = comments.find(({ body }) => body.startsWith(bodyStartMarker));
           const id = comment?.id;
           let commentBody = comment?.body ?? bodyStartMarker;
-          const bodyHasJobInfo = commentBody.includes('<!-- @run-terraform:start:${{ inputs.environment }} -->');
+          const bodyHasJobInfo = commentBody.includes('<!-- @run-terraform:start:${ENV} -->');
 
-          const exitcode = '${{ needs.terraform_plan.outputs.plan_exitcode }}';
+          const exitcode = PLAN_EXITCODE;
           const action = {
             0: 'No changes detected. Will not run Terraform apply job',
             1: 'An error occured! Will not run Terraform apply job',
-            2: 'Changes detected. Will run Terraform apply job on merge to ${{ inputs.deploy_on }}'
+            2: 'Changes detected. Will run Terraform apply job on merge to ${DEPLOY_ON}'
           }[exitcode] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
           
-          const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
-          ## Results for ${{ inputs.environment }} ${exitcode === '2' ? '– ❗ `CHANGED` ❗' : ''}
-          #### Terraform Format and Style 🖌 \`${{ needs.terraform_check.outputs.format_outcome }}\`
-          #### Terraform Initialization ⚙️ \`${{ needs.terraform_plan.outputs.init_outcome }}\`
-          #### Terraform Validation 🤖 \`${{ needs.terraform_check.outputs.validate_outcome }}\`
+          const jobBody = `<!-- @run-terraform:start:${ENV} -->
+          ## Results for ${ENV} ${exitcode === '2' ? '– ❗ `CHANGED` ❗' : ''}
+          #### Terraform Format and Style 🖌 \`${FORMAT_OUTCOME}\`
+          #### Terraform Initialization ⚙️ \`${INIT_OUTCOME}\`
+          #### Terraform Validation 🤖 \`${VALIDATE_OUTCOME}\`
           <details><summary>Validation Output</summary>
 
           \`\`\`\n
-          ${{ needs.terraform_check.outputs.validate_stdout }}
+          ${VALIDATE_OUTPUT}
           \`\`\`
 
           </details>
 
-          #### Terraform Plan 📖 \`${{ needs.terraform_plan.outputs.plan_outcome }}\`
+          #### Terraform Plan 📖 \`${PLAN_OUTCOME}\`
           
           <details><summary>Show Plan</summary>
           
           \`\`\`\n
-          ${{ needs.terraform_plan.outputs.plan_stdout }}
+          ${PLAN_OUTPUT}
           \`\`\`
           
           </details>
@@ -291,12 +310,12 @@ jobs:
           #### Next action 🚀
           ${action}
           
-          *Pusher: @${{ github.actor }}, Working Directory: \`${{ inputs.working_directory }}\`, Commit: ${{ github.sha }}, Generated at: \`${new Date().toLocaleString('nb')}\`*
-          <!-- @run-terraform:end:${{ inputs.environment }} -->`;
+          *Pusher: @${{ github.actor }}, Working Directory: \`${WORKING_DIRECTORY}\`, Commit: ${{ github.sha }}, Generated at: \`${new Date().toLocaleString('nb')}\`*
+          <!-- @run-terraform:end:${ENV} -->`;
 
           if (bodyHasJobInfo) {
             commentBody = commentBody.replace(
-              /<!-- @run-terraform:start:${{ inputs.environment }} -->.*<!-- @run-terraform:end:${{ inputs.environment }} -->/s,
+              /<!-- @run-terraform:start:${ENV} -->.*<!-- @run-terraform:end:${ENV} -->/s,
               jobBody,
             );
           } else {
