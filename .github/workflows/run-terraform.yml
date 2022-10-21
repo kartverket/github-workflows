@@ -480,10 +480,11 @@ jobs:
         env:
           ENV: ${{ inputs.env }}
           PROJECT_ID: ${{ inputs.project_id }}
+          IMAGE_URL: ${{ steps.image-digest-url.outputs.image_url }}
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="$PROJECT_ID" \
-            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
+            --artifact-url="$IMAGE_URL" \
             --attestor="Deploy-$ENV" \
             --attestor-project="$PROJECT_ID" \
             --keyversion-project="$PROJECT_ID" \
