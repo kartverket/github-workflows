@@ -449,17 +449,17 @@ jobs:
                 const comment = comments.find(({ body }) => body.startsWith(bodyStartMarker));
                 const id = comment?.id;
                 let commentBody = comment?.body ?? bodyStartMarker;
-                const bodyHasJobInfo = commentBody.includes('<!-- @run-terraform:start:${{ inputs.environment }} -->');
+                const bodyHasJobInfo = commentBody.includes('<!-- @run-terraform:start:$ENV -->');
 
                 const exitcode = '${{ needs.terraform_plan.outputs.plan_exitcode }}';
                 const action = {
                   0: 'No changes detected. Will not run Terraform apply job',
                   1: 'An error occured! Will not run Terraform apply job',
-                  2: 'Changes detected. Will run Terraform apply job on merge to ${{ inputs.deploy_on }}'
+                  2: 'Changes detected. Will run Terraform apply job on merge to $DEPLOY_ON'
                 }[exitcode] ?? 'Terraform gave an unknown exit code, I don\'t know what happens next!';
 
-                const jobBody = `<!-- @run-terraform:start:${{ inputs.environment }} -->
-                ## Results for ${{ inputs.environment }} ${exitcode === '2' ? '– ❗ `CHANGED` ❗' : ''}
+                const jobBody = `<!-- @run-terraform:start:$ENV -->
+                ## Results for $ENV ${exitcode === '2' ? '– ❗ `CHANGED` ❗' : ''}
                 #### Terraform Format and Style 🖌 \`${{ needs.terraform_check.outputs.format_outcome }}\`
                 #### Terraform Initialization ⚙️ \`${{ needs.terraform_plan.outputs.init_outcome }}\`
                 #### Terraform Validation 🤖 \`${{ needs.terraform_check.outputs.validate_outcome }}\`
@@ -484,12 +484,12 @@ jobs:
                 #### Next action 🚀
                 ${action}
 
-                *Pusher: @${{ github.actor }}, Working Directory: \`${{ inputs.working_directory }}\`, Commit: ${{ github.sha }}, Generated at: \`${new Date().toLocaleString('nb')}\`*
-                <!-- @run-terraform:end:${{ inputs.environment }} -->`;
+                *Pusher: @${{ github.actor }}, Working Directory: \`$WORKING_DIRECTORY\`, Commit: ${{ github.sha }}, Generated at: \`${new Date().toLocaleString('nb')}\`*
+                <!-- @run-terraform:end:$ENV -->`;
 
                 if (bodyHasJobInfo) {
                   commentBody = commentBody.replace(
-                    /<!-- @run-terraform:start:${{ inputs.environment }} -->.*<!-- @run-terraform:end:${{ inputs.environment }} -->/s,
+                    /<!-- @run-terraform:start:$ENV -->.*<!-- @run-terraform:end:$ENV -->/s,
                     jobBody,
                   );
                 } else {
