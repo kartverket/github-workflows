@@ -190,11 +190,14 @@ jobs:
       - name: Create Options Array
         run: |
           IFS='|' read -r -a options <<< "$TF_BACKEND_CONFIG"
+          echo "${options[@]}"
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Pre-Init
         if: inputs.terraform_workspace != ''
-        run: terraform init "${options[@]}"
+        run: |
+          echo "${options[@]}"
+          terraform init "${options[@]}"
 
       - name: Select/Create Terraform Workspace
         if: inputs.terraform_workspace != ''
