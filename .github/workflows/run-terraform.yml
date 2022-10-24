@@ -189,11 +189,13 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Pre-Init
-        id: init
-        run: terraform init ${{ inputs.terraform_backend_config }}
+        id: pre-init
+        run: terraform init $TF_BACKEND_CONFIG
 
       - name: Select/Create Terraform Workspace
-        run: terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
+        run: |
+          echo "{TF_WORKSPACE}={$WORKSPACE}" >> $GITHUB_ENV
+          terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
 
       # Initialize again in case a new workspace was selected
       - name: Terraform Init
