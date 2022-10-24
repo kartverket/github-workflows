@@ -19,6 +19,9 @@ jobs:
       run:
         shell: bash
 
+    env:
+      IMAGE_URL: ${{ inputs.image_url }}
+
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
@@ -28,7 +31,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ inputs.image_url }}
+          image-ref: $IMAGE_URL
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
@@ -49,7 +52,7 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="${{inputs.image_url}}")
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="$IMAGE_URL")
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
           echo "::set-output name=msg::$msg"
           echo "${{ steps.get-attestation.outputs.msg }}"
@@ -58,8 +61,6 @@ jobs:
       # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
       # Attestor name: Trivy-Scan
       - name: Perform attestation
-        env:
-          IMAGE_URL: ${{ inputs.image_url }}
         # TODO: Come up with a better if check
         if: steps.get-attestation.outputs.msg < 1000
         run: |
