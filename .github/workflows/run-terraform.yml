@@ -196,7 +196,7 @@ jobs:
       - name: Select/Create Terraform Workspace
         if: inputs.terraform_workspace != ''
         run: |
-          echo "{TF_WORKSPACE}={$WORKSPACE}" >> $GITHUB_ENV
+          echo "TF_WORKSPACE=$WORKSPACE" >> $GITHUB_ENV
           terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
 
       # Initialize again in case a new workspace was selected
@@ -345,7 +345,7 @@ jobs:
             commentBody = commentBody
               .replaceAll("%0A", "\n")
               .replaceAll("%0D", "\n");
-              
+
             if (id) {
               github.rest.issues.updateComment({
                 comment_id: id,
