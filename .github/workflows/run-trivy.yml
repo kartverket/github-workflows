@@ -20,7 +20,7 @@ jobs:
         shell: bash
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
+      # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -29,16 +29,16 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ inputs.image_url }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-          timeout: '15m'
-          security-checks: 'vuln'
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+          timeout: "15m"
+          security-checks: "vuln"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: "trivy-results.sarif"
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
@@ -58,12 +58,14 @@ jobs:
       # add --validate tag to validate that the Attestation can be verified by the provided Attestor.
       # Attestor name: Trivy-Scan
       - name: Perform attestation
+        env:
+          IMAGE_URL: ${{ inputs.image_url }}
         # TODO: Come up with a better if check
         if: steps.get-attestation.outputs.msg < 1000
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ inputs.image_url }}" \
+            --artifact-url="$IMAGE_URL" \
             --attestor="Trivy-Scan" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="kubernetes-dev-94b9" \

@@ -24,7 +24,9 @@ jobs:
     defaults:
       run:
         shell: bash
-    outputs: 
+    env:
+      IMAGE_URL: ${ {inputs.image_url }}
+    outputs:
       image_url: ${{ steps.image-digest-url.outputs.image_url }}
     steps:
       - name: Checkout repository
@@ -35,23 +37,23 @@ jobs:
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
-      
+
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
-          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          if [[ "$IMAGE_URL" == *"@"* ]] 
           then
-            image_digest_url="${{ inputs.image_url }}"
+            image_digest_url="$IMAGE_URL"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=${{ inputs.image_url }}
+            image_tag_url=$IMAGE_URL
             digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
           echo "::set-output name=image_url::$image_digest_url"
-      
+
       - name: Check if already attested
         id: get-attestation
         run: |
@@ -78,7 +80,7 @@ jobs:
 
   attest-branch:
     name: Image is on main or master branch
-    if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main' 
+    if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     defaults:
       run:
