@@ -19,11 +19,8 @@ jobs:
       run:
         shell: bash
 
-    env:
-      IMAGE_URL: ${{ inputs.image_url }}
-
     steps:
-      # Checkout the repository to the GitHub Actions runner
+    # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -31,17 +28,17 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: $IMAGE_URL
-          format: "sarif"
-          output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH"
-          timeout: "15m"
-          security-checks: "vuln"
+          image-ref: ${{ inputs.image_url }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          timeout: '15m'
+          security-checks: 'vuln'
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: "trivy-results.sarif"
+          sarif_file: 'trivy-results.sarif'
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
@@ -52,9 +49,9 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="$IMAGE_URL")
+          mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="${{inputs.image_url}}")
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
-          echo "msg=$msg" >> $GITHUB_OUTPUT
+          echo "::set-output name=msg::$msg"
           echo "${{ steps.get-attestation.outputs.msg }}"
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations
@@ -66,7 +63,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="$IMAGE_URL" \
+            --artifact-url="${{ inputs.image_url }}" \
             --attestor="Trivy-Scan" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="kubernetes-dev-94b9" \

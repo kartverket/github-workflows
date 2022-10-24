@@ -146,8 +146,6 @@ jobs:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
       WORKSPACE: ${{ inputs.terraform_workspace }}
-      TF_BACKEND_CONFIG: ${{ inputs.terraform_backend_config }}
-      TF_OPTIONS: ${{ inputs.terraform_options }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -202,7 +200,7 @@ jobs:
       # Initialize again in case a new workspace was selected
       - name: Terraform Init
         id: init
-        run: terraform init $TF_BACKEND_CONFIG
+        run: terraform init ${{ inputs.terraform_backend_config }}
 
       - name: Terraform Plan
         id: plan
@@ -210,7 +208,7 @@ jobs:
           ENV: ${{ inputs.environment }}
         run: |
           # 1. Run and send stdout to build log as usual
-          terraform plan $TF_OPTIONS -input=false -no-color -detailed-exitcode -out=plan-$ENV.tfplan | tee output.txt
+          terraform plan ${{ inputs.terraform_options }} -input=false -no-color -detailed-exitcode -out=plan-$ENV.tfplan | tee output.txt
 
           # 2. Remove some github commands and fluff
           STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
@@ -383,8 +381,6 @@ jobs:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
       TF_WORKSPACE: ${{ inputs.terraform_workspace }}
-      TF_BACKEND_CONFIG: ${{ inputs.terraform_backend_config }}
-      TF_OPTIONS: ${{ inputs.terraform_options }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -427,13 +423,13 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: terraform init $TF_BACKEND_CONFIG
+        run: terraform init ${{ inputs.terraform_backend_config }}
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
         if: inputs.destroy == true
         id: destroy
-        run: terraform destroy $TF_OPTIONS -auto-approve
+        run: terraform destroy ${{ inputs.terraform_options }} -auto-approve
 
       - name: Run Terraform
         if: inputs.destroy == false
@@ -476,7 +472,7 @@ jobs:
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
-          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
+          echo "::set-output name=image_url::$image_digest_url"
 
       - name: Check if already attested
         id: get-attestation
@@ -486,7 +482,7 @@ jobs:
         run: |
           attestation=$(gcloud container binauthz attestations list --project="$PROJECT_ID" --attestor="projects/$PROJECT_ID/attestors/Deploy-$ENV" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
+          echo "::set-output name=attestation::$attestationoutput"
 
       # Attestor name: Deploy-Dev
       - name: Perform attestation of deploy to ${{inputs.environment}}
