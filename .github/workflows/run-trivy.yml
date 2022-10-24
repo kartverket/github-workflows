@@ -54,7 +54,7 @@ jobs:
         run: |
           mystr=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Deploy-Trivy-Scan" --artifact-url="$IMAGE_URL")
           msg=$(printf '%s' "$mystr" | jq --raw-input --slurp '. | length' )
-          echo "::set-output name=msg::$msg"
+          echo "msg=$msg" >> $GITHUB_OUTPUT
           echo "${{ steps.get-attestation.outputs.msg }}"
 
       # https://cloud.google.com/binary-authorization/docs/making-attestations

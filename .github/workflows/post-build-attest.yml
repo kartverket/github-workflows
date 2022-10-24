@@ -26,8 +26,6 @@ jobs:
         shell: bash
     env:
       IMAGE_URL: ${ {inputs.image_url }}
-    outputs:
-      image_url: ${{ steps.image-digest-url.outputs.image_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -52,14 +50,14 @@ jobs:
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
-          echo "::set-output name=image_url::$image_digest_url"
+          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
 
       - name: Check if already attested
         id: get-attestation
         run: |
           attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=attestation::$attestationoutput"
+          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
       # Attestor name: Build-kartverket
       - name: Perform attestation
@@ -95,12 +93,28 @@ jobs:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
 
+      - name: Get Image Digest URL from Image Tag URL
+        id: image-digest-url
+        run: |
+          # If image_url = registry/repository@digest
+          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          then
+            image_digest_url="${{ inputs.image_url }}"
+          else
+            # Convert registry/repository:tag to registry/repository@digest
+            image_tag_url=${{ inputs.image_url }}
+            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
+            base_image_url=${image_tag_url%:*}
+            image_digest_url="${base_image_url}@${digest}"
+          fi
+          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
+
       - name: Check if already attested
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ needs.attest-kartverket-kontekst.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=attestation::$attestationoutput"
+          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
       # Attestor name: Build-master
       - name: Perform attestation
@@ -109,7 +123,7 @@ jobs:
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
-            --artifact-url="${{ needs.attest-kartverket-kontekst.outputs.image_url }}" \
+            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="Build-Master-Branch" \
             --attestor-project="kubernetes-dev-94b9" \
             --keyversion-project="kubernetes-dev-94b9" \
