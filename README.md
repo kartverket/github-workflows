@@ -71,9 +71,9 @@ jobs:
       - name: set outputs with default values
         id: set-output
         run: |
-          echo "::set-output name=workload_identity_provider::${{ env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER }}"
-          echo "::set-output name=service_account::${{ env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT }}"
-          echo "::set-output name=project_id::${{ env.PROJECT_ID }}"
+          echo "workload_identity_provider=${{ env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER }}" >> $GITHUB_OUTPUT
+          echo "service_account=${{ env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT }}" >> $GITHUB_OUTPUT
+          echo "project_id=${{ env.PROJECT_ID }}" >> $GITHUB_OUTPUT
   dev:
     name: Deploy to dev
     needs: setup-env
