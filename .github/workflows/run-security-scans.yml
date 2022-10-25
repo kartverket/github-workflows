@@ -60,7 +60,7 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == 'true' # && github.ref == inputs.deploy_on && (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: inputs.trivy == 'true' && github.event_name == 'push' && github.event_name.pull_request != 'draft'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -82,7 +82,6 @@ jobs:
 
 # To run a dependency scan use trivy fs
 # simultaneously run a scan for vulnerabilities and misconfigurations by adding --security-checks vuln,config.
-
 # By adding --severity HIGH,CRITICAL to the command we can filter results.
 
       - name: Upload Trivy scan results to GitHub Security tab
