@@ -74,10 +74,6 @@ jobs:
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
           timeout: '15m'
 
-# To run a dependency scan use trivy fs
-# simultaneously run a scan for vulnerabilities and misconfigurations by adding --security-checks vuln,config.
-# By adding --severity HIGH,CRITICAL to the command we can filter results.
-
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
