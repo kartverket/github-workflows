@@ -172,24 +172,76 @@ jobs:
 |----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`   |
 | service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
-| image_url                  | string |          | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                            |
+| image_url                  | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                            |
 
 ## run-security-scans
 This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found. 
+Note, in order to not limit/interfere with the developement process, the scans do not run on draft pull requests.
 
 ### Features
-- Runs Trivy, a comprehensive security scanner, on push to main branch.
-- Runs TFSec, a static analysis security scanner for your Terraform code.
-- Creates a binary attestation on the supplied image if there are no _high_ or _critical_ errors in Github Security Code Scanning.  
+- Runs TFSec, a static analysis security scanner for your Terraform code. Does not run on draft pull requests.
+- Runs Trivy, a comprehensive security scanner. Does not run on draft pull requests.
+- Creates a binary attestation on the supplied image if trivy is run.
+- Calls the Github Security Code Scanning API and fails with exit code 1 if there are any _high_ or _critical_ errors.
+- Creates a binary attestation on the supplied image if both TFsec and Trivy scans are run and there are no _high_ or _critical_ errors in Github Security Code Scanning.  
 
 ### Requirements
-- Code Scanning must be appropriatly set up for the scans in the Github Security tab.
+- Code Scanning must be appropriatly set up in the Github Security tab.
 
 ### Example
 ```yaml
 jobs:
   build: 
-    # build image
+    # Example of how to build an image and supply appropriate inputs to run-security-scans reusable workflow
+    # Note outputs derived in the setOutput step and 'tags' set in the meta step
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_url: ${{ steps.setOutput.outputs.image_url }}
+      image_tag_url: ${{ steps.setOutput.outputs.image_tag_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Login against a Docker registry except on draft-PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event.pull_request.draft == false
+        uses: docker/login-action@<version>
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@<version>
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # see https://github.com/docker/metadata-action#tags-input
+          tags: type=sha,format=long
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        id: build-docker
+        uses: docker/build-push-action@<version>
+        with:
+          context: .
+          push: ${{ !github.event.pull_request.draft }} 
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+     
+      - name: Set output with build values
+        id: setOutput
+        run: |
+          echo "image_url=${{ env.REGISTRY }}/${{ github.repository }}@${{ steps.build-docker.outputs.digest }}" >> $GITHUB_OUTPUT
+          echo "image_tag_url=${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }}" >> $GITHUB_OUTPUT
 
   post-build-attest:
     # call to post-build-attest.yml with build image
@@ -214,11 +266,22 @@ jobs:
     with:
       workload_identity_provider: x
       service_account: x
-      image_url: <registry>/<repository>:<tag>
+      image_url: ${{ needs.build.outputs.image_tag_url}} # format is <registry>/<repository>:<tag>
       trivy: <optional>
       tfsec: <optional>
   
   prod:
     dev:
-    # call to run-terraform.yml for prod environment
+    # call to run-terraform.yml for prod environment only after security-scans job 
 ```
+
+### Options
+
+| Key                        | Type   | Required | Description                                                                                                                                                                                                                    |
+|----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`   |
+| service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
+| image_url                  | string | X        | The Docker image url must be of the form `registry/repository:tag` for the run-security-scans workflow                                                                                                                            |
+| trivy                  | boolean |          | An optional boolean that determins whether trivy-scan will be run. Defaults to 'true'.                                                                                                                             |
+| tfsec                  | boolean |          | An optional boolean that determins whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                             |
+

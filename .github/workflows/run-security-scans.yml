@@ -16,11 +16,6 @@ on:
         description: "The GCP service account connected to the identity pool that will be used by Terraform"
         required: true
         type: string
-      deploy_on:
-        description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/head/main`"
-        required: false
-        type: string
-        default: 'refs/heads/main'
       trivy:
         description: "A boolean which determins whether or not trivy vulnerability scan will be run. Defaults to true"
         required: false
@@ -32,11 +27,10 @@ on:
         default: true
         type: string
 
-
 jobs:
   tfsec:
     name: TFSec
-    if: inputs.tfsec == 'true'
+    if: inputs.tfsec == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -77,7 +71,7 @@ jobs:
           image-ref: ${{ inputs.image_url }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
           timeout: '15m'
 
 # To run a dependency scan use trivy fs
@@ -161,7 +155,7 @@ jobs:
 
   attest:
     name: Attest Github Security Code Scanning
-    needs: [ check-github-security ]
+    needs: [ tfsec, trivy, check-github-security ]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
