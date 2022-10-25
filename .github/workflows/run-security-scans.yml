@@ -60,6 +60,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      IMAGE_URL: ${{ inputs.image_url }}
     steps:
     # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
@@ -68,7 +70,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ inputs.image_url }}
+          image-ref: $IMAGE_URL
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
@@ -89,12 +91,12 @@ jobs:
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
-          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          if [[ "$IMAGE_URL" == *"@"* ]] 
           then
-            image_digest_url="${{ inputs.image_url }}"
+            image_digest_url="$IMAGE_URL"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=${{ inputs.image_url }}
+            image_tag_url=$IMAGE_URL
             digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
@@ -157,6 +159,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      IMAGE_URL: ${{ inputs.image_url }}
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
@@ -172,12 +176,12 @@ jobs:
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
-          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          if [[ "$IMAGE_URL" == *"@"* ]] 
           then
-            image_digest_url="${{ inputs.image_url }}"
+            image_digest_url="$IMAGE_URL"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=${{ inputs.image_url }}
+            image_tag_url=$IMAGE_URL
             digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
