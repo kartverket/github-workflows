@@ -193,7 +193,7 @@ jobs:
       - name: Terraform Pre-Init
         if: inputs.terraform_workspace != ''
         run: |
-          terraform init $TF_BACKEND_CONFIG
+          echo $TF_BACKEND_CONFIG
 
       - name: Select/Create Terraform Workspace
         if: inputs.terraform_workspace != ''
