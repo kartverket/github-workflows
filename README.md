@@ -71,9 +71,9 @@ jobs:
       - name: set outputs with default values
         id: set-output
         run: |
-          echo "::set-output name=workload_identity_provider::${{ env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER }}"
-          echo "::set-output name=service_account::${{ env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT }}"
-          echo "::set-output name=project_id::${{ env.PROJECT_ID }}"
+          echo "workload_identity_provider=${{ env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER }}" >> $GITHUB_OUTPUT
+          echo "service_account=${{ env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT }}" >> $GITHUB_OUTPUT
+          echo "project_id=${{ env.PROJECT_ID }}" >> $GITHUB_OUTPUT
   dev:
     name: Deploy to dev
     needs: setup-env
@@ -117,7 +117,7 @@ this role.
 | workload_identity_provider | string  | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`.  |
 | service_account            | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                         |
 | runner                     | string  | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                         |
-| deploy_on                  | string  |          | Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/head/main`.                                                         |
+| deploy_on                  | string  |          | Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`.                                                         |
 | working_directory          | string  |          | The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository.                                                                                        |
 | project_id                 | string  |          | The GCP Project ID to use as the "active project" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered.                                             |
 | kubernetes_cluster         | string  |          | An optional kubernetes cluster to authenticate to. Note that the project_id must match where the cluster is registered.                                                                                                        |

@@ -24,8 +24,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    outputs: 
-      image_url: ${{ steps.image-digest-url.outputs.image_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -50,14 +48,14 @@ jobs:
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
-          echo "::set-output name=image_url::$image_digest_url"
-
-      - name: Check if already attested by Build-Kartverket attestor
+          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
+      
+      - name: Check if already attested
         id: get-attestation
         run: |
           attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=attestation::$attestationoutput"
+          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
       - name: Perform Build-Kartverket attestation
         id: attest-kartverket-kontekst
@@ -106,14 +104,14 @@ jobs:
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
-          echo "::set-output name=image_url::$image_digest_url"
-      
-      - name: Check if already attested by Build-Master-Branch attestor
+          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
+
+      - name: Check if already attested
         id: get-attestation
         run: |
           attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "::set-output name=attestation::$attestationoutput"
+          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
       - name: Perform Build-Master-Branch attestation
         id: attest-branch
