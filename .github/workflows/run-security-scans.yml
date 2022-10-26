@@ -20,20 +20,17 @@ on:
         description: "A boolean which determins whether or not trivy vulnerability scan will be run. Defaults to true"
         required: false
         default: true
-        type: string
+        type: boolean
       tfsec:
         description: "A boolean which determins whether or not TFSec security scan will be run. Defaults to true"
         required: false
         default: true
-        type: string
+        type: boolean
 
 jobs:
   tfsec:
     name: TFSec
-    env:
-      TFSEC: ${{ inputs.tfsec }}
-      DRAFT: ${{ github.event.pull_request.draft }}
-    if: env.TFSEC == 'true' && env.DRAFT == false
+    if: inputs.tfsec == 'true' && github.event.pull_request.draft == 'false'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -58,12 +55,10 @@ jobs:
   trivy:
     name: Trivy
     env:
-      TRIVY: ${{ inputs.trivy }}
-      DRAFT: ${{ github.event.pull_request.draft }}
       IMAGE_URL: ${{ inputs.image_url }}
       WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
       SERVICE_ACCOUNT: ${{ inputs.service_account }}
-    if: env.TRIVY == 'true' && env.DRAFT == false
+    if: inputs.trivy == 'true' && github.event.pull_request.draft == 'false'
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -78,15 +73,15 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: $IMAGE_URL
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
-          timeout: '15m'
+          format: sarif
+          output: trivy-results.sarif
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          timeout: 15m
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: trivy-results.sarif
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
