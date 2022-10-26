@@ -193,7 +193,7 @@ jobs:
       - name: Terraform Pre-Init
         if: inputs.terraform_workspace != ''
         run: |
-          terraform init $TF_BACKEND_CONFIG
+          terraform init "$TF_BACKEND_CONFIG"
 
       - name: Select/Create Terraform Workspace
         if: inputs.terraform_workspace != ''
@@ -204,7 +204,7 @@ jobs:
       # Initialize again in case a new workspace was selected
       - name: Terraform Init
         id: init
-        run: terraform init $TF_BACKEND_CONFIG
+        run: terraform init "$TF_BACKEND_CONFIG"
 
       - name: Terraform Plan
         id: plan
