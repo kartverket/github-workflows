@@ -30,7 +30,10 @@ on:
 jobs:
   tfsec:
     name: TFSec
-    if: inputs.tfsec == 'true' && github.event.pull_request.draft == false
+    env:
+      TFSEC: ${{ inputs.tfsec }}
+      DRAFT: ${{ github.event.pull_request.draft }}
+    if: $TFSEC == 'true' && $DRAFT == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -54,14 +57,18 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == 'true' && github.event.pull_request.draft == false
+    env:
+      TRIVY: ${{ inputs.trivy }}
+      DRAFT: ${{ github.event.pull_request.draft }}
+      IMAGE_URL: ${{ inputs.image_url }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
+      SERVICE_ACCOUNT: ${{ inputs.service_account }}
+    if: $TRIVY == 'true' && $DRAFT == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
-    env:
-      IMAGE_URL: ${{ inputs.image_url }}
     steps:
     # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
@@ -84,8 +91,8 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account }}
+          workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
+          service_account: $SERVICE_ACCOUNT
       
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
@@ -161,6 +168,8 @@ jobs:
         shell: bash
     env:
       IMAGE_URL: ${{ inputs.image_url }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
+      SERVICE_ACCOUNT: ${{ inputs.service_account }}
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
@@ -169,8 +178,8 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account }}
+          workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
+          service_account: $SERVICE_ACCOUNT
       
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
