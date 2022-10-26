@@ -33,7 +33,7 @@ jobs:
     env:
       TFSEC: ${{ inputs.tfsec }}
       DRAFT: ${{ github.event.pull_request.draft }}
-    if: $TFSEC == 'true' && $DRAFT == false
+    if: env.TFSEC == 'true' && env.DRAFT == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -63,7 +63,7 @@ jobs:
       IMAGE_URL: ${{ inputs.image_url }}
       WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
       SERVICE_ACCOUNT: ${{ inputs.service_account }}
-    if: $TRIVY == 'true' && $DRAFT == false
+    if: env.TRIVY == 'true' && env.DRAFT == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
