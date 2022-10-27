@@ -54,16 +54,16 @@ jobs:
 
   trivy:
     name: Trivy
-    env:
-      IMAGE_URL: ${{ inputs.image_url }}
-      WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
-      SERVICE_ACCOUNT: ${{ inputs.service_account }}
     if: inputs.trivy == 'true' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
+    env:
+      IMAGE_URL: ${{ inputs.image_url }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
+      SERVICE_ACCOUNT: ${{ inputs.service_account }}
     steps:
     # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
