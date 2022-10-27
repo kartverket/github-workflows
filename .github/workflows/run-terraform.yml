@@ -637,7 +637,7 @@ jobs:
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
       
-      # Attestor name: Deploy-ENV
+      # Attestor name: Deploy-<environment>
       - name: Perform attestation of deploy to ${{inputs.environment}}
         id: attest-deploy
         # Note: msg is an empty string when no attestation is done
