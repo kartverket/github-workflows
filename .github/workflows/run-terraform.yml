@@ -593,7 +593,7 @@ jobs:
 
   attest-deploy:
     if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
-    name: Attest deploy to ${{ inputs.environment }}
+    name: Attest deploy to environment
     needs: run_terraform
     runs-on: ubuntu-latest
     defaults:
@@ -627,7 +627,7 @@ jobs:
           fi
           echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
 
-      - name: Check if already attested by Deploy-${{ inputs.environment }} attestor
+      - name: Check if already attested
         id: get-attestation
         env:
           ENV: ${{ inputs.env }}
@@ -637,8 +637,10 @@ jobs:
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
       
+      # Attestor name: Deploy-ENV
       - name: Perform attestation of deploy to ${{inputs.environment}}
         id: attest-deploy
+        # Note: msg is an empty string when no attestation is done
         if: steps.get-attestation.outputs.attestation == ''
         env:
           ENV: ${{ inputs.env }}
