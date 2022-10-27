@@ -187,6 +187,7 @@ Note, in order to not limit/interfere with the developement process, the scans d
 
 ### Requirements
 - Code Scanning must be appropriatly set up in the Github Security tab.
+- Note that the image built during your build-job must be pushed to the registry on all but draft PRs for the workflow to work as intended (see example build job below, paying extra attention to lines following `# Note: ...`)
 
 ### Example
 ```yaml
@@ -223,7 +224,7 @@ jobs:
         uses: docker/metadata-action@<version>
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # see https://github.com/docker/metadata-action#tags-input
+          # Note: checkout https://github.com/docker/metadata-action#tags-input for tag format options
           tags: type=sha,format=long
 
       # Build and push Docker image with Buildx (don't push on PR)
@@ -233,12 +234,14 @@ jobs:
         uses: docker/build-push-action@<version>
         with:
           context: .
+          # Note: The image must be pushed to registry in all cases except for draft PRs
           push: ${{ !github.event.pull_request.draft }} 
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
      
       - name: Set output with build values
         id: setOutput
+        # Note: The image url is output in both `registry/repository:tag` and `registry/repository@digest` formats 
         run: |
           echo "image_url=${{ env.REGISTRY }}/${{ github.repository }}@${{ steps.build-docker.outputs.digest }}" >> $GITHUB_OUTPUT
           echo "image_tag_url=${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }}" >> $GITHUB_OUTPUT
