@@ -17,6 +17,11 @@ on:
         required: true
         type: string
 
+env:
+  WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
+  SERVICE_ACCOUNT: ${{ inputs.service_account }}
+  IMAGE_URL: ${{ inputs.image_url }}
+
 jobs:
   attest-kartverket-kontekst:
     name: Image in context of kartverket
@@ -24,8 +29,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      IMAGE_URL: ${ {inputs.image_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -33,8 +36,8 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
 
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
@@ -90,19 +93,19 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
 
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
-          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          if [[ "$IMAGE_URL" == *"@"* ]] 
           then
-            image_digest_url="${{ inputs.image_url }}"
+            image_digest_url="$IMAGE_URL"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=${{ inputs.image_url }}
+            image_tag_url="$IMAGE_URL"
             digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
