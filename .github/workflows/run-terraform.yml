@@ -126,7 +126,7 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: terraform init -backend=false
+        run: terraform init -backend=false -input=false
 
       - name: Terraform Validate
         id: validate
@@ -213,7 +213,7 @@ jobs:
       - name: Terraform Pre-Init
         if: inputs.terraform_workspace != ''
         run: |
-          terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3"
+          terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3" -input=false
 
       - name: Select/Create Terraform Workspace
         if: inputs.terraform_workspace != ''
@@ -225,7 +225,7 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
-          terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3"
+          terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3" -input=false
 
       - name: Terraform Plan
         id: plan
@@ -406,8 +406,6 @@ jobs:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
       TF_WORKSPACE: ${{ inputs.terraform_workspace }}
-      TF_OPTIONS: ${{ inputs.terraform_options }}
-      TF_BACKEND_CONFIG: ${{ inputs.terraform_backend_config }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -450,7 +448,7 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3"
+        run: terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3" -input=false
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
