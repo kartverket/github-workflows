@@ -41,12 +41,28 @@ on:
         description: "When provided will set a workspace as the active workspace when planning and deploying"
         required: false
         type: string
-      terraform_options:
-        description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
+      terraform_option_1:
+        description: "An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
         required: false
         type: string
-      terraform_backend_config:
-        description: "Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`"
+      terraform_option_2:
+        description: "An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
+        required: false
+        type: string
+      terraform_option_3:
+        description: "An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
+        required: false
+        type: string
+      terraform_init_option_1:
+        description: "An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
+        required: false
+        type: string
+      terraform_init_option_2:
+        description: "An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
+        required: false
+        type: string
+      terraform_init_option_3:
+        description: "An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
         required: false
         type: string
       vault_role:
@@ -68,6 +84,14 @@ on:
         required: false
         type: boolean
         default: false
+
+env:
+  TF_INIT_OPTION_1: ${{ inputs.terraform_init_option_1 }}
+  TF_INIT_OPTION_2: ${{ inputs.terraform_init_option_2 }}
+  TF_INIT_OPTION_3: ${{ inputs.terraform_init_option_3 }}
+  TF_OPTION_1: ${{ inputs.terraform_option_1 }}
+  TF_OPTION_2: ${{ inputs.terraform_option_2 }}
+  TF_OPTION_3: ${{ inputs.terraform_option_3 }}
 
 jobs:
   terraform_check:
@@ -146,8 +170,6 @@ jobs:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
       WORKSPACE: ${{ inputs.terraform_workspace }}
-      TF_BACKEND_CONFIG: ${{ inputs.terraform_backend_config }}
-      TF_OPTIONS: ${{ inputs.terraform_options }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -188,13 +210,10 @@ jobs:
           certb64: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-      #
-      #    echo "${options[@]}"
       - name: Terraform Pre-Init
         if: inputs.terraform_workspace != ''
         run: |
-          IFS='|' read -r -a options <<< "$TF_BACKEND_CONFIG"
-          terraform init "${options[@]}"
+          terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3"
 
       - name: Select/Create Terraform Workspace
         if: inputs.terraform_workspace != ''
@@ -206,8 +225,7 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
-          IFS='|' read -r -a options <<< "$TF_BACKEND_CONFIG"
-          terraform init "${options[@]}"
+          terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3"
 
       - name: Terraform Plan
         id: plan
@@ -215,8 +233,7 @@ jobs:
           ENV: ${{ inputs.environment }}
         run: |
           # 1. Run and send stdout to build log as usual
-          IFS='|' read -r -a options <<< "$TF_OPTIONS"
-          terraform plan "${options[@]}" -input=false -no-color -detailed-exitcode -out=plan-$ENV.tfplan | tee output.txt
+          terraform plan "$TF_OPTION1" "$TF_OPTION2" "$TF_OPTION3" -input=false -no-color -detailed-exitcode -out=plan-$ENV.tfplan | tee output.txt
 
           # 2. Remove some github commands and fluff
           STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
@@ -433,17 +450,13 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: |
-          IFS='|' read -r -a options <<< "$TF_BACKEND_CONFIG"
-          terraform init "${options[@]}"
+        run: terraform init "$TF_INIT_OPTION1" "$TF_INIT_OPTION2" "$TF_INIT_OPTION3"
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
         if: inputs.destroy == true
         id: destroy
-        run: |
-          IFS='|' read -r -a options <<< "$TF_OPTIONS"
-          terraform destroy "${options[@]}" -auto-approve
+        run: terraform destroy "$TF_OPTION1" "$TF_OPTION2" "$TF_OPTION3" -auto-approve
 
       - name: Run Terraform
         if: inputs.destroy == false
