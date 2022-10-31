@@ -228,7 +228,10 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
-          terraform init "$TF_INIT_OPTION_1" "$TF_INIT_OPTION_2" "$TF_INIT_OPTION_3" -input=false
+          terraform init -input=false \
+            ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} \
+            ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_2"} \
+            ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
 
       - name: Terraform Plan
         id: plan
@@ -236,7 +239,11 @@ jobs:
           ENV: ${{ inputs.environment }}
         run: |
           # 1. Run and send stdout to build log as usual
-          terraform plan "$TF_OPTION_1" "$TF_OPTION_2" "$TF_OPTION_3" -input=false -no-color -detailed-exitcode -out=plan-$ENV.tfplan | tee output.txt
+          terraform plan  -input=false -no-color -detailed-exitcode -out=plan-$ENV.tfplan \
+            ${TF_OPTION_1:+"$TF_OPTION_1"} \
+            ${TF_OPTION_2:+"$TF_OPTION_2"} \
+            ${TF_OPTION_3:+"$TF_OPTION_3"} \
+            | tee output.txt
 
           # 2. Remove some github commands and fluff
           STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
@@ -451,13 +458,21 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: terraform init "$TF_INIT_OPTION_1" "$TF_INIT_OPTION_2" "$TF_INIT_OPTION_3" -input=false
+        run: |
+          terraform init -input=false \
+            ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} \
+            ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_2"} \
+            ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
         if: inputs.destroy == true
         id: destroy
-        run: terraform destroy "$TF_OPTION_1" "$TF_OPTION_2" "$TF_OPTION_3" -auto-approve
+        run: |
+          terraform destroy -auto-approve \
+            ${TF_OPTION_1:+"$TF_OPTION_1"} \
+            ${TF_OPTION_2:+"$TF_OPTION_2"} \
+            ${TF_OPTION_3:+"$TF_OPTION_3"}
 
       - name: Run Terraform
         if: inputs.destroy == false
