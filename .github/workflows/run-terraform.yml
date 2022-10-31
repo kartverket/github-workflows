@@ -161,7 +161,6 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
-      WORKSPACE: ${{ env.terraform_workspace }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -207,7 +206,7 @@ jobs:
       - name: Select/Create Terraform Workspace
         if: env.TF_TMP_WORKSPACE != ''
         run: |
-          echo "TF_WORKSPACE=$WORKSPACE" >> $GITHUB_ENV
+          echo "TF_WORKSPACE=$TF_TMP_WORKSPACE" >> $GITHUB_ENV
           terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
 
       # Initialize again in case a new workspace was selected
