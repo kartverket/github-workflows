@@ -27,10 +27,17 @@ on:
         default: true
         type: boolean
 
+env:
+  WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
+  SERVICE_ACCOUNT: ${{ inputs.service_account }}
+  IMAGE_URL: ${{ inputs.image_url }}
+  TFSEC: ${{ inputs.tfsec }}
+  TRIVY: ${{ inputs.trivy }}
+
 jobs:
   tfsec:
     name: TFSec
-    if: inputs.tfsec == true && github.event.pull_request.draft == false
+    if: env.TFSEC == true && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -54,16 +61,12 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == true && github.event.pull_request.draft == false
+    if: env.TRIVY == true && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
-    env:
-      IMAGE_URL: ${{ inputs.image_url }}
-      WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
-      SERVICE_ACCOUNT: ${{ inputs.service_account }}
     steps:
     # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
@@ -161,10 +164,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      IMAGE_URL: ${{ inputs.image_url }}
-      WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
-      SERVICE_ACCOUNT: ${{ inputs.service_account }}
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
