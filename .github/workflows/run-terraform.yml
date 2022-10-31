@@ -278,7 +278,7 @@ jobs:
           retention-days: 5
 
   update_github:
-    if: (always() && ${{ env.ADD_COMMENT_ON_PR }} == true && github.event_name == 'pull_request')
+    if: (always() && env.ADD_COMMENT_ON_PR == true && github.event_name == 'pull_request')
     needs: [terraform_check, terraform_plan]
     name: Update GitHub
     runs-on: ubuntu-latest
