@@ -278,7 +278,7 @@ jobs:
           retention-days: 5
 
   update_github:
-    if: (always() && env.ADD_COMMENT_ON_PR == true && github.event_name == 'pull_request')
+    if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
     needs: [terraform_check, terraform_plan]
     name: Update GitHub
     runs-on: ubuntu-latest
@@ -401,7 +401,7 @@ jobs:
   run_terraform:
     # TODO We need to verify that env.DEPLOY_ON actually works. Seems to only work on main atm
     needs: [terraform_check, terraform_plan]
-    if: github.ref == env.DEPLOY_ON && github.event_name == 'push' && (needs.terraform_plan.outputs.plan_exitcode == '2' || env.DESTROY == true)
+    if: github.ref == inputs.deploy_on && github.event_name == 'push' && (needs.terraform_plan.outputs.plan_exitcode == '2' || env.DESTROY == true)
     name: Terraform Apply or Destroy
     runs-on: $RUNNER
     environment: $ENVIRONMENT
@@ -480,7 +480,7 @@ jobs:
         run: terraform apply -input=false plan-$ENVIRONMENT.tfplan
 
   attest-deploy:
-    if: env.IMAGE_URL != '' && (env.ENVIRONMENT == 'dev' || env.ENVIRONMENT == 'test')
+    if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
     name: Attest deploy to environment
     needs: run_terraform
     runs-on: ubuntu-latest
