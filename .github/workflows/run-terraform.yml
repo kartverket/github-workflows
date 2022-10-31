@@ -161,10 +161,10 @@ jobs:
 
   terraform_plan:
     name: Terraform Plan
-    runs-on: ${{ env.RUNNER }}
+    runs-on: ${{ $RUNNER }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
-    concurrency: ${{ env.ENVIRONMENT }}
+    concurrency: ${{ $ENVIRONMENT }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -403,11 +403,11 @@ jobs:
     needs: [terraform_check, terraform_plan]
     if: github.ref == env.DEPLOY_ON && github.event_name == 'push' && (needs.terraform_plan.outputs.plan_exitcode == '2' || env.DESTROY == true)
     name: Terraform Apply or Destroy
-    runs-on: ${{ env.RUNNER }}
-    environment: ${{ env.ENVIRONMENT }}
+    runs-on: ${{ $RUNNER }}
+    environment: ${{ $ENVIRONMENT }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
-    concurrency: ${{ env.ENVIRONMENT }}
+    concurrency: ${{ $ENVIRONMENT }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
