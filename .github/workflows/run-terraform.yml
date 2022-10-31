@@ -207,7 +207,7 @@ jobs:
         if: env.TF_TMP_WORKSPACE != ''
         run: |
           echo "TF_WORKSPACE=$TF_TMP_WORKSPACE" >> $GITHUB_ENV
-          terraform workspace select $WORKSPACE || terraform workspace new $WORKSPACE
+          terraform workspace select $TF_TMP_WORKSPACE || terraform workspace new $TF_TMP_WORKSPACE
 
       # Initialize again in case a new workspace was selected
       - name: Terraform Init
