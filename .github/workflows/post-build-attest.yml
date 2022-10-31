@@ -21,6 +21,7 @@ env:
   WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
+  ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
 
 jobs:
   attest-kartverket-kontekst:
@@ -58,21 +59,20 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      # Attestor name: Build-kartverket
-      - name: Perform attestation
+      - name: Perform Build-Kartverket attestation
         id: attest-kartverket-kontekst
         if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
+            --project="$ATTESTOR_PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="Build-Kartverket" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="kubernetes-dev-94b9" \
+            --attestor-project="$ATTESTOR_PROJECT_ID" \
+            --keyversion-project="$ATTESTOR_PROJECT_ID" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
             --keyversion-key="Build-Kartverket-Key" \
@@ -115,21 +115,20 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      # Attestor name: Build-master
-      - name: Perform attestation
+      - name: Perform Build-Master-Branch attestation
         id: attest-branch
-        if: steps.get-attestation.outputs.msg == ''
+        if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
+            --project="$ATTESTOR_PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="Build-Master-Branch" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="kubernetes-dev-94b9" \
+            --attestor-project="$ATTESTOR_PROJECT_ID" \
+            --keyversion-project="$ATTESTOR_PROJECT_ID" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
             --keyversion-key="Build-Master-Branch-Key" \
