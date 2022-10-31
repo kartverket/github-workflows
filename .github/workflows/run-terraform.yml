@@ -213,7 +213,7 @@ jobs:
       - name: Terraform Pre-Init
         if: inputs.terraform_workspace != ''
         run: |
-          terraform init -input=false ${$TF_INIT_OPTION_1+"$TF_INIT_OPTION_1"} ${$TF_INIT_OPTION_2+"$TF_INIT_OPTION_3"} ${$TF_INIT_OPTION_3+"$TF_INIT_OPTION_3"}
+          terraform init -input=false ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_3"} ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
 
       - name: Select/Create Terraform Workspace
         if: inputs.terraform_workspace != ''
