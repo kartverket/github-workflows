@@ -17,6 +17,12 @@ on:
         required: true
         type: string
 
+env:
+  WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
+  SERVICE_ACCOUNT: ${{ inputs.service_account }}
+  IMAGE_URL: ${{ inputs.image_url }}
+  ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
+
 jobs:
   attest-kartverket-kontekst:
     name: Image in context of kartverket
@@ -31,43 +37,42 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account }}
-      
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
-          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          if [[ "$IMAGE_URL" == *"@"* ]] 
           then
-            image_digest_url="${{ inputs.image_url }}"
+            image_digest_url="$IMAGE_URL"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=${{ inputs.image_url }}
+            image_tag_url=$IMAGE_URL
             digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
           fi
           echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
-      
+
       - name: Check if already attested
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      # Attestor name: Build-kartverket
-      - name: Perform attestation
+      - name: Perform Build-Kartverket attestation
         id: attest-kartverket-kontekst
         if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
+            --project="$ATTESTOR_PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="Build-Kartverket" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="kubernetes-dev-94b9" \
+            --attestor-project="$ATTESTOR_PROJECT_ID" \
+            --keyversion-project="$ATTESTOR_PROJECT_ID" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
             --keyversion-key="Build-Kartverket-Key" \
@@ -76,7 +81,7 @@ jobs:
 
   attest-branch:
     name: Image is on main or master branch
-    if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main' 
+    if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -88,19 +93,19 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ inputs.workload_identity_provider }}
-          service_account: ${{ inputs.service_account }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
 
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
           # If image_url = registry/repository@digest
-          if [[ "${{inputs.image_url}}" == *"@"* ]] 
+          if [[ "$IMAGE_URL" == *"@"* ]] 
           then
-            image_digest_url="${{ inputs.image_url }}"
+            image_digest_url="$IMAGE_URL"
           else
             # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=${{ inputs.image_url }}
+            image_tag_url="$IMAGE_URL"
             digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
             base_image_url=${image_tag_url%:*}
             image_digest_url="${base_image_url}@${digest}"
@@ -110,21 +115,20 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="kubernetes-dev-94b9" --attestor="projects/kubernetes-dev-94b9/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      # Attestor name: Build-master
-      - name: Perform attestation
+      - name: Perform Build-Master-Branch attestation
         id: attest-branch
-        if: steps.get-attestation.outputs.msg == ''
+        if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="kubernetes-dev-94b9" \
+            --project="$ATTESTOR_PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="Build-Master-Branch" \
-            --attestor-project="kubernetes-dev-94b9" \
-            --keyversion-project="kubernetes-dev-94b9" \
+            --attestor-project="$ATTESTOR_PROJECT_ID" \
+            --keyversion-project="$ATTESTOR_PROJECT_ID" \
             --keyversion-location="europe-north1" \
             --keyversion-keyring="Attestor-Keyring" \
             --keyversion-key="Build-Master-Branch-Key" \
