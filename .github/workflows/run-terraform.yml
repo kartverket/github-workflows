@@ -278,7 +278,7 @@ jobs:
           retention-days: 5
 
   update_github:
-    if: ${{ always() && env.ADD_COMMENT_ON_PR == true && github.event_name == 'pull_request' }}
+    if: (always() && ${{ env.ADD_COMMENT_ON_PR }} == true && github.event_name == 'pull_request')
     needs: [terraform_check, terraform_plan]
     name: Update GitHub
     runs-on: ubuntu-latest
@@ -418,7 +418,7 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
-      TF_WORKSPACE: ${{ env.TF_TMP_WORKSPACE }}
+      TF_WORKSPACE: "$TF_TMP_WORKSPACE"
 
     steps:
       # Checkout the repository to the GitHub Actions runner
