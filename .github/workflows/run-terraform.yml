@@ -420,7 +420,7 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
-      TF_WORKSPACE: "$TF_TMP_WORKSPACE"
+      TF_WORKSPACE: ${{ inputs.terraform_workspace }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
