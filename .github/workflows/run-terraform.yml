@@ -448,7 +448,7 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: terraform init "$TF_INIT_OPTION_1" "$TF_INIT_OPTION_2" "$TF_INIT_OPTION_3" -input=false
+        run: terraform init -input=false "$TF_INIT_OPTION_1" "$TF_INIT_OPTION_2" "$TF_INIT_OPTION_3"
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
