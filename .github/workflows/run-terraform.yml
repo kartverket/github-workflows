@@ -41,12 +41,28 @@ on:
         description: "When provided will set a workspace as the active workspace when planning and deploying"
         required: false
         type: string
-      terraform_options:
-        description: "Any additional terraform options to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
+      terraform_option_1:
+        description: "An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
         required: false
         type: string
-      terraform_backend_config:
-        description: "Any additional terraform backend-config to be passed to init. For example `-backend-config=dev.gcs.tfbackend`"
+      terraform_option_2:
+        description: "An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
+        required: false
+        type: string
+      terraform_option_3:
+        description: "An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`"
+        required: false
+        type: string
+      terraform_init_option_1:
+        description: "An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
+        required: false
+        type: string
+      terraform_init_option_2:
+        description: "An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
+        required: false
+        type: string
+      terraform_init_option_3:
+        description: "An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
         required: false
         type: string
       vault_role:
@@ -72,19 +88,21 @@ on:
 env:
   WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
-  RUNNER: ${{ inputs.runner }}
   DEPLOY_ON: ${{ inputs.deploy_on }}
   WORKING_DIRECTORY: ${{ inputs.working_directory }}
   PROJECT_ID: ${{ inputs.project_id }}
   ENVIRONMENT: ${{ inputs.environment }}
   KUBERNETES_CLUSTER: ${{ inputs.kubernetes_cluster }}
   TF_TMP_WORKSPACE: ${{ inputs.terraform_workspace }}
-  TF_OPTIONS: ${{ inputs.terraform_options }}
-  TF_BACKEND_CONFIG: ${{ inputs.terraform_backend_config }}
   VAULT_ROLE: ${{ inputs.vault_role }}
   IMAGE_URL: ${{ inputs.image_url }}
-  ADD_COMMENT_ON_PR: ${{ inputs.add_comment_on_pr }}
   DESTROY: ${{ inputs.destroy }}
+  TF_INIT_OPTION_1: ${{ inputs.terraform_init_option_1 }}
+  TF_INIT_OPTION_2: ${{ inputs.terraform_init_option_2 }}
+  TF_INIT_OPTION_3: ${{ inputs.terraform_init_option_3 }}
+  TF_OPTION_1: ${{ inputs.terraform_option_1 }}
+  TF_OPTION_2: ${{ inputs.terraform_option_2 }}
+  TF_OPTION_3: ${{ inputs.terraform_option_3 }}
 
 jobs:
   terraform_check:
@@ -94,7 +112,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: $WORKING_DIRECTORY
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     outputs:
       validate_outcome: ${{ steps.validate.outcome }}
@@ -119,7 +137,7 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: terraform init -backend=false
+        run: terraform init -backend=false -input=false
 
       - name: Terraform Validate
         id: validate
@@ -141,16 +159,16 @@ jobs:
 
   terraform_plan:
     name: Terraform Plan
-    runs-on: ${{ env.RUNNER }}
+    runs-on: ${{ inputs.runner }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
-    concurrency: ${{ env.ENVIRONMENT }}
+    concurrency: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
-        working-directory: $WORKING_DIRECTORY
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     outputs:
       init_outcome: ${{ steps.init.outcome }}
@@ -201,7 +219,11 @@ jobs:
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Pre-Init
         if: env.TF_TMP_WORKSPACE != ''
-        run: terraform init $TF_BACKEND_CONFIG
+        run: |
+          terraform init -input=false \
+            ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} \
+            ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_2"} \
+            ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
 
       - name: Select/Create Terraform Workspace
         if: env.TF_TMP_WORKSPACE != ''
@@ -212,13 +234,21 @@ jobs:
       # Initialize again in case a new workspace was selected
       - name: Terraform Init
         id: init
-        run: terraform init $TF_BACKEND_CONFIG
+        run: |
+          terraform init -input=false \
+            ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} \
+            ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_2"} \
+            ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
 
       - name: Terraform Plan
         id: plan
         run: |
           # 1. Run and send stdout to build log as usual
-          terraform plan $TF_OPTIONS -input=false -no-color -detailed-exitcode -out=plan-$ENVIRONMENT.tfplan | tee output.txt
+          terraform plan -input=false -no-color -detailed-exitcode -out=plan-$ENVIRONMENT.tfplan \
+            ${TF_OPTION_1:+"$TF_OPTION_1"} \
+            ${TF_OPTION_2:+"$TF_OPTION_2"} \
+            ${TF_OPTION_3:+"$TF_OPTION_3"} \
+            | tee output.txt
 
           # 2. Remove some github commands and fluff
           STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
@@ -246,7 +276,7 @@ jobs:
           retention-days: 5
 
   update_github:
-    if: ${{ always() && env.ADD_COMMENT_ON_PR == true && github.event_name == 'pull_request' }}
+    if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
     needs: [terraform_check, terraform_plan]
     name: Update GitHub
     runs-on: ubuntu-latest
@@ -363,19 +393,21 @@ jobs:
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
-                repo: context.repo.repo
-              });
+                repo: context.repo.repo,
+                body: commentBody
+              })
+            }
 
   run_terraform:
     # TODO We need to verify that env.DEPLOY_ON actually works. Seems to only work on main atm
     needs: [terraform_check, terraform_plan]
-    if: github.ref == env.DEPLOY_ON && github.event_name == 'push' && (needs.terraform_plan.outputs.plan_exitcode == '2' || env.DESTROY == true)
+    if: github.ref == inputs.deploy_on && github.event_name == 'push' && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
     name: Terraform Apply or Destroy
-    runs-on: ${{ env.RUNNER }}
-    environment: ${{ env.ENVIRONMENT }}
+    runs-on: ${{ inputs.runner }}
+    environment: ${{ inputs.environment }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
-    concurrency: ${{ env.ENVIRONMENT }}
+    concurrency: ${{ inputs.environment }}
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -386,7 +418,7 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
-      TF_WORKSPACE: ${{ env.TF_TMP_WORKSPACE }}
+      TF_WORKSPACE: ${{ inputs.terraform_workspace }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -427,20 +459,28 @@ jobs:
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
-        run: terraform init $TF_BACKEND_CONFIG
+        run: |
+          terraform init -input=false \
+            ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} \
+            ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_2"} \
+            ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
-        if: env.DESTROY == true
+        if: env.DESTROY == 'true'
         id: destroy
-        run: terraform destroy $TF_OPTIONS -auto-approve
+        run: |
+          terraform destroy -auto-approve \
+            ${TF_OPTION_1:+"$TF_OPTION_1"} \
+            ${TF_OPTION_2:+"$TF_OPTION_2"} \
+            ${TF_OPTION_3:+"$TF_OPTION_3"}
 
       - name: Run Terraform
-        if: env.DESTROY == false
+        if: env.DESTROY == 'false'
         run: terraform apply -input=false plan-$ENVIRONMENT.tfplan
 
   attest-deploy:
-    if: env.IMAGE_URL != '' && (env.ENVIRONMENT == 'dev' || env.ENVIRONMENT == 'test')
+    if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
     name: Attest deploy to environment
     needs: run_terraform
     runs-on: ubuntu-latest
