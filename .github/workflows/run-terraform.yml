@@ -395,8 +395,10 @@ jobs:
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
-                repo: context.repo.repo
-              });
+                repo: context.repo.repo,
+                body: commentBody
+              })
+            }
 
   run_terraform:
     # TODO We need to verify that env.DEPLOY_ON actually works. Seems to only work on main atm
