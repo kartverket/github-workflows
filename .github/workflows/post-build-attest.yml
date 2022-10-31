@@ -33,7 +33,7 @@ jobs:
         with:
           workload_identity_provider: ${{ inputs.workload_identity_provider }}
           service_account: ${{ inputs.service_account }}
-      
+
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
@@ -57,8 +57,7 @@ jobs:
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      # Attestor name: Build-kartverket
-      - name: Perform attestation
+      - name: Perform Build-Kartverket attestation
         id: attest-kartverket-kontekst
         if: steps.get-attestation.outputs.attestation == ''
         run: |
@@ -114,10 +113,9 @@ jobs:
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      # Attestor name: Build-master
-      - name: Perform attestation
+      - name: Perform Build-Master-Branch attestation
         id: attest-branch
-        if: steps.get-attestation.outputs.msg == ''
+        if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
             --project="kubernetes-dev-94b9" \
