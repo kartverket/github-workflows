@@ -114,7 +114,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: $WORKING_DIRECTORY
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     outputs:
       validate_outcome: ${{ steps.validate.outcome }}
@@ -170,7 +170,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: $WORKING_DIRECTORY
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     outputs:
       init_outcome: ${{ steps.init.outcome }}
@@ -413,7 +413,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: "$WORKING_DIRECTORY"
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
