@@ -467,7 +467,7 @@ jobs:
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
-        if: env.DESTROY == true
+        if: env.DESTROY == 'true'
         id: destroy
         run: |
           terraform destroy -auto-approve \
@@ -476,7 +476,7 @@ jobs:
             ${TF_OPTION_3:+"$TF_OPTION_3"}
 
       - name: Run Terraform
-        if: env.DESTROY == false
+        if: env.DESTROY == 'false'
         run: terraform apply -input=false plan-$ENVIRONMENT.tfplan
 
   attest-deploy:
