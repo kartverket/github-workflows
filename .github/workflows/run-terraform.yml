@@ -94,7 +94,7 @@ on:
         default: false
 
 env:
-  WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider_override || projects/inputs.project_number/locations/global/workloadIdentityPools/inputs.product_name-deploy-pool/providers/github-provider' }}
+  WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider_override || 'projects/'inputs.project_number'/locations/global/workloadIdentityPools/'inputs.product_name'-deploy-pool/providers/github-provider' }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   DEPLOY_ON: ${{ inputs.deploy_on }}
   WORKING_DIRECTORY: ${{ inputs.working_directory }}
