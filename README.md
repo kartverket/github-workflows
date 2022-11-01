@@ -40,8 +40,7 @@ jobs:
       terraform_option_1: -var-file=dev.tfvars
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
-      project_number: 123456789123
-      product_name: kartkartkart
+      auth_project_number: 123456789123
       service_account: X
       project_id: X
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
@@ -58,21 +57,21 @@ provide an output that can be mapped to the arguments of the job.
 <details>
 <summary>Click here to see an example of this</summary>
 <code><pre>env:
-  WORKLOAD_IDENTITY_FEDERATION_PROVIDER: X
+  AUTH_PROJECT_NUMBER: X
   WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT: X
   PROJECT_ID: X
 jobs:
   setup-env:
     runs-on: ubuntu-latest
     outputs:
-      workload_identity_provider: ${{ steps.set-output.outputs.workload_identity_provider }}
+      auth_project_number: ${{ steps.set-output.outputs.auth_project_number }}
       service_account: ${{ steps.set-output.outputs.service_account }}
       project_id: ${{ steps.set-output.outputs.project_id }}
     steps:
       - name: set outputs with default values
         id: set-output
         run: |
-          echo "workload_identity_provider=${{ env.WORKLOAD_IDENTITY_FEDERATION_PROVIDER }}" >> $GITHUB_OUTPUT
+          echo "auth_project_number=${{ env.AUTH_PROJECT_NUMBER }}" >> $GITHUB_OUTPUT
           echo "service_account=${{ env.WORKLOAD_IDENTITY_FEDERATION_SERVICE_ACCOUNT }}" >> $GITHUB_OUTPUT
           echo "project_id=${{ env.PROJECT_ID }}" >> $GITHUB_OUTPUT
   dev:
@@ -89,7 +88,7 @@ jobs:
       terraform_workspace: dev
       terraform_option_1: -var-file=dev.tfvars
       working_directory: terraform
-      workload_identity_provider: ${{ needs.setup-env.outputs.workload_identity_provider }}
+      auth_project_number: ${{ needs.setup-env.outputs.auth_project_number }}
       service_account: ${{ needs.setup-env.outputs.service_account }}
       project_id: ${{ needs.setup-env.outputs.project_id }}</pre></code>
 </details>
@@ -116,10 +115,9 @@ this role.
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                                                                                                                        |
-| project_number                      | number  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
-| product_name                        | string  | X        | The name of the product as given by SKIP in the GCP-service-accounts repository. Examples are skiperator, vault, dfo, nibas, dfa, etc. Used to find workload identity pool provider.                                                                                                                                          |
-| runner                              | string  | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                                                                                                                        |
+| auth_project_number                 | number  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
+| runner                              | string  | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                                                                                                                        |
 | deploy_on                           | string  |          | Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`.                                                                                                                                                       |
 | working_directory                   | string  |          | The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository.                                                                                                                                                                                       |
 | project_id                          | string  |          | The GCP Project ID to use as the "active project" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered.                                                                                                                                            |
@@ -164,18 +162,19 @@ jobs:
       statuses: write
     uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
     with:
-      workload_identity_provider: x
+      auth_project_number: 123456789321
       service_account: x
       image_url: ${{ needs.build.outputs.image_url }} # the image created by build job
 ```
 
 ### Options
 
-| Key                        | Type   | Required | Description                                                                                                                                                                                                                  |
-| -------------------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| workload_identity_provider | string | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}` |
-| service_account            | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                       |
-| image_url                  | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                           |
+| Key                                 | Type   | Required | Description                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| auth_project_number                 | number | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
+| workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
+| service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                                                                                                                        |
+| image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
 
 ## run-security-scans
 
@@ -274,7 +273,7 @@ jobs:
       security-events: write
     uses: kartverket/github-workflows/.github/workflows/run-security-scans.yml@<release tag>
     with:
-      workload_identity_provider: x
+      auth_project_number: 123456789123
       service_account: x
       image_url: ${{ needs.build.outputs.image_tag_url}} # format is <registry>/<repository>:<tag>
       trivy: <optional>
@@ -287,10 +286,11 @@ jobs:
 
 ### Options
 
-| Key                        | Type    | Required | Description                                                                                                                                                                                                                  |
-| -------------------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| workload_identity_provider | string  | X        | The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}` |
-| service_account            | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                       |
-| image_url                  | string  | X        | The Docker image url must be of the form `registry/repository:tag` for the run-security-scans workflow                                                                                                                       |
-| trivy                      | boolean |          | An optional boolean that determins whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                       |
-| tfsec                      | boolean |          | An optional boolean that determins whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                       |
+| Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| auth_project_number                 | number  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
+| workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
+| service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                                                                                                                        |
+| image_url                           | string  | X        | The Docker image url must be of the form `registry/repository:tag` for the run-security-scans workflow                                                                                                                                                                                                                        |
+| trivy                               | boolean |          | An optional boolean that determins whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                        |
+| tfsec                               | boolean |          | An optional boolean that determins whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                        |
