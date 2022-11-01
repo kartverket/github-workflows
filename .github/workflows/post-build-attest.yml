@@ -3,9 +3,13 @@ name: Post Build Attestation
 on:
   workflow_call:
     inputs:
-      workload_identity_provider:
-        description: "The ID of the provider to use for authentication. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`"
+      auth_project_number:
+        description: "The GCP Project Number used for authentication. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool."
         required: true
+        type: number
+      workload_identity_provider_override:
+        description: "The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`"
+        required: false
         type: string
       service_account:
         description: "The GCP service account connected to the identity pool that will be used by Terraform"
@@ -18,18 +22,36 @@ on:
         type: string
 
 env:
-  WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
+  WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
+  AUTH_PROJECT_NUMBER: ${{ inputs.auth_project_number }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
   ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
 
 jobs:
+  setup-env:
+    runs-on: ubuntu-latest
+    outputs:
+      workload_identity_provider: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
+    steps:
+      - name: Set vars
+        id: set-output
+        run: |
+          PRODUCT_NAME=$(echo $SERVICE_ACCOUNT | sed 's/-deploy.*//')
+          DEFAULT_WORKLOAD_IDENTITY="projects/$AUTH_PROJECT_NUMBER/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider"
+          OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
+          PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
+          echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
+
   attest-kartverket-kontekst:
     name: Image in context of kartverket
+    needs: [setup-env]
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
+    env:
+      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -81,11 +103,14 @@ jobs:
 
   attest-branch:
     name: Image is on main or master branch
+    needs: [setup-env]
     if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
+    env:
+      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
