@@ -112,15 +112,19 @@ env:
 jobs:
   setup-env:
     runs-on: ubuntu-latest
+    outputs:
+      workload_identity_provider: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
-      - name: Set workload identity provider
-        id: set-output
+      - name: Set vars
         run: |
           PRODUCT_NAME="$SERVICE_ACCOUNT" | sed 's/-.*//'
           DEFAULT_WORKLOAD_IDENTIY="projects/$AUTH_PROJECT_NUMBER/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider"
-          echo ${WORKLOAD_IDENTITY_PROVIDER_OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           PROVIDER=${WORKLOAD_IDENTITY_PROVIDER_OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
-          echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_ENV
+      - name: Test echo
+        run: echo ${WORKLOAD_IDENTITY_PROVIDER_OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
+      - name: Set workload identity provider
+        id: set-output
+        run: echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
 
   terraform_check:
     needs: [setup-env]
@@ -149,7 +153,7 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
+          workload_identity_provider: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: $SERVICE_ACCOUNT
           project_id: $PROJECT_ID
 
@@ -218,7 +222,7 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
           project_id: ${{ env.PROJECT_ID }}
 
@@ -453,7 +457,7 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
           project_id: ${{ env.PROJECT_ID }}
 
@@ -513,7 +517,7 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v0
         with:
-          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
       - name: Get Image Digest URL from Image Tag URL
