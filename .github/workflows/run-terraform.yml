@@ -119,14 +119,11 @@ jobs:
         id: set-output
         run: |
           PRODUCT_NAME=${{ env.SERVICE_ACCOUNT }} | sed 's/-.*//'
+          echo $PRODUCT_NAME
           DEFAULT_WORKLOAD_IDENTITY="projects/${{ env.AUTH_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${PRODUCT_NAME}-deploy-pool/providers/github-provider"
           OVERRIDE=${{ env.WORKLOAD_IDENTITY_PROVIDER_OVERRIDE }}
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
-      - name: Test echo
-        run: echo $DEFAULT_WORKLOAD_IDENTITY
-      - name: Test echo 2
-        run: echo $PROVIDER
 
   terraform_check:
     needs: [setup-env]
