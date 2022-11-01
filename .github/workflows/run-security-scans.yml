@@ -31,21 +31,19 @@ env:
   WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
-  TFSEC: ${{ inputs.tfsec }}
-  TRIVY: ${{ inputs.trivy }}
   ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
 
 jobs:
   tfsec:
     name: TFSec
-    if: env.TFSEC == true && github.event.pull_request.draft == false
+    if: inputs.tfsec == true && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
     steps:
-    # Checkout the repository to the GitHub Actions runner
+      # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -62,14 +60,14 @@ jobs:
 
   trivy:
     name: Trivy
-    if: env.TRIVY == true && github.event.pull_request.draft == false
+    if: inputs.trivy == true && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
     steps:
-    # Checkout the repository to the GitHub Actions runner
+      # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -92,7 +90,7 @@ jobs:
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
-      
+
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
@@ -108,14 +106,14 @@ jobs:
             image_digest_url="${base_image_url}@${digest}"
           fi
           echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
-        
+
       - name: Check if already attested by Trivy-Scan attestor
         id: get-attestation
         run: |
           attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Trivy-Scan" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
-      
+
       - name: Perform Trivy-Scan attestation
         id: attest-kartverket-kontekst
         if: steps.get-attestation.outputs.attestation == ''
@@ -135,18 +133,18 @@ jobs:
   check-github-security:
     name: Check Github Security Code Scanning
     if: ${{ always() }}
-    needs: [ tfsec, trivy ]
+    needs: [tfsec, trivy]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
     steps:
-    # Checkout the repository to the GitHub Actions runner
+      # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
 
-    # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
+      # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
       - name: Check for Critical and High Severity
         id: severity_check
         run: |
@@ -159,7 +157,7 @@ jobs:
 
   attest:
     name: Attest Github Security Code Scanning
-    needs: [ tfsec, trivy, check-github-security ]
+    needs: [tfsec, trivy, check-github-security]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -175,7 +173,7 @@ jobs:
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
-      
+
       - name: Get Image Digest URL from Image Tag URL
         id: image-digest-url
         run: |
@@ -191,14 +189,14 @@ jobs:
             image_digest_url="${base_image_url}@${digest}"
           fi
           echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
-        
+
       - name: Check if already attested by Security-Scan attestor
         id: get-attestation
         run: |
           attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Security-Scan" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
-      
+
       - name: Perform Security-Scan attestation
         id: attest-kartverket-kontekst
         if: steps.get-attestation.outputs.attestation == ''
