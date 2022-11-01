@@ -91,8 +91,8 @@ on:
 
 env:
   WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
-  SERVICE_ACCOUNT: ${{ inputs.service_account }}
   AUTH_PROJECT_NUMBER: ${{ inputs.auth_project_number }}
+  SERVICE_ACCOUNT: ${{ inputs.service_account }}
   DEPLOY_ON: ${{ inputs.deploy_on }}
   WORKING_DIRECTORY: ${{ inputs.working_directory }}
   PROJECT_ID: ${{ inputs.project_id }}
