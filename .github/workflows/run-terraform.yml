@@ -116,6 +116,7 @@ jobs:
       workload_identity_provider: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
       - name: Set vars
+        id: set-output
         run: |
           PRODUCT_NAME=${{ env.SERVICE_ACCOUNT }} | sed 's/-.*//'
           DEFAULT_WORKLOAD_IDENTITY=projects/${{ env.AUTH_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider
