@@ -123,9 +123,9 @@ jobs:
           PROVIDER=${OVERRIDE:-"TESTIDENTITY"}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
       - name: Test echo
-        run: echo "$DEFAULT_WORKLOAD_IDENTITY"
+        run: echo $DEFAULT_WORKLOAD_IDENTITY
       - name: Test echo 2
-        run: echo "$PROVIDER"
+        run: echo $PROVIDER
 
   terraform_check:
     needs: [setup-env]
