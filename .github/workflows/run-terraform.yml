@@ -118,7 +118,7 @@ jobs:
       - name: Set vars
         run: |
           PRODUCT_NAME="$SERVICE_ACCOUNT" | sed 's/-.*//'
-          DEFAULT_WORKLOAD_IDENTIY="projects/$AUTH_PROJECT_NUMBER/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider"
+          DEFAULT_WORKLOAD_IDENTITY="projects/$AUTH_PROJECT_NUMBER/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider"
           PROVIDER=${WORKLOAD_IDENTITY_PROVIDER_OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
       - name: Test echo
         run: echo ${WORKLOAD_IDENTITY_PROVIDER_OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
