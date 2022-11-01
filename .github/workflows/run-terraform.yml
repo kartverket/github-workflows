@@ -206,7 +206,7 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
-      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.workload_identity_provider }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
