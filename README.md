@@ -40,7 +40,7 @@ jobs:
       terraform_option_1: -var-file=dev.tfvars
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
-      auth_project_number: 123456789123
+      auth_project_number: "123456789123"
       service_account: X
       project_id: X
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
@@ -115,7 +115,7 @@ this role.
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                                                                                                                        |
-| auth_project_number                 | number  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
+| auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | runner                              | string  | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                                                                                                                        |
 | deploy_on                           | string  |          | Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`.                                                                                                                                                       |
@@ -162,7 +162,7 @@ jobs:
       statuses: write
     uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
     with:
-      auth_project_number: 123456789321
+      auth_project_number: "123456789321"
       service_account: x
       image_url: ${{ needs.build.outputs.image_url }} # the image created by build job
 ```
@@ -171,7 +171,7 @@ jobs:
 
 | Key                                 | Type   | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| auth_project_number                 | number | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
+| auth_project_number                 | string | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
 | workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                                                                                                                        |
 | image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
@@ -273,7 +273,7 @@ jobs:
       security-events: write
     uses: kartverket/github-workflows/.github/workflows/run-security-scans.yml@<release tag>
     with:
-      auth_project_number: 123456789123
+      auth_project_number: "123456789123"
       service_account: x
       image_url: ${{ needs.build.outputs.image_tag_url}} # format is <registry>/<repository>:<tag>
       trivy: <optional>
@@ -288,7 +288,7 @@ jobs:
 
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| auth_project_number                 | number  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
+| auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                                                                                                                        |
 | image_url                           | string  | X        | The Docker image url must be of the form `registry/repository:tag` for the run-security-scans workflow                                                                                                                                                                                                                        |
