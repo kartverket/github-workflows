@@ -121,9 +121,9 @@ jobs:
           DEFAULT_WORKLOAD_IDENTITY="projects/$AUTH_PROJECT_NUMBER/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider"
           PROVIDER=${WORKLOAD_IDENTITY_PROVIDER_OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
       - name: Test echo
-        run: echo $DEFAULT_WORKLOAD_IDENTITY
+        run: echo "$DEFAULT_WORKLOAD_IDENTITY"
       - name: Test echo 2
-        run: echo $PROVIDER
+        run: echo "$PROVIDER"
       - name: Set workload identity provider
         id: set-output
         run: echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
