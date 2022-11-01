@@ -7,14 +7,10 @@ on:
         description: "The GCP service account connected to the identity pool that will be used by Terraform for authentication to GCP."
         required: true
         type: string
-      project_number:
-        description: "The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool."
+      auth_project_number:
+        description: "The GCP Project Number used for authentication. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool."
         required: true
         type: number
-      product_name:
-        description: "The name of the product as given by SKIP in the GCP-service-accounts repository. Examples are skiperator, vault, dfo, nibas, dfa, etc. Used to find workload identity pool provider."
-        required: true
-        type: string
       runner:
         description: "The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`"
         required: true
@@ -94,7 +90,8 @@ on:
         default: false
 
 env:
-  WORKLOAD_IDENTITY_PROVIDER: ${{ inputs.workload_identity_provider_override || format('projects/{0}/locations/global/workloadIdentityPools/{1}-deploy-pool/providers/github-provider', inputs.project_number, inputs.product_name) }}
+  WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
+  AUTH_PROJECT_NUMBER: ${{ inputs.auth_project_number }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   DEPLOY_ON: ${{ inputs.deploy_on }}
   WORKING_DIRECTORY: ${{ inputs.working_directory }}
@@ -113,7 +110,22 @@ env:
   TF_OPTION_3: ${{ inputs.terraform_option_3 }}
 
 jobs:
+  setup-env:
+    runs-on: ubuntu-latest
+    outputs:
+      workload_identity_provider: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
+    steps:
+      - name: Set vars
+        id: set-output
+        run: |
+          PRODUCT_NAME=$(echo ${{ env.SERVICE_ACCOUNT }} | sed 's/-.*//')
+          DEFAULT_WORKLOAD_IDENTITY="projects/${{ env.AUTH_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${PRODUCT_NAME}-deploy-pool/providers/github-provider"
+          OVERRIDE=${{ env.WORKLOAD_IDENTITY_PROVIDER_OVERRIDE }}
+          PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
+          echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
+
   terraform_check:
+    needs: [setup-env]
     name: Terraform Validate
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
@@ -126,6 +138,9 @@ jobs:
       validate_outcome: ${{ steps.validate.outcome }}
       validate_stdout: ${{ steps.validate.outputs.stdout}}
       format_outcome: ${{ steps.format.outcome }}
+
+    env:
+      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -166,6 +181,7 @@ jobs:
           Run `terraform fmt` in $WORKING_DIRECTORY, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
   terraform_plan:
+    needs: [setup-env]
     name: Terraform Plan
     runs-on: ${{ inputs.runner }}
 
@@ -187,6 +203,7 @@ jobs:
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
+      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.workload_identity_provider }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -408,7 +425,7 @@ jobs:
 
   run_terraform:
     # TODO We need to verify that env.DEPLOY_ON actually works. Seems to only work on main atm
-    needs: [terraform_check, terraform_plan]
+    needs: [terraform_check, terraform_plan, setup-env]
     if: github.ref == inputs.deploy_on && github.event_name == 'push' && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
     name: Terraform Apply or Destroy
     runs-on: ${{ inputs.runner }}
@@ -427,6 +444,7 @@ jobs:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
       TF_WORKSPACE: ${{ inputs.terraform_workspace }}
+      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
 
     steps:
       # Checkout the repository to the GitHub Actions runner
@@ -490,11 +508,15 @@ jobs:
   attest-deploy:
     if: inputs.image_url != '' && (inputs.environment == 'dev' || inputs.environment == 'test')
     name: Attest deploy to environment
-    needs: run_terraform
+    needs: [run_terraform]
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
+
+    env:
+      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
