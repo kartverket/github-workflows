@@ -47,9 +47,9 @@ jobs:
       - name: Set vars
         id: set-output
         run: |
-          PRODUCT_NAME=$(echo ${{ env.SERVICE_ACCOUNT }} | sed 's/-deploy.*//')
-          DEFAULT_WORKLOAD_IDENTITY="projects/${{ env.AUTH_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${PRODUCT_NAME}-deploy-pool/providers/github-provider"
-          OVERRIDE=${{ env.WORKLOAD_IDENTITY_PROVIDER_OVERRIDE }}
+          PRODUCT_NAME=$(echo $SERVICE_ACCOUNT | sed 's/-deploy.*//')
+          DEFAULT_WORKLOAD_IDENTITY="projects/$AUTH_PROJECT_NUMBER/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider"
+          OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
 
