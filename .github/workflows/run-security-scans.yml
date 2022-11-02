@@ -155,7 +155,7 @@ jobs:
   check-github-security:
     name: Check Github Security Code Scanning
     if: ${{ always() }}
-    needs: [tfsec, trivy]
+    needs: [tfsec, trivy, setup-env]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -181,7 +181,7 @@ jobs:
 
   attest:
     name: Attest Github Security Code Scanning
-    needs: [tfsec, trivy, check-github-security]
+    needs: [tfsec, trivy, check-github-security, setup-env]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
