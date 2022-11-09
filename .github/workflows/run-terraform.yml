@@ -152,7 +152,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
           service_account: $SERVICE_ACCOUNT
@@ -222,7 +222,7 @@ jobs:
         uses: hashicorp/setup-terraform@78ea3ac2fbe8fe4dab277d1cbd1e6435a91a49cc
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
@@ -458,7 +458,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
@@ -522,7 +522,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
