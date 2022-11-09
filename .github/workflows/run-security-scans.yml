@@ -86,6 +86,13 @@ jobs:
     defaults:
       run:
         shell: bash
+    permissions:
+      contents: read
+      packages: write
+      # required for authentication to GCP
+      id-token: write
+      actions: read
+      security-events: write
     env:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
