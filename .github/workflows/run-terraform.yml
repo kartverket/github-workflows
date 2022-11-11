@@ -154,9 +154,9 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: $WORKLOAD_IDENTITY_PROVIDER
-          service_account: $SERVICE_ACCOUNT
-          project_id: $PROJECT_ID
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+          project_id: ${{ env.PROJECT_ID }}
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
