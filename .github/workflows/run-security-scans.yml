@@ -194,7 +194,7 @@ jobs:
       - name: Check for Critical and High Severity
         id: severity_check
         run: |
-          curly=$(curl -H "Accept: application/vnd.github+json" -H "ref: ${{ github.ref }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq - r)
+          curly=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref:${{github.ref}} | jq - r)
           echo "curly=$curly"
           #severity_check=$(curl -H "Accept: application/vnd.github+json" -H "ref: ${{ github.ref }}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high" or .rule.security_severity_level == "critical"))] | any')
           #echo $severity_check
@@ -205,6 +205,7 @@ jobs:
           #else
           #  echo "else"
           #fi
+          
 
   attest:
     name: Attest Github Security Code Scanning
