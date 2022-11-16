@@ -84,7 +84,7 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == true # && github.event.pull_request.draft == false
+    if: inputs.trivy == true && inputs.image_url != '' # && github.event.pull_request.draft == false
     needs: [setup-env]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
@@ -105,17 +105,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-#     - name: Log into registry
-#       # if: github.event_name != 'pull_request'
-#       uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-#       with:
-#         registry: ${{ env.REGISTRY }}
-#         username: ${{ github.actor }}
-#         password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull image for Trivy
-        run: |
-          docker pull $IMAGE_URL
+      - name: Log into registry and docker pull image
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        run: docker pull $IMAGE_URL
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@9ab158e8597f3b310480b9a69402b419bc03dbd5
@@ -205,6 +201,7 @@ jobs:
 
   attest:
     name: Attest Github Security Code Scanning
+    if: inputs.image_url != ''
     needs: [tfsec, trivy, check-github-security, setup-env]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
