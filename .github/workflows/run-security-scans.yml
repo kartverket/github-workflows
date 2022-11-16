@@ -197,8 +197,9 @@ jobs:
           severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq -e '[.[] | select(.state == "open" and (.rule.security_severity_level == "high" or .rule.security_severity_level == "critical"))] | any')
           if [[ $severity_check == 'true' ]]
           then
-            echo "Error" && exit 1;
+            echo "Error";
           fi
+          exit 1
 
   attest:
     name: Attest Github Security Code Scanning
