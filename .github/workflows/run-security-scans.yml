@@ -105,12 +105,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Log into registry and docker pull image
+      - name: Log into registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker pull image
         run: docker pull $IMAGE_URL
 
       - name: Run Trivy vulnerability scanner
