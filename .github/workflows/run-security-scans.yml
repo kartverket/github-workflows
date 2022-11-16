@@ -115,7 +115,7 @@ jobs:
 
       - name: echo image
         run: |
-          echo ${{ env.IMAGE_URL }} 
+          echo $IMAGE_URL
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@9ab158e8597f3b310480b9a69402b419bc03dbd5
