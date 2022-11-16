@@ -84,7 +84,7 @@ jobs:
 
   trivy:
     name: Trivy
-    if: inputs.trivy == true && inputs.image_url != '' && github.event.pull_request.draft == false
+    if: inputs.trivy == true && inputs.image_url != '' #&& github.event.pull_request.draft == false
     needs: [setup-env]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
@@ -194,8 +194,8 @@ jobs:
       - name: Check for Critical and High Severity
         id: severity_check
         run: |
-          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/refs/pull/18/merge/code-scanning/alerts | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high" or .rule.security_severity_level == "critical"))] | any')
-          echo $severity_check
+          severity_check1=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/refs/pull/18/merge/code-scanning/alerts)
+          echo $severity_check1
           #severity_check=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high" or .rule.security_severity_level == "critical"))] | any')
           if [[ $severity_check == 'true' ]]
           then
