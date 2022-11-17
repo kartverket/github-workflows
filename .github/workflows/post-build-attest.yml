@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       WORKLOAD_IDENTITY_PROVIDER: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
-      REGISTRY: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
+      REGISTRY: ${{ steps.set-output.outputs.REGISTRY }}
     steps:
       - name: Set vars
         id: set-output
@@ -55,7 +55,7 @@ jobs:
         shell: bash
     env:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
-      REGISTRY: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }} 
+      REGISTRY: ${{ needs.setup-env.outputs.REGISTRY }} 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
