@@ -26,7 +26,7 @@ env:
   AUTH_PROJECT_NUMBER: ${{ inputs.auth_project_number }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
-  ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
+  ATTESTOR_PROJECT_ID: kubernetes-dev-94b9i
 
 jobs:
   setup-env:
@@ -42,6 +42,8 @@ jobs:
           OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
+          REGISTRY=$(echo $IMAGE_URL | sed 's/\/.*//')
+          echo "REGISTRY=$REGISTRY" >> GITHUB_OUTPUT
 
   attest-kartverket-kontekst:
     name: Image in context of kartverket
