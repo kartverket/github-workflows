@@ -194,10 +194,10 @@ jobs:
       - name: Check for Critical and High Severity
         id: severity_check
         run: |
-          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=refs/heads/main | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high" or .rule.security_severity_level == "critical"))] | any')
+          severity_check=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{github.ref}} | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high" or .rule.security_severity_level == "critical"))] | any')
           if [[ $severity_check == 'true' ]]
           then
-            echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities. If this is a pull request, search for pr:<number>";
+            echo "Error: High or critical vulnerabilities detected. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities. If this is a pull request, search for 'is:open pr:<pr-number>'";
             exit 1;
           else
             echo "Success! No high or critical code scanning alerts."
