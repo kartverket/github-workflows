@@ -37,7 +37,7 @@ env:
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
   ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
-  BRANCH: ${{ github.ref_name }}
+  BRANCH: ${{ echo github.ref_name | sed 's/\/.*//' }}
   EVENT_NAME: ${{ github.event_name }}
 
 jobs:
