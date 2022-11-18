@@ -22,6 +22,12 @@ This workflow plans and applies Terraform config to deploy to an environment.
 
 ```yaml
 jobs:
+  build: 
+  # ...
+
+  post-build-attest:
+    # call to post-build-attest.yml with build image
+
   dev:
     name: Deploy to dev
     permissions:
@@ -147,7 +153,8 @@ Note the format of the image_url parameter.
 
 ```yaml
 jobs:
-  build: ...
+  build: 
+  # ...
 
   post-build-attest:
     needs: [build]
@@ -179,7 +186,8 @@ jobs:
 ## run-security-scans
 
 This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found.
-Note, in order to not limit/interfere with the developement process, the scans do not run on draft pull requests.
+Note, in order to not limit/interfere with the developement process, the scans do not run on draft pull requests. 
+Additionally, if image_url is not supplied neither Trivy nor Binary Attestation will be performed (i.e. only TFSec scan will run).
 
 ### Features
 
@@ -213,6 +221,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Sets tag 'latest' for images built on main/master branch and tag 'prebuild-temp' on all other image builds
+      - name: Set tag
+        id: set-tag
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+            echo "image_tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "image_tag=prebuild-temp" >> $GITHUB_OUTPUT
+          fi
+
       # Login against a Docker registry except on draft-PR
       # https://github.com/docker/login-action
       - name: Log into registry ${{ env.REGISTRY }}
@@ -231,7 +251,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           # Note: checkout https://github.com/docker/metadata-action#tags-input for tag format options
-          tags: type=sha,format=long
+          tags: |
+            type=sha,format=long
+            type=raw,value=${{ steps.set-tag.outputs.image_tag }}
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
@@ -275,7 +297,7 @@ jobs:
     with:
       auth_project_number: "123456789123"
       service_account: x
-      image_url: ${{ needs.build.outputs.image_tag_url}} # format is <registry>/<repository>:<tag>
+      image_url: ${{ needs.build.outputs.image_tag_url}} # optional, must have format <registry>/<repository>:<tag>
       trivy: <optional>
       tfsec: <optional>
 
@@ -291,6 +313,6 @@ jobs:
 | auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool.                                                                                                                                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform.                                                                                                                                                                                                                                        |
-| image_url                           | string  | X        | The Docker image url must be of the form `registry/repository:tag` for the run-security-scans workflow                                                                                                                                                                                                                        |
+| image_url                           | string  |          | The Docker image url must be of the form `registry/repository:tag` for run-security-scans. It is not required; however, in order to run Trivy and aquire attestations an image_url must be supplied.  workflow                                                                                                                                                                                                                        |
 | trivy                               | boolean |          | An optional boolean that determins whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                        |
 | tfsec                               | boolean |          | An optional boolean that determins whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                        |
