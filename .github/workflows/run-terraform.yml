@@ -108,6 +108,7 @@ env:
   TF_OPTION_1: ${{ inputs.terraform_option_1 }}
   TF_OPTION_2: ${{ inputs.terraform_option_2 }}
   TF_OPTION_3: ${{ inputs.terraform_option_3 }}
+  REGISTRY: ghcr.io
 
 jobs:
   setup-env:
@@ -530,7 +531,7 @@ jobs:
       - name: Log into registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 

@@ -27,13 +27,13 @@ env:
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
   ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
+  REGISTRY: ghcr.io
 
 jobs:
   setup-env:
     runs-on: ubuntu-latest
     outputs:
       WORKLOAD_IDENTITY_PROVIDER: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
-      REGISTRY: ${{ steps.set-output.outputs.REGISTRY }}
     steps:
       - name: Set vars
         id: set-output
@@ -43,8 +43,6 @@ jobs:
           OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
-          REGISTRY=$(echo $IMAGE_URL | sed 's/\/.*//')
-          echo "REGISTRY=$REGISTRY" >> GITHUB_OUTPUT
 
   attest-kartverket-kontekst:
     name: Image in context of kartverket
@@ -68,7 +66,7 @@ jobs:
       - name: Log into registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -134,7 +132,7 @@ jobs:
       - name: Log into registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
