@@ -37,6 +37,8 @@ jobs:
       pull-requests: write
       # For fetching git repo
       contents: read
+      # For accessing repository
+      packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
     with:
       runner: atkv1-dev
@@ -86,6 +88,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write
+      packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2.1
     with:
       runner: atkv1-dev
