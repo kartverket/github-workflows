@@ -21,12 +21,12 @@ on:
         required: true
         type: string
       trivy:
-        description: "A boolean which determins whether or not trivy vulnerability scan will be run. Defaults to true"
+        description: "A boolean which determines whether or not trivy vulnerability scan will be run. Defaults to true"
         required: false
         default: true
         type: boolean
       tfsec:
-        description: "A boolean which determins whether or not TFSec security scan will be run. Defaults to true"
+        description: "A boolean which determines whether or not TFSec security scan will be run. Defaults to true"
         required: false
         default: true
         type: boolean
@@ -206,7 +206,6 @@ jobs:
           else
             echo "Success! No high or critical code scanning alerts."
           fi
-          
 
   attest:
     name: Attest Github Security Code Scanning
