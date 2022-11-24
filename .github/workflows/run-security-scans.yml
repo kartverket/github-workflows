@@ -203,6 +203,10 @@ jobs:
           then
             echo "Error: High or critical vulnerabilities detected on main/master branch. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities.";
             exit 1;
+          elif [[ $severity_check == 'true' &&  $EVENT_NAME == 'workflow_dispatch']]
+          then
+            echo "Error: High or critical vulnerabilities detected on workflow dispatch. Go to the Code Scanning section of the Github Security-tab and review vulnerabilities related to your workflow dispatch run.";
+            exit 1;
           else
             echo "Success! No high or critical code scanning alerts."
           fi
