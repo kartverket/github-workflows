@@ -89,10 +89,10 @@ on:
         type: boolean
         default: false
       unlock:
-        description: "An optional boolean which runs terraform force-unlock when set to true. Defaluts to false"
+        description: "An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set."
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: ""
 
 env:
   WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
@@ -274,10 +274,10 @@ jobs:
 
       # Run terraform force-unlock if 'unlock' is set to true
       - name: Terraform Unlock
-        if: env.UNLOCK == 'true'
+        if: env.UNLOCK != ''
         id: unlock
         run: |
-          terraform force-unlock -force
+          terraform force-unlock -force $UNLOCK
 
       - name: Terraform Plan
         id: plan
