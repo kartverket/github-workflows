@@ -277,10 +277,7 @@ jobs:
         if: env.UNLOCK == 'true'
         id: unlock
         run: |
-          terraform force-unlock -force \
-            ${TF_OPTION_1:+"$TF_OPTION_1"} \
-            ${TF_OPTION_2:+"$TF_OPTION_2"} \
-            ${TF_OPTION_3:+"$TF_OPTION_3"}
+          terraform force-unlock -force
 
       - name: Terraform Plan
         id: plan
