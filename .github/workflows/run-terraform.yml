@@ -88,6 +88,11 @@ on:
         required: false
         type: boolean
         default: false
+      unlock:
+        description: "An optional boolean which runs terraform force-unlock when set to true. Defaluts to false"
+        required: false
+        type: boolean
+        default: false
 
 env:
   WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
@@ -102,6 +107,7 @@ env:
   VAULT_ROLE: ${{ inputs.vault_role }}
   IMAGE_URL: ${{ inputs.image_url }}
   DESTROY: ${{ inputs.destroy }}
+  UNLOCK: ${{ inputs.unlock }}
   TF_INIT_OPTION_1: ${{ inputs.terraform_init_option_1 }}
   TF_INIT_OPTION_2: ${{ inputs.terraform_init_option_2 }}
   TF_INIT_OPTION_3: ${{ inputs.terraform_init_option_3 }}
@@ -265,6 +271,16 @@ jobs:
             ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} \
             ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_2"} \
             ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
+
+      # Run terraform force-unlock if 'unlock' is set to true
+      - name: Terraform Unlock
+        if: env.UNLOCK == 'true'
+        id: unlock
+        run: |
+          terraform force-unlock -force \
+            ${TF_OPTION_1:+"$TF_OPTION_1"} \
+            ${TF_OPTION_2:+"$TF_OPTION_2"} \
+            ${TF_OPTION_3:+"$TF_OPTION_3"}
 
       - name: Terraform Plan
         id: plan
