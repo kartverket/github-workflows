@@ -193,8 +193,9 @@ jobs:
       - name: Check for Critical and High Severity
         id: severity_check
         run: |
+          echo ${{github.ref}}
           severity_check=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{github.ref}} | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high" or .rule.security_severity_level == "critical"))] | any') 
-          if [[ $severity_check == 'true' &&  $EVENT_NAME == 'pull_request' ]]
+          if [[ $severity_check == 'true' && $EVENT_NAME == 'pull_request' ]]
           then
             pr_number=$( echo $BRANCH | sed 's/\/.*//')
             echo "Error: High or critical vulnerabilities detected on pull-request. Go to the Code Scanning section of the Github Security-tab and search for 'is:open pr:$pr_number' to review these vulnerabilities.";
@@ -203,9 +204,9 @@ jobs:
           then
             echo "Error: High or critical vulnerabilities detected on main/master branch. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities.";
             exit 1;
-          elif [[ $severity_check == 'true' &&  $EVENT_NAME == 'workflow_dispatch']]
+          elif [[ $severity_check == 'true' && $EVENT_NAME == 'workflow_dispatch' ]]
           then
-            echo "Error: High or critical vulnerabilities detected on workflow dispatch. Go to the Code Scanning section of the Github Security-tab and review vulnerabilities related to your workflow dispatch run.";
+            echo "Error: High or critical vulnerabilities detected on workflow-dispatch. Go to the Code Scanning section of the Github Security-tab and review vulnerabilities related to your workflow dispatch run.";
             exit 1;
           else
             echo "Success! No high or critical code scanning alerts."
