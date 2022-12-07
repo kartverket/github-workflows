@@ -17,6 +17,7 @@ This workflow plans and applies Terraform config to deploy to an environment.
 - Prevents deploys running in parallel against the same environment crashing due to failing to aquire state lock
 - Allows for the choice of deploying and/or destroying terraform config
 - Performs binary attestation on the image if proivided. Note that for an image to be used in the test and prod environments (i.e. test and prod kubernetes clusters) it will need to be attested in this manner.
+- Will only deploy on push or workflow_dispatch event to main by default. Can be configured to deploy on a different branch using the `deploy_on` input.
 
 ### Example
 
