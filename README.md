@@ -17,6 +17,7 @@ This workflow plans and applies Terraform config to deploy to an environment.
 - Prevents deploys running in parallel against the same environment crashing due to failing to aquire state lock
 - Allows for the choice of deploying and/or destroying terraform config
 - Performs binary attestation on the image if proivided. Note that for an image to be used in the test and prod environments (i.e. test and prod kubernetes clusters) it will need to be attested in this manner.
+- Will only deploy on push or workflow_dispatch event to main by default. Can be configured to deploy on a different branch using the `deploy_on` input.
 
 ### Example
 
@@ -53,6 +54,7 @@ jobs:
       project_id: X
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
       destroy: <optional boolean>
+      unlock: <LOCK_ID>
 ```
 
 ### Passing env vars to run-terraform
@@ -140,6 +142,7 @@ this role.
 | add_comment_on_pr                   | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                                                                                                                    |
 | image_url                           | string  |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                     |
 | destroy                             | boolean |          | An optional boolean that determines whether terraform will be destroyed. Defaults to 'false'.                                                                                                                                                                                                                                 |
+| unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.                                                                                                                                                                                                                                       |
 
 <br />
 
