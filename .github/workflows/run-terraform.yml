@@ -117,6 +117,12 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Echo 
+       run: |
+        echo ${{ github.ref }}
   setup-env:
     runs-on: ubuntu-latest
     outputs:
