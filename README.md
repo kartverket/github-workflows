@@ -4,14 +4,14 @@ Shared reusable workflows for GitHub Actions.
 
 ---
 - [Reusable Workflows](#reusable-workflows)
-  - [run-terraform](#run-terraform)
-    - [Features](#features)
-    - [Example](#example)
-    - [Options](#options)
   - [post-build-attest](#post-build-attest)
     - [Features](#features-1)
     - [Example](#example-1)
     - [Options](#options-1)
+  - [run-terraform](#run-terraform)
+    - [Features](#features)
+    - [Example](#example)
+    - [Options](#options)
   - [run-security-scans](#run-security-scans)
     - [Features](#features-2)
     - [Example](#example-2)
@@ -32,6 +32,53 @@ We currently have 3 reusable workflows (i.e. [run-terraform](#run-terraform), [p
 See [All Workflows Together](#all-workflows-together) for an example of how to optimally use all 3 workflows together.
 
 See [Tips and Tricks](#tips-and-tricks) for more useful information regarding how to use the reusable workflows.
+
+### post-build-attest
+
+This workflow performs binary attestation on a built image.
+Note the format of the image_url parameter.
+
+#### Features
+
+- Logs in to GCP automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
+- Performs binary attestation on the image. Attests (1) that the image was built in context of Kartverket and (2) that the image is on main/master branch.
+
+#### Example
+
+```yaml
+jobs:
+  build:
+  # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
+  # and pushes it to the github registry. This is the image that must be used in all following jobs.
+  # See 'Using outputs' section for suggestions on how to do this.
+
+  post-build-attest:
+    needs: [build]
+    name: Authentication and Attestation of Build
+    permissions:
+      contents: read
+      packages: write
+      # required for authentication to GCP
+      id-token: write
+      actions: read
+      security-events: write
+      statuses: write
+    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
+    with:
+      auth_project_number: "123456789321"
+      service_account: sa-name@project-dev-123.iam.gserviceaccount.com
+      image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
+```
+
+#### Options
+
+| Key                                 | Type   | Required | Description                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| auth_project_number                 | string | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. This project should be your dev environment project, as this is the environment where the attestors are located                                                        |
+| workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
+| service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
+| image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
+
 
 ### run-terraform
 
@@ -90,6 +137,14 @@ jobs:
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by the build job
       destroy: <optional boolean>
       unlock: <optional LOCK_ID>
+
+  test:
+    needs: [build, dev]
+    # approximately the same as 'dev' but for the test environment
+
+  prod:
+    needs: [build, dev, test]
+    # approximately the same as 'dev' but for the prod environment
 ```
 
 #### Options
@@ -115,52 +170,6 @@ jobs:
 | unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.                                                                                                                                                                                                                                       |
 
 <br />
-
-### post-build-attest
-
-This workflow performs binary attestation on a built image.
-Note the format of the image_url parameter.
-
-#### Features
-
-- Logs in to GCP automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
-- Performs binary attestation on the image. Attests (1) that the image was built in context of Kartverket and (2) that the image is on main/master branch.
-
-#### Example
-
-```yaml
-jobs:
-  build:
-  # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
-  # and pushes it to the github registry. This is the image that must be used in all following jobs.
-  # See 'Using outputs' section for suggestions on how to do this.
-
-  post-build-attest:
-    needs: [build]
-    name: Authentication and Attestation of Build
-    permissions:
-      contents: read
-      packages: write
-      # required for authentication to GCP
-      id-token: write
-      actions: read
-      security-events: write
-      statuses: write
-    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
-    with:
-      auth_project_number: "123456789321"
-      service_account: sa-name@project-dev-123.iam.gserviceaccount.com
-      image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
-```
-
-#### Options
-
-| Key                                 | Type   | Required | Description                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| auth_project_number                 | string | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. This project should be your dev environment project, as this is the environment where the attestors are located                                                        |
-| workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
-| service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
-| image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
 
 ### run-security-scans
 
@@ -437,7 +446,9 @@ jobs:
 ```
 
 ### Deploy on workflow dispatch
-If you want to deploy a selected branch to the dev-environment on workflow dispatch. Note that you will need to take care not to interfere with others working in the same repo/environment. 
+If you want to deploy a selected branch to the dev-environment on workflow dispatch. 
+You will need to take care not to interfere with others working in the same repo/environment. 
+Note that the 'deploy_on' input is set to '${{ github.ref }}' and that the only 'on' specified is 'workflow_dispatch'
 
 ```yaml
 name: Deploy to dev on workflow dispatch
@@ -489,7 +500,9 @@ jobs:
 ## Tips and Tricks 
 
 ### Using outputs
-aaa
+> You can use jobs.<job_id>.outputs to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
+
+See the [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
 
 ### Passing env vars to reusable workflows
 
@@ -559,7 +572,12 @@ this role.
 <br />
 
 ## Troubleshooting
-aaa UNLOCK, Destroy
+
+### Locked terraform workloads
+If you experience having a locked terraform workload, run terraform force-unlockl by providing the `LOCK_ID` as the `unlock` input in run-terraform.
+
+### Terraform Destroy
+You can set the `destroy` input in run-terraform to `true` in order to run terraform destroy. 
 
 ## Contributing
 aaa
