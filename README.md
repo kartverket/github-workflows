@@ -2,13 +2,12 @@
 
 Shared reusable workflows for GitHub Actions.
 
----
 - [Reusable Workflows](#reusable-workflows)
   - [post-build-attest](#post-build-attest)
   - [run-terraform](#run-terraform)
   - [run-security-scans](#run-security-scans)
 - [Example usage](#example-usage)
-  - [All Workflows Together](#all-workflows-together)
+  - [Ideal Use of Reusable Workflows](#ideal-use-of-reusable-workflows)
   - [Deploy on workflow dispatch](#deploy-on-workflow-dispatch)
 - [Tips and Tricks](#tips-and-tricks)
   - [Using outputs](#using-outputs)
@@ -17,24 +16,28 @@ Shared reusable workflows for GitHub Actions.
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
-## Reusable Workflows
+---
+---
+# Reusable Workflows
 We currently have 3 reusable workflows (i.e. [run-terraform](#run-terraform), [post-build-attest](#post-build-attest) and [run-security-scans](#run-security-scans)) available for use. 
 
-See [All Workflows Together](#all-workflows-together) for an example of how to optimally use all 3 workflows together.
+See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
-See [Tips and Tricks](#tips-and-tricks) for more useful information regarding how to use the reusable workflows.
+See [Tips and Tricks](#tips-and-tricks) for supporting information regarding usage of the reusable workflows.
 
-### post-build-attest
+<br/>
+
+## post-build-attest
 
 This workflow performs binary attestation on a built image.
 Note the format of the image_url parameter.
 
-#### Features
+### Features
 
 - Logs in to GCP automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
 - Performs binary attestation on the image. Attests (1) that the image was built in context of Kartverket and (2) that the image is on main/master branch.
 
-#### Example
+### Example
 
 ```yaml
 jobs:
@@ -61,7 +64,7 @@ jobs:
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
 ```
 
-#### Options
+### Options
 
 | Key                                 | Type   | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -69,13 +72,12 @@ jobs:
 | workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
 | image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
-
-
-### run-terraform
+<br/>
+## run-terraform
 
 This workflow plans and applies Terraform config to deploy to an environment.
 
-#### Features
+### Features
 
 - Logs in to GCP, Kubernetes and Vault automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
 - Posts comments with relevant information to Pull Requests
@@ -88,7 +90,7 @@ This workflow plans and applies Terraform config to deploy to an environment.
 - Performs binary attestation on the image if proivided. Note that for an image to be used in the test and prod environments (i.e. test and prod kubernetes clusters) it will need to be attested in this manner.
 - Will only deploy on push or workflow_dispatch event to main by default. Can be configured to deploy on a different branch using the `deploy_on` input.
 
-#### Example
+### Example
 
 ```yaml
 jobs:
@@ -138,7 +140,7 @@ jobs:
     # approximately the same as 'dev' but for the prod environment
 ```
 
-#### Options
+### Options
 
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -162,13 +164,14 @@ jobs:
 
 <br />
 
-### run-security-scans
+---
+## run-security-scans
 
 This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found.
 Note, in order to not limit/interfere with the developement process, the scans do not run on draft pull requests.
 Additionally, if image_url is not supplied neither Trivy nor Binary Attestation will be performed (i.e. only TFSec scan will run).
 
-#### Features
+### Features
 
 - Runs TFSec, a static analysis security scanner for your Terraform code. Does not run on draft pull requests.
 - Runs Trivy, a comprehensive security scanner. Does not run on draft pull requests.
@@ -176,12 +179,12 @@ Additionally, if image_url is not supplied neither Trivy nor Binary Attestation 
 - Calls the Github Security Code Scanning API and fails with exit code 1 if there are any _high_ or _critical_ errors.
 - Creates a binary attestation on the supplied image if both TFsec and Trivy scans are run and there are no _high_ or _critical_ errors in Github Security Code Scanning.
 
-#### Requirements
+### Requirements
 
 - Code Scanning must be appropriatly set up in the Github Security tab.
 - Note that the image built during your build-job must be pushed to the registry on all but draft PRs for the workflow to work as intended (see example build job below, paying extra attention to lines following `# Note: ...`)
 
-#### Example
+### Example
 
 ```yaml
 jobs:
@@ -225,7 +228,7 @@ jobs:
     # call to run-terraform.yml for prod environment only after security-scans job, with build image
 ```
 
-#### Options
+### Options
 
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -235,9 +238,12 @@ jobs:
 | image_url                           | string  |          | The Docker image url must be of the form `registry/repository:tag` for run-security-scans. It is not required; however, in order to run Trivy and aquire attestations an image_url must be supplied.                                                                                                                          |
 | trivy                               | boolean |          | An optional boolean that determines whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
 | tfsec                               | boolean |          | An optional boolean that determines whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
-## Example usage
+<br/>
 
-### All workflows together
+# Example Usage
+Below are examples of how to use the reusable workflows for different scenarios
+
+## Ideal Use of Reusable Workflows
 The following is an example of how to use run-terraform, run-security-scans and post-build-attest together to deploy to dev, test and prod environments.
 Note how the use of `jobs.<job_id>.needs` to specify the order in which jobs run. 
 For details on how to use `jobs.<job_id>.outputs` see [Using outputs](#using-outputs).
@@ -438,7 +444,7 @@ jobs:
       image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by the build job
 ```
 
-### Deploy on workflow dispatch
+## Deploy on workflow dispatch
 If you want to deploy a selected branch to the dev-environment on workflow dispatch. 
 You will need to take care not to interfere with others working in the same repo/environment. 
 Note that the 'deploy_on' input is set to '${{ github.ref }}' and that the only 'on' specified is 'workflow_dispatch'
@@ -490,21 +496,21 @@ jobs:
 ```
 
 
-## Tips and Tricks 
+# Tips and Tricks 
 
-### Using outputs
+## Using outputs
 If you want to use outputs from one job in some following job:
 > You can use jobs.<job_id>.outputs to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
 
 See [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
 
-### Using needs
+## Using needs
 If you want jobs to run in a particular order:
 > Use jobs.<job_id>.needs to identify any jobs that must complete successfully before this job will run. [[2](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)]
 
 See [Github Doc: jobs.<job_id>.needs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)
 
-### Passing env vars to reusable workflows
+## Passing env vars to reusable workflows
 
 If you want to use environment variables, passing them to a reusable workflow is 
 a little tricky as this behavior is not currently supported by GitHub.
@@ -555,7 +561,7 @@ jobs:
 </details>
 <br />
 
-### Passing secrets to reusable workflows
+## Passing secrets to reusable workflows
 
 Secrets should be administered through vault and thus there is no explicit
 support for taking GitHub secrets into the action. GitHub will also stop you
@@ -571,13 +577,8 @@ this role.
 <br />
 <br />
 
-## Troubleshooting
+# Troubleshooting
+See [TROUBLESHOOTING.md](https://github.com/kartverket/github-workflows/blob/main/TROUBLESHOOTING.md)
 
-### Locked terraform workloads
-If you experience having a locked terraform workload, run terraform force-unlockl by providing the `LOCK_ID` as the `unlock` input in run-terraform.
-
-### Terraform Destroy
-You can set the `destroy` input in run-terraform to `true` in order to run terraform destroy. 
-
-## Contributing
+# Contributing
 aaa
