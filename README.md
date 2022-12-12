@@ -164,7 +164,6 @@ jobs:
 
 <br />
 
----
 ## run-security-scans
 
 This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found.
@@ -494,7 +493,7 @@ jobs:
       image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by the build job
       deploy_on: ${{ github.ref }} 
 ```
-
+<br/>
 
 # Tips and Tricks 
 
@@ -574,11 +573,13 @@ fetch secrets required at deploy-time.
 
 Each repo needs its own unique `vault_role`. Contact SKIP if you do not have
 this role.
-<br />
+
 <br />
 
 # Troubleshooting
 See [TROUBLESHOOTING.md](https://github.com/kartverket/github-workflows/blob/main/TROUBLESHOOTING.md)
 
+<br />
+
 # Contributing
-aaa
+TBA
