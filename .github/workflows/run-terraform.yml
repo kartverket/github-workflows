@@ -447,8 +447,8 @@ jobs:
     # TODO We need to verify that env.DEPLOY_ON actually works. Seems to only work on main atm
     # changed from github.ref = inputs.deploy_on to github.ref = 'heads/refs/'${{ inputs.deploy_on }}
     needs: [terraform_check, terraform_plan, setup-env]
-   # if: github.ref = 'heads/refs/'${{ inputs.deploy_on }} && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
-    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
+    if: github.ref == 'refs/heads/'inputs.deploy_on && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
+    # if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
     name: Terraform Apply or Destroy
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
