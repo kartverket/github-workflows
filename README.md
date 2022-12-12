@@ -50,7 +50,7 @@ jobs:
   build:
   # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
   # and pushes it to the github registry. This is the image that must be used in all following jobs.
-  # See 'Using outputs' section for suggestions on how to do this.
+  # See 'All Workflows Together' section for an example build job.
 
   post-build-attest:
     needs: [build]
@@ -104,7 +104,7 @@ jobs:
   build:
   # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
   # and pushes it to the github registry. This is the image that must be used in all following jobs.
-  # See 'Using outputs' section for suggestions on how to do this.
+  # See 'All Workflows Together' section for an example build job.
 
   post-build-attest:
     needs: [build]
@@ -197,7 +197,7 @@ jobs:
   build:
     # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
   # and pushes it to the github registry. This is the image that must be used in all following jobs.
-  # See 'Using outputs' section for suggestions on how to do this.
+  # See 'All Workflows Together' section for an example build job.
 
   post-build-attest:
     needs: [build]
@@ -248,6 +248,8 @@ jobs:
 
 ### All workflows together
 The following is an example of how to use run-terraform, run-security-scans and post-build-attest together to deploy to dev, test and prod environments.
+Note how the use of `jobs.<job_id>.needs` to specify the order in which jobs run. 
+For details on how to use `jobs.<job_id>.outputs` see [Using outputs](#using-outputs).
 
 ```yaml
 name: <some name>
@@ -500,9 +502,16 @@ jobs:
 ## Tips and Tricks 
 
 ### Using outputs
+If you want to use outputs from one job in some following job:
 > You can use jobs.<job_id>.outputs to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
 
-See the [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
+See [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
+
+### Using needs
+If you want jobs to run in a particular order:
+> Use jobs.<job_id>.needs to identify any jobs that must complete successfully before this job will run. [[2](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)]
+
+See [Github Doc: jobs.<job_id>.needs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)
 
 ### Passing env vars to reusable workflows
 
