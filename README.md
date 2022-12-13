@@ -586,4 +586,4 @@ See [TROUBLESHOOTING.md](https://github.com/kartverket/github-workflows/blob/mai
 <br />
 
 # Contributing
-TBA
+Get in touch with SKIP if you have any contribution suggestions. 
