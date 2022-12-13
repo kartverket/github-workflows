@@ -244,7 +244,7 @@ Below are examples of how to use the reusable workflows for different scenarios
 
 ## Ideal Use of Reusable Workflows
 The following is an example of how to use run-terraform, run-security-scans and post-build-attest together to deploy to dev, test and prod environments.
-Note how the use of `jobs.<job_id>.needs` to specify the order in which jobs run. 
+Note the use of `jobs.<job_id>.needs` to specify the order in which jobs run. 
 For details on how to use `jobs.<job_id>.outputs` see [Using outputs](#using-outputs).
 
 ```yaml
