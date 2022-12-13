@@ -595,8 +595,7 @@ this role.
 <br />
 
 # Troubleshooting
-
-See [TROUBLESHOOTING.md](https://github.com/kartverket/github-workflows/blob/main/TROUBLESHOOTING.md)
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 <br />
 
