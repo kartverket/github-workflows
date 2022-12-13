@@ -449,7 +449,7 @@ jobs:
 ## Deploy on workflow dispatch
 If you want to deploy a selected branch to the dev-environment on workflow dispatch. 
 You will need to take care not to interfere with others working in the same repo/environment. 
-Note that the 'deploy_on' input is set to '${{ github.ref }}' and that the only 'on' specified is 'workflow_dispatch'
+Note that the `deploy_on` input is set to `${{ github.ref }}` and that the only `on` specified is `workflow_dispatch`
 
 ```yaml
 name: Deploy to dev on workflow dispatch
@@ -503,13 +503,13 @@ Helpful "tips and tricks" for using the reusable workflows can be found below.
 
 ## Using needs
 If you want jobs to run in a particular order:
-> Use jobs.<job_id>.needs to identify any jobs that must complete successfully before this job will run. [[2](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)]
+> Use `jobs.<job_id>.needs` to identify any jobs that must complete successfully before this job will run. [[2](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)]
 
 See [Github Doc: jobs.<job_id>.needs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)
 
 ## Using outputs
 If you want to use outputs from one job in some following job:
-> You can use jobs.<job_id>.outputs to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
+> You can use `jobs.<job_id>.outputs` to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
 
 See [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
 
