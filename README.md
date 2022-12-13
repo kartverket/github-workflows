@@ -30,7 +30,6 @@ See [Tips and Tricks](#tips-and-tricks) for supporting information regarding usa
 ## post-build-attest
 
 This workflow performs binary attestation on a built image.
-Note the format of the image_url parameter.
 
 ### Features
 
@@ -50,7 +49,9 @@ jobs:
     needs: [build]
     name: Authentication and Attestation of Build
     permissions:
+      # For fetching git repo
       contents: read
+      # For accessing repository
       packages: write
       # required for authentication to GCP
       id-token: write
@@ -200,7 +201,9 @@ jobs:
     needs: [build]
     name: Security Scans
     permissions:
+      # For fetching git repo
       contents: read
+      # For accessing repository
       packages: write
       # required for authentication to GCP
       id-token: write
@@ -495,19 +498,20 @@ jobs:
 ```
 <br/>
 
-# Tips and Tricks 
-
-## Using outputs
-If you want to use outputs from one job in some following job:
-> You can use jobs.<job_id>.outputs to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
-
-See [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
+# Tips and Tricks
+Helpful "tips and tricks" for using the reusable workflows can be found below.
 
 ## Using needs
 If you want jobs to run in a particular order:
 > Use jobs.<job_id>.needs to identify any jobs that must complete successfully before this job will run. [[2](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)]
 
 See [Github Doc: jobs.<job_id>.needs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)
+
+## Using outputs
+If you want to use outputs from one job in some following job:
+> You can use jobs.<job_id>.outputs to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
+
+See [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
 
 ## Passing env vars to reusable workflows
 
