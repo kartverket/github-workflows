@@ -595,10 +595,11 @@ this role.
 <br />
 
 # Troubleshooting
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md). 
+If you experience and fix an issue that isn't mentioned there, feel free to add it. 
 
 <br />
 
 # Contributing
 
-Get in touch with SKIP if you have any contribution suggestions.
+Get in touch with SKIP if you have any contribution suggestions, and feel free to create a pull-request. 
