@@ -78,6 +78,7 @@ jobs:
 | image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
 
 <br/>
+
 ## run-terraform
 
 This workflow plans and applies Terraform config to deploy to an environment.
