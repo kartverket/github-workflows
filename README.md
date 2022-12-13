@@ -251,7 +251,7 @@ Note the use of `jobs.<job_id>.needs` to specify the order in which jobs run.
 For details on how to use `jobs.<job_id>.outputs` see [Using outputs](#using-outputs).
 
 ```yaml
-name: <some name>
+name: "Ideal" workflow
 
 # The workflow runs when (1) there is a push to the 'main' branch or (2) there is a push to a pull request onto main branch
 on:
