@@ -17,9 +17,12 @@ Shared reusable workflows for GitHub Actions.
 - [Contributing](#contributing)
 
 ---
+
 ---
+
 # Reusable Workflows
-We currently have 3 reusable workflows (i.e. [run-terraform](#run-terraform), [post-build-attest](#post-build-attest) and [run-security-scans](#run-security-scans)) available for use. 
+
+We currently have 3 reusable workflows (i.e. [run-terraform](#run-terraform), [post-build-attest](#post-build-attest) and [run-security-scans](#run-security-scans)) available for use.
 
 See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
@@ -73,6 +76,7 @@ jobs:
 | workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
 | image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
+
 <br/>
 ## run-terraform
 
@@ -118,7 +122,7 @@ jobs:
       packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
     with:
-      runner: atkv1-dev
+      runner: ubuntu-latest
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
@@ -148,13 +152,13 @@ jobs:
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform. Service account and auth_project_number environment must coincide.                                                                                                                                                                     |
 | auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. Project number and SA environment must coincide                                                                                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
-| runner                              | string  | X        | The GitHub runner to use when running the deploy. This can for example be `atkv1-dev`.                                                                                                                                                                                                                                        |
+| runner                              | string  | X        | The GitHub runner to use when running the deploy. This can for example be `ubuntu-latest`. When using vault, you **have** to use an on-premise runner. These are usually in the format of `atkv1-$ENVIRONMENT`.                                                                                                               |
 | deploy_on                           | string  |          | Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`.                                                                                                                                                       |
 | working_directory                   | string  |          | The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository.                                                                                                                                                                                       |
 | project_id                          | string  |          | The GCP Project ID to use as the "active project" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered.                                                                                                                                            |
 | kubernetes_cluster                  | string  |          | An optional kubernetes cluster to authenticate to. Note that the project_id must match where the cluster is registered.                                                                                                                                                                                                       |
 | environment                         | string  |          | The GitHub environment to use when deploying. See [using environments for deployment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) for more info on this.                                                                                                |
-| vault_role                          | string  |          | Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work.                                                                                                                                                                                                      |
+| vault_role                          | string  |          | Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work. Note also that you must use an on-premise runner when using vault. See `runner ` for information.                                                                                                    |
 | terraform_workspace                 | string  |          | When provided will set a workspace as the active workspace when planning and deploying.                                                                                                                                                                                                                                       |
 | terraform_option_X                  | string  |          | An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`. X may be an integer between 1-3, which allows at most 3 options.                                                                                                                 |
 | terraform_init_option_Y             | string  |          | An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`. Y may be an integer between 1-3, which allows at most 3 init options.                                                                                                                                                   |
@@ -196,7 +200,7 @@ jobs:
   post-build-attest:
     needs: [build]
     # call to post-build-attest.yml with build image
-    
+
   security-scans:
     needs: [build]
     name: Security Scans
@@ -240,14 +244,17 @@ jobs:
 | image_url                           | string  |          | The Docker image url must be of the form `registry/repository:tag` for run-security-scans. It is not required; however, in order to run Trivy and aquire attestations an image_url must be supplied.                                                                                                                          |
 | trivy                               | boolean |          | An optional boolean that determines whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
 | tfsec                               | boolean |          | An optional boolean that determines whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
+
 <br/>
 
 # Example Usage
+
 Below are examples of how to use the reusable workflows for different scenarios
 
 ## Ideal Use of Reusable Workflows
+
 The following is an example of how to use run-terraform, run-security-scans and post-build-attest together to deploy to dev, test and prod environments.
-Note the use of `jobs.<job_id>.needs` to specify the order in which jobs run. 
+Note the use of `jobs.<job_id>.needs` to specify the order in which jobs run.
 For details on how to use `jobs.<job_id>.outputs` see [Using outputs](#using-outputs).
 
 ```yaml
@@ -348,7 +355,7 @@ jobs:
       auth_project_number: "123456789321"
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
       image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by build job
-      
+
   security-scans:
     needs: [build]
     name: Security Scans
@@ -381,7 +388,7 @@ jobs:
       packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
     with:
-      runner: atkv1-dev
+      runner: ubuntu-latest
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
@@ -407,7 +414,7 @@ jobs:
       packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
     with:
-      runner: atkv1-test
+      runner: ubuntu-latest
       environment: test
       kubernetes_cluster: atkv1-test
       terraform_workspace: test
@@ -433,7 +440,7 @@ jobs:
       packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
     with:
-      runner: atkv1-prod
+      runner: ubuntu-latest
       environment: prod
       kubernetes_cluster: atkv1-prod
       terraform_workspace: prod
@@ -447,8 +454,9 @@ jobs:
 ```
 
 ## Deploy on workflow dispatch
-If you want to deploy a selected branch to the dev-environment on workflow dispatch. 
-You will need to take care not to interfere with others working in the same repo/environment. 
+
+If you want to deploy a selected branch to the dev-environment on workflow dispatch.
+You will need to take care not to interfere with others working in the same repo/environment.
 Note that the `deploy_on` input is set to `${{ github.ref }}` and that the only `on` specified is `workflow_dispatch`
 
 ```yaml
@@ -464,7 +472,7 @@ jobs:
   post-build-attest:
     needs: [build]
     # call to post-build-attest.yml with build image
-    
+
   security-scans:
     needs: [build]
     # call to run-security-scans.yml with build image
@@ -483,7 +491,7 @@ jobs:
       packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
     with:
-      runner: atkv1-dev
+      runner: ubuntu-latest
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
@@ -494,28 +502,34 @@ jobs:
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
       project_id: project-dev-123
       image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by the build job
-      deploy_on: ${{ github.ref }} 
+      deploy_on: ${{ github.ref }}
 ```
+
 <br/>
 
 # Tips and Tricks
+
 Helpful "tips and tricks" for using the reusable workflows can be found below.
 
 ## Using needs
+
 If you want jobs to run in a particular order:
+
 > Use `jobs.<job_id>.needs` to identify any jobs that must complete successfully before this job will run. [[2](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)]
 
 See [Github Doc: jobs.<job_id>.needs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds)
 
 ## Using outputs
+
 If you want to use outputs from one job in some following job:
+
 > You can use `jobs.<job_id>.outputs` to create a map of outputs for a job. Job outputs are available to all downstream jobs that depend on this job. [[1](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs)]
 
 See [Github Doc: Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more information.
 
 ## Passing env vars to reusable workflows
 
-If you want to use environment variables, passing them to a reusable workflow is 
+If you want to use environment variables, passing them to a reusable workflow is
 a little tricky as this behavior is not currently supported by GitHub.
 This is a [requested feature](https://github.community/t/passing-environment-variables-to-reusable-workflow/230456/4).
 The current workaround for this is to use a setup-job to consume env vars and
@@ -551,7 +565,7 @@ jobs:
       packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@v2.1
     with:
-      runner: atkv1-dev
+      runner: ubuntu-latest
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
@@ -581,9 +595,11 @@ this role.
 <br />
 
 # Troubleshooting
+
 See [TROUBLESHOOTING.md](https://github.com/kartverket/github-workflows/blob/main/TROUBLESHOOTING.md)
 
 <br />
 
 # Contributing
-Get in touch with SKIP if you have any contribution suggestions. 
+
+Get in touch with SKIP if you have any contribution suggestions.
