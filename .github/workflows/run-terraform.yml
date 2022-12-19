@@ -23,7 +23,6 @@ on:
         description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`"
         required: false
         type: string
-#        default: "refs/heads/main"
       working_directory:
         description: "The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository"
         required: false
@@ -122,6 +121,7 @@ jobs:
     steps:
       - name: Echo 
         env:
+        
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: echo "$GITHUB_CONTEXT"
   
@@ -138,7 +138,10 @@ jobs:
           OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
-
+      - name: Echo github context 
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
 
   terraform_check:
     needs: [setup-env]
@@ -447,14 +450,8 @@ jobs:
             }
 
   run_terraform:
-    # TODO We need to verify that env.DEPLOY_ON actually works. Seems to only work on main atm
-    # changed from github.ref = inputs.deploy_on to github.ref = 'heads/refs/'${{ inputs.deploy_on }}
-
     needs: [terraform_check, terraform_plan, setup-env]
     if: ((github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') || (github.ref == inputs.deploy_on || github.ref_name == inputs.deploy_on)) && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
-    #if: github.ref == format('refs/heads/{0}', inputs.deploy_on) && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    # && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
-    # if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
     name: Terraform Apply or Destroy
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
