@@ -122,8 +122,9 @@ jobs:
     steps:
      - name: Echo 
        run: |
-#        echo ${{ github.ref_name }}
-         echo ${GITHUB_REF}
+        echo ${{ github.ref_name }}
+
+  
   setup-env:
     runs-on: ubuntu-latest
     outputs:
