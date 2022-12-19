@@ -117,12 +117,15 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+
+jobs:
   test:
     runs-on: ubuntu-latest
     steps:
      - name: Echo 
        run: |
-        echo ${{ github.ref_name }}
+#        echo ${{ github.ref_name }}
+         echo ${GITHUB_REF}
   setup-env:
     runs-on: ubuntu-latest
     outputs:
@@ -136,6 +139,7 @@ jobs:
           OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
+
 
   terraform_check:
     needs: [setup-env]
