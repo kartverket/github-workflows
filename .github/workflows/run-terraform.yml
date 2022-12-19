@@ -123,9 +123,9 @@ jobs:
      - name: Echo 
  #      run: |
  #       echo ${{ github}}
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+      run: echo "$GITHUB_CONTEXT"
   
   setup-env:
     runs-on: ubuntu-latest
