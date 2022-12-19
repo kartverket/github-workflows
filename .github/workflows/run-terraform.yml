@@ -121,9 +121,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
      - name: Echo 
-       run: |
-        echo ${{ github}}
-
+ #      run: |
+ #       echo ${{ github}}
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
   
   setup-env:
     runs-on: ubuntu-latest
