@@ -23,7 +23,7 @@ on:
         description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`"
         required: false
         type: string
-      working_directory:
+      working_directory: 
         description: "The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository"
         required: false
         type: string
@@ -116,8 +116,6 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-
-  
   setup-env:
     runs-on: ubuntu-latest
     outputs:
@@ -131,7 +129,6 @@ jobs:
           OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
-
 
   terraform_check:
     needs: [setup-env]
