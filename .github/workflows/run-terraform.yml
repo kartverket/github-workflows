@@ -283,7 +283,7 @@ jobs:
         id: plan
         run: |
           # 1. Run and send stdout to build log as usual
-          if [[env.DESTROY == 'true']] 
+          if [["$DESTROY" == 'true']] 
           then
             terraform plan -destroy -input=false -no-color -detailed-exitcode -out=plan-$ENVIRONMENT.tfplan \
               ${TF_OPTION_1:+"$TF_OPTION_1"} \
