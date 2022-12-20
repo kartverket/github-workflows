@@ -116,14 +116,7 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Echo 
-        env:
-        
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
+
   
   setup-env:
     runs-on: ubuntu-latest
@@ -138,10 +131,7 @@ jobs:
           OVERRIDE=$WORKLOAD_IDENTITY_PROVIDER_OVERRIDE
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
-      - name: Echo github context 
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
+
 
   terraform_check:
     needs: [setup-env]
