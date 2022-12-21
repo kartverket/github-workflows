@@ -210,7 +210,7 @@ jobs:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.workload_identity_provider }}
-
+      
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
@@ -282,11 +282,20 @@ jobs:
         id: plan
         run: |
           # 1. Run and send stdout to build log as usual
-          terraform plan -input=false -no-color -detailed-exitcode -out=plan-$ENVIRONMENT.tfplan \
-            ${TF_OPTION_1:+"$TF_OPTION_1"} \
-            ${TF_OPTION_2:+"$TF_OPTION_2"} \
-            ${TF_OPTION_3:+"$TF_OPTION_3"} \
-            | tee output.txt
+          if [ "$DESTROY" == "true" ] 
+          then
+            terraform plan -destroy -input=false -no-color -detailed-exitcode -out=plan-$ENVIRONMENT.tfplan \
+              ${TF_OPTION_1:+"$TF_OPTION_1"} \
+              ${TF_OPTION_2:+"$TF_OPTION_2"} \
+              ${TF_OPTION_3:+"$TF_OPTION_3"} \
+              | tee output.txt
+          else
+            terraform plan -input=false -no-color -detailed-exitcode -out=plan-$ENVIRONMENT.tfplan \
+              ${TF_OPTION_1:+"$TF_OPTION_1"} \
+              ${TF_OPTION_2:+"$TF_OPTION_2"} \
+              ${TF_OPTION_3:+"$TF_OPTION_3"} \
+              | tee output.txt
+          fi  
 
           # 2. Remove some github commands and fluff
           STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
