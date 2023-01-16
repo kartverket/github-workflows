@@ -100,7 +100,7 @@ jobs:
           gcloud beta container binauthz attestations sign-and-create \
             --project="$ATTESTOR_PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
-            --attestor="Build-Kartverket" \
+            --attestor="built-in-kartverket-context-attestor" \
             --attestor-project="$ATTESTOR_PROJECT_ID" \
             --keyversion-project="$ATTESTOR_PROJECT_ID" \
             --keyversion-location="europe" \
