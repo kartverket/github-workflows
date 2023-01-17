@@ -23,7 +23,7 @@ on:
         description: "Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`"
         required: false
         type: string
-      working_directory: 
+      working_directory:
         description: "The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository"
         required: false
         type: string
@@ -210,7 +210,7 @@ jobs:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
       TF_IN_AUTOMATION: true
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.workload_identity_provider }}
-      
+
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
@@ -298,7 +298,8 @@ jobs:
           fi  
 
           # 2. Remove some github commands and fluff
-          STDOUT="$(sed '/^::/d' output.txt | grep -v 'Refreshing state...')"
+          # This removes any line containing "Reading...", "Read complete after", and "Refreshing state...", which are terraform lines spewed out during state reading
+          STDOUT="$(sed '/^::/d' output.txt | grep -v -E '(.*Reading\.\.\..*)|(.*Read complete after.*)|(.*Refreshing state\.\.\..*)')"
 
           # 3. Write to step summary
           cat >> $GITHUB_STEP_SUMMARY <<EOF
