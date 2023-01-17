@@ -238,7 +238,7 @@ jobs:
 
           elif [[ $ALLOW_SEVERITY_LEVEL == 'high' ]]
           then
-            if [[ ${{ steps.severity_check_outputs.outputs.severity_check_critical == 'false' }} ]]
+            if [[ ${{ steps.severity_check_outputs.outputs.severity_check_critical }} == 'true' ]]
             then
               echo "Only high vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to high.";
               exit 0;
