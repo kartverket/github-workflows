@@ -299,7 +299,7 @@ jobs:
 
           # 2. Remove some github commands and fluff
 
-          STDOUT="$(sed '/^::/d' output.txt | grep -v -E '(.*Reading\.\.\..*)|(.*Read complete after.*)|(.*Refreshing state\.\.\..*)'"
+          STDOUT="$(sed '/^::/d' output.txt | grep -v -E '(.*Reading\.\.\..*)|(.*Read complete after.*)|(.*Refreshing state\.\.\..*)')"
 
           # 3. Write to step summary
           cat >> $GITHUB_STEP_SUMMARY <<EOF
