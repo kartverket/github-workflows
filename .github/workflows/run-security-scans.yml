@@ -33,7 +33,7 @@ on:
       allow_severity_level:
         description: 'A string which determines the level of severity the security scans can find while still succeeding workflows. Only "not_allowed", "high" and "critical" values are allowed. Note that these values are case sensitive.'
         required: false
-        default: "not_allowed"
+        default: not_allowed
         type: string
 
 env:
@@ -46,7 +46,7 @@ env:
   BRANCH: ${{ github.ref_name }}
   HEAD_REF: ${{ github.head_ref }}
   EVENT_NAME: ${{ github.event_name }}
-  ALLOW_SEVERITY_LEVEL: ${{ inputs.allow_severity_levels }}
+  ALLOW_SEVERITY_LEVEL: ${{ inputs.allow_severity_level }}
 
 jobs:
   setup-env:
