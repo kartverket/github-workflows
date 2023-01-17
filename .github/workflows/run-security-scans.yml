@@ -213,9 +213,10 @@ jobs:
       - name: Succeed or fail based on severity
         id: severity_check
         run: |
-          pr_number=$( echo $BRANCH | sed 's/\/.*//')
+          pr_number=$( echo $BRANCH | sed 's/\/.*//');
+
           if [[ ${{ steps.severity_check_outputs.outputs.severity_check_high == 'false' && steps.severity_check_outputs.outputs.severity_check_critical == 'false' }} ]]
-            echo "Success! No high or critical code scanning alerts."
+            echo "Success! No high or critical code scanning alerts.";
             exit 0;
           fi
 
@@ -239,7 +240,7 @@ jobs:
           then
             if [[ ${{ steps.severity_check_outputs.outputs.severity_check_critical == 'false' }} ]]
             then
-              echo "High vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to high."
+              echo "Only high vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to high.";
               exit 0;
             fi
 
@@ -259,7 +260,7 @@ jobs:
 
           elif [[ $ALLOW_SEVERITY_LEVEL == 'critical' ]]
           then
-            echo "High or critical vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to critical."
+            echo "High or critical vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to critical.";
             exit 0;
           fi
 
