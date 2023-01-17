@@ -216,6 +216,7 @@ jobs:
           pr_number=$( echo $BRANCH | sed 's/\/.*//');
 
           if [[ ${{ steps.severity_check_outputs.outputs.severity_check_high == 'false' && steps.severity_check_outputs.outputs.severity_check_critical == 'false' }} ]]
+          then
             echo "Success! No high or critical code scanning alerts.";
             exit 0;
           fi
