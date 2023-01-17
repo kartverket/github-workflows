@@ -156,6 +156,7 @@ jobs:
           attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/trivy-scan-attestor" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
+          echo $attestationoutput
 
       - name: Perform Trivy-Scan attestation
         id: attest-kartverket-kontekst
