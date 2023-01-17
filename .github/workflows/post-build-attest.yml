@@ -93,7 +93,7 @@ jobs:
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      - name: Perform Build-Kartverket attestation
+      - name: Perform Kartverket Context Build attestation
         id: attest-kartverket-kontekst
         if: steps.get-attestation.outputs.attestation == ''
         run: |
