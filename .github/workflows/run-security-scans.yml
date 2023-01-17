@@ -71,6 +71,7 @@ jobs:
   tfsec:
     name: TFSec
     if: inputs.tfsec == true && github.event.pull_request.draft == false
+    needs: [setup-env]
     runs-on: ubuntu-latest
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
