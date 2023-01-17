@@ -99,7 +99,6 @@ env:
   KUBERNETES_CLUSTER: ${{ inputs.kubernetes_cluster }}
   TF_TMP_WORKSPACE: ${{ inputs.terraform_workspace }}
   VAULT_ROLE: ${{ inputs.vault_role }}
-  IMAGE_URL: ${{ inputs.image_url }}
   DESTROY: ${{ inputs.destroy }}
   UNLOCK: ${{ inputs.unlock }}
   TF_INIT_OPTION_1: ${{ inputs.terraform_init_option_1 }}
