@@ -65,7 +65,7 @@ jobs:
       - name: Check severity level
         if: inputs.allow_severity_level != 'none' && inputs.allow_severity_level != 'high' && inputs.allow_severity_level != 'critical'
         run: |
-          echo "Error: The input 'allow_severity_level' was not one of the allowed strings, 'high', 'critical' or 'none'. Found: "$ALLOW_SEVERITY_LEVEL".;
+          echo "Error: The input 'allow_severity_level' was not one of the allowed strings, 'high', 'critical' or 'none'. Found: "$ALLOW_SEVERITY_LEVEL".";
           exit 1;
 
   tfsec:
