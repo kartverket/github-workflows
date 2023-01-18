@@ -31,9 +31,9 @@ on:
         default: true
         type: boolean
       allow_severity_level:
-        description: 'A string which determines the level of severity the security scans can find while still succeeding workflows. Only "not_allowed", "high" and "critical" values are allowed. Note that these values are case sensitive.'
+        description: 'A string which determines the level of severity the security scans can find while still succeeding workflows. Only "none", "high" and "critical" values are allowed. Note that these values are case sensitive. Note also that a severity level of "none" still allows medium/low severities, as these are not considered dangerous.'
         required: false
-        default: not_allowed
+        default: none
         type: string
 
 env:
@@ -63,9 +63,9 @@ jobs:
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
       - name: Check severity level
-        if: inputs.allow_severity_level != 'not_allowed' && inputs.allow_severity_level != 'high' && inputs.allow_severity_level != 'critical'
+        if: inputs.allow_severity_level != 'none' && inputs.allow_severity_level != 'high' && inputs.allow_severity_level != 'critical'
         run: |
-          echo "Error: The input 'allow_severity_level' was not one of the allowed strings, 'high', 'critical' or 'not_allowed'.";
+          echo "Error: The input 'allow_severity_level' was not one of the allowed strings, 'high', 'critical' or 'none'. Found: "$ALLOW_SEVERITY_LEVEL".;
           exit 1;
 
   tfsec:
@@ -225,7 +225,7 @@ jobs:
             exit 0;
           fi
 
-          if [[ $ALLOW_SEVERITY_LEVEL == 'not_allowed' ]]
+          if [[ $ALLOW_SEVERITY_LEVEL == 'none' ]]
           then
             if [[ $EVENT_NAME == 'pull_request' ]]
             then
