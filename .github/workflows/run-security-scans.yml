@@ -234,7 +234,7 @@ jobs:
           is_high_vuln_present=${{ steps.severity_check_outputs.outputs.is_high_vuln_present }}
           is_critical_vuln_present=${{ steps.severity_check_outputs.outputs.is_critical_vuln_present }}
 
-          error_start_message="Error: Vulnerabilities were found of level "
+          error_start_message="Error: Vulnerabilities were found of level"
           error_end_message="Go to the Code Scanning section of the Github Secuity tab to review these vulnerabilities."
           error_search_pr_message="Search for is:open pr:"$pr_number" to find PR related vulnerabilities."
 
@@ -246,7 +246,7 @@ jobs:
 
           if [[ ${{ env.ALLOW_SEVERITY_LEVEL }} == 'none' ]]
           then
-            if [[ $EVENT_NAME == 'pull_request' ]]
+            if [[ ${{ env.EVENT_NAME }} == 'pull_request' ]]
             then
               echo ""$error_start_message" high or critical. "$error_end_message" "$error_search_pr_message"";
               exit 1;
@@ -263,7 +263,7 @@ jobs:
               exit 0;
             fi
 
-            if [[ $EVENT_NAME == 'pull_request' ]]
+            if [[ ${{ env.EVENT_NAME }} == 'pull_request' ]]
             then
               echo ""$error_start_message" critical. "$error_end_message" "$error_search_pr_message"";
               exit 1;
@@ -278,7 +278,7 @@ jobs:
             exit 0;
 
           else
-            echo "Input ALLOW_SEVERITY_LEVEL was not one of the known values, found "$ALLOW_SEVERITY_LEVEL". If you see this message, please contact SKIP.";
+            echo "Input ALLOW_SEVERITY_LEVEL was not one of the known values, found "${{ env.ALLOW_SEVERITY_LEVEL }}". If you see this message, please contact SKIP.";
             exit 1;
           fi
 
