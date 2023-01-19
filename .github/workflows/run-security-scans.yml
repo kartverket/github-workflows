@@ -234,6 +234,10 @@ jobs:
           is_high_vuln_present=${{ steps.severity_check_outputs.outputs.is_high_vuln_present }}
           is_critical_vuln_present=${{ steps.severity_check_outputs.outputs.is_critical_vuln_present }}
 
+          error_start_message="Error: Vulnerabilities were found of level "
+          error_end_message="Go to the Code Scanning section of the Github Secuity tab to review these vulnerabilities."
+          error_search_pr_message="Search for is:open pr:"$pr_number" to find PR related vulnerabilities."
+
           if [[ $is_high_vuln_present == 'false' ||  $is_critical_vuln_present == 'false' ]]
           then
             echo "Success! No high or critical code scanning alerts.";
@@ -244,15 +248,10 @@ jobs:
           then
             if [[ $EVENT_NAME == 'pull_request' ]]
             then
-              echo "Error: High or critical vulnerabilities detected on pull-request. Go to the Code Scanning section of the Github Security-tab and search for 'is:open pr:$pr_number' to review these vulnerabilities.";
+              echo ""$error_start_message" high or critical. "$error_end_message" "$error_search_pr_message"";
               exit 1;
-            elif [[ ($BRANCH == 'main' || $BRANCH == 'master')]]
-            then
-              echo "Error: High or critical vulnerabilities detected on main/master branch. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities.";
-              exit 1;
-            elif [[ $EVENT_NAME == 'workflow_dispatch' ]]
-            then
-              echo "Error: High or critical vulnerabilities detected on workflow-dispatch. Go to the Code Scanning section of the Github Security-tab and review vulnerabilities related to your workflow dispatch run.";
+            else
+              echo ""$error_start_message" high or critical found on branch "$BRANCH". $error_end_message";
               exit 1;
             fi
 
@@ -266,15 +265,10 @@ jobs:
 
             if [[ $EVENT_NAME == 'pull_request' ]]
             then
-              echo "Error: Critical vulnerabilities detected on pull-request. Go to the Code Scanning section of the Github Security-tab and search for 'is:open pr:$pr_number' to review these vulnerabilities.";
+              echo ""$error_start_message" critical. "$error_end_message" "$error_search_pr_message"";
               exit 1;
-            elif [[ ($BRANCH == 'main' || $BRANCH == 'master')]]
-            then
-              echo "Error: Critical vulnerabilities detected on main/master branch. Go to the Code Scanning section of the Github Security-tab to review these vulnerabilities.";
-              exit 1;
-            elif [[ $EVENT_NAME == 'workflow_dispatch' ]]
-            then
-              echo "Error: Critical vulnerabilities detected on workflow-dispatch. Go to the Code Scanning section of the Github Security-tab and review vulnerabilities related to your workflow dispatch run.";
+            else
+              echo ""$error_start_message" critical found on "$BRANCH" branch. $error_end_message";
               exit 1;
             fi
 
@@ -282,6 +276,7 @@ jobs:
           then
             echo "High or critical vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to critical.";
             exit 0;
+
           else
             echo "Input ALLOW_SEVERITY_LEVEL was not one of the known values, found "$ALLOW_SEVERITY_LEVEL". If you see this message, please contact SKIP.";
             exit 1;
