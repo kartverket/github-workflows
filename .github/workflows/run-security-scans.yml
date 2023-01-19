@@ -230,7 +230,7 @@ jobs:
       - name: Succeed or fail based on severity
         id: severity_check
         run: |
-          pr_number=$( echo $BRANCH | sed 's/\/.*//');
+          pr_number=$( echo ${{ env.BRANCH }} | sed 's/\/.*//');
           is_high_vuln_present=${{ steps.severity_check_outputs.outputs.is_high_vuln_present }}
           is_critical_vuln_present=${{ steps.severity_check_outputs.outputs.is_critical_vuln_present }}
 
@@ -244,18 +244,18 @@ jobs:
             exit 0;
           fi
 
-          if [[ $ALLOW_SEVERITY_LEVEL == 'none' ]]
+          if [[ ${{ env.ALLOW_SEVERITY_LEVEL }} == 'none' ]]
           then
             if [[ $EVENT_NAME == 'pull_request' ]]
             then
               echo ""$error_start_message" high or critical. "$error_end_message" "$error_search_pr_message"";
               exit 1;
             else
-              echo ""$error_start_message" high or critical found on branch "$BRANCH". $error_end_message";
+              echo ""$error_start_message" high or critical found on branch "${{ env.BRANCH }}". $error_end_message";
               exit 1;
             fi
 
-          elif [[ $ALLOW_SEVERITY_LEVEL == 'high' ]]
+          elif [[ ${{ env.ALLOW_SEVERITY_LEVEL }} == 'high' ]]
           then
             if [[ $is_critical_vuln_present == 'false' ]]
             then
@@ -268,11 +268,11 @@ jobs:
               echo ""$error_start_message" critical. "$error_end_message" "$error_search_pr_message"";
               exit 1;
             else
-              echo ""$error_start_message" critical found on "$BRANCH" branch. $error_end_message";
+              echo ""$error_start_message" critical found on "${{ env.BRANCH }}" branch. $error_end_message";
               exit 1;
             fi
 
-          elif [[ $ALLOW_SEVERITY_LEVEL == 'critical' ]]
+          elif [[ ${{ env.ALLOW_SEVERITY_LEVEL }} == 'critical' ]]
           then
             echo "High or critical vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to critical.";
             exit 0;
