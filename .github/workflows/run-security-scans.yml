@@ -231,8 +231,10 @@ jobs:
         id: severity_check
         run: |
           pr_number=$( echo $BRANCH | sed 's/\/.*//');
+          is_high_vuln_present=${{ steps.severity_check_outputs.outputs.is_high_vuln_present }}
+          is_critical_vuln_present=${{ steps.severity_check_outputs.outputs.is_critical_vuln_present }}
 
-          if [[ ${{ steps.severity_check_outputs.outputs.is_high_vuln_present == 'false' && steps.severity_check_outputs.outputs.is_critical_vuln_present == 'false' }} == 'true' ]]
+          if [[ $is_high_vuln_present == 'false' ||  $is_critical_vuln_present == 'false' ]]
           then
             echo "Success! No high or critical code scanning alerts.";
             exit 0;
@@ -256,7 +258,7 @@ jobs:
 
           elif [[ $ALLOW_SEVERITY_LEVEL == 'high' ]]
           then
-            if [[ ${{ steps.severity_check_outputs.outputs.is_critical_vuln_present }} == 'false' ]]
+            if [[ $is_critical_vuln_present == 'false' ]]
             then
               echo "Only high vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to high.";
               exit 0;
