@@ -216,9 +216,9 @@ jobs:
           auth_header="Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
           base_url="https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{ github.ref }}&state=open"
 
-          result_severity_check_high=$(curl -s -H "$content_header" -H "$auth_header" "${$base_url}&severity=high")
-          result_severity_check_critical=$(curl -s -H "$content_header" -H "$auth_header" "${$base_url}&severity=critical")
-          result_severity_check_error=$(curl -s -H "$content_header" -H "$auth_header" "${$base_url}&severity=error")
+          result_severity_check_high=$(curl -s -H "$content_header" -H "$auth_header" "${base_url}&severity=high")
+          result_severity_check_critical=$(curl -s -H "$content_header" -H "$auth_header" "${base_url}&severity=critical")
+          result_severity_check_error=$(curl -s -H "$content_header" -H "$auth_header" "${base_url}&severity=error")
 
           is_high_vuln_present=$([ "$result_severity_check_high" != "[]" ] && echo "true" || echo "false")
           is_critical_vuln_present=$([ "$result_severity_check_critical" != "[]" || "$result_severity_check_error" != "[]" ] && echo "true" || echo "false")
