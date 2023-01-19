@@ -208,7 +208,7 @@ jobs:
       - name: Set high and critical severity outputs
         id: severity_check_outputs
         run: |
-          severity_check_high=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{github.ref}} | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high"))] | any') 
+          severity_check_high=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{github.ref}}& | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high"))] | any') 
           severity_check_critical=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{github.ref}} | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "critical"))] | any')
           echo "severity_check_high=$severity_check_high" >> $GITHUB_OUTPUT
           echo "severity_check_critical=$severity_check_critical" >> $GITHUB_OUTPUT
@@ -243,7 +243,7 @@ jobs:
 
           elif [[ $ALLOW_SEVERITY_LEVEL == 'high' ]]
           then
-            if [[ ${{ steps.severity_check_outputs.outputs.severity_check_critical }} == 'true' ]]
+            if [[ ${{ steps.severity_check_outputs.outputs.severity_check_critical }} == 'false' ]]
             then
               echo "Only high vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to high.";
               exit 0;
