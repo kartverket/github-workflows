@@ -212,10 +212,19 @@ jobs:
       - name: Set high and critical severity outputs
         id: severity_check_outputs
         run: |
-          severity_check_high=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{github.ref}} | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "high"))] | any') 
-          severity_check_critical=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{github.ref}} | jq '[.[] | select(.state == "open" and (.rule.security_severity_level == "critical"))] | any')
-          echo "severity_check_high=$severity_check_high" >> $GITHUB_OUTPUT
-          echo "severity_check_critical=$severity_check_critical" >> $GITHUB_OUTPUT
+          content_header="Accept: application/vnd.github+json"
+          auth_header="Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
+          base_url="https://api.github.com/repos/${{ github.repository }}/code-scanning/alerts?ref=${{ github.ref }}&state=open"
+
+          result_severity_check_high=$(curl -s -H "$content_header" -H "$auth_header" "$base_url"&severity=high)
+          result_severity_check_critical=$(curl -s -H "$content_header" -H "$auth_header" "$base_url"&severity=critical)
+          result_severity_check_error=$(curl -s -H "$content_header" -H "$auth_header" "$base_url"&severity=error)
+
+          is_high_vuln_present=$([ "$result_severity_check_high" != "[]" ] && echo "true" || "false")
+          is_critical_vuln_present=$([ "$result_severity_check_critical" != "[]" || "$result_severity_check_error" != "[]" ] && echo "true" || "false")
+
+          echo "is_high_vuln_present=$is_high_vuln_present" >> $GITHUB_OUTPUT
+          echo "is_critical_vuln_present=$is_critical_vuln_present" >> $GITHUB_OUTPUT
 
       # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
       - name: Succeed or fail based on severity
@@ -223,7 +232,7 @@ jobs:
         run: |
           pr_number=$( echo $BRANCH | sed 's/\/.*//');
 
-          if [[ ${{ steps.severity_check_outputs.outputs.severity_check_high == 'false' && steps.severity_check_outputs.outputs.severity_check_critical == 'false' }} == 'true' ]]
+          if [[ ${{ steps.severity_check_outputs.outputs.is_high_vuln_present == 'false' && steps.severity_check_outputs.outputs.is_critical_vuln_present == 'false' }} == 'true' ]]
           then
             echo "Success! No high or critical code scanning alerts.";
             exit 0;
@@ -247,7 +256,7 @@ jobs:
 
           elif [[ $ALLOW_SEVERITY_LEVEL == 'high' ]]
           then
-            if [[ ${{ steps.severity_check_outputs.outputs.severity_check_critical }} == 'false' ]]
+            if [[ ${{ steps.severity_check_outputs.outputs.is_critical_vuln_present }} == 'false' ]]
             then
               echo "Only high vulnerabilities detected! Allowing due to input ALLOW_SEVERITY_LEVEL being set to high.";
               exit 0;
