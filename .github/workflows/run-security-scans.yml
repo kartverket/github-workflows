@@ -220,8 +220,8 @@ jobs:
           result_severity_check_critical=$(curl -s -H "$content_header" -H "$auth_header" "${base_url}&severity=critical")
           result_severity_check_error=$(curl -s -H "$content_header" -H "$auth_header" "${base_url}&severity=error")
 
-          is_high_vuln_present=$([[ "$result_severity_check_high" =~ [[a-zA-Z]] ]] && echo "true" || echo "false")
-          is_critical_vuln_present=$([[ "$result_severity_check_critical" =~ [[a-zA-Z]] || "$result_severity_check_error" =~ [[a-zA-Z]] ]] && echo "true" || echo "false")
+          is_high_vuln_present=$([[ "$result_severity_check_high" =~ [a-zA-Z] ]] && echo "true" || echo "false")
+          is_critical_vuln_present=$([[ "$result_severity_check_critical" =~ [a-zA-Z] || "$result_severity_check_error" =~ [a-zA-Z] ]] && echo "true" || echo "false")
 
           echo "is_high_vuln_present=$is_high_vuln_present" >> $GITHUB_OUTPUT
           echo "is_critical_vuln_present=$is_critical_vuln_present" >> $GITHUB_OUTPUT
