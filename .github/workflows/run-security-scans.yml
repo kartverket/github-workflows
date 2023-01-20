@@ -241,7 +241,7 @@ jobs:
           error_end_message="Go to the Code Scanning section of the Github Secuity tab to review these vulnerabilities."
           error_search_pr_message="Search for is:open pr:"$pr_number" to find PR related vulnerabilities."
 
-          if [[ $is_high_vuln_present == 'false' ||  $is_critical_vuln_present == 'false' ]]
+          if [[ $is_high_vuln_present == 'false' &&  $is_critical_vuln_present == 'false' ]]
           then
             echo "Success! No high or critical code scanning alerts.";
             exit 0;
