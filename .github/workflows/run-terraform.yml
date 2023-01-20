@@ -236,6 +236,7 @@ jobs:
 
       # Install the Gcloud suite in order to install gke-gcloud-auth-plugin plugin
       - name: Set up Cloud SDK
+        if: env.KUBERNETES_CLUSTER != ''
         uses: google-github-actions/setup-gcloud@v1
 
       - name: Authenticate with Kubernetes
@@ -492,9 +493,15 @@ jobs:
           service_account: ${{ env.SERVICE_ACCOUNT }}
           project_id: ${{ env.PROJECT_ID }}
 
+      - name: Set up Cloud SDK
+        if: env.KUBERNETES_CLUSTER != ''
+        uses: google-github-actions/setup-gcloud@v1
+
       - name: Authenticate with Kubernetes
         if: env.KUBERNETES_CLUSTER != ''
-        run: gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+          gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug
 
       - name: Authenticate with Vault
         if: env.VAULT_ROLE != ''
