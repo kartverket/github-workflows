@@ -220,6 +220,9 @@ jobs:
           result_severity_check_critical=$(curl -s -H "$content_header" -H "$auth_header" "${base_url}&severity=critical")
           result_severity_check_error=$(curl -s -H "$content_header" -H "$auth_header" "${base_url}&severity=error")
 
+          echo "$result_severity_check_critical";
+          echo "$result_severity_check_error";
+
           is_high_vuln_present=$([ "$result_severity_check_high" != "[]" ] && echo "true" || echo "false")
           is_critical_vuln_present=$([[ "$result_severity_check_critical" != "[]" || "$result_severity_check_error" != "[]" ]] && echo "true" || echo "false")
 
