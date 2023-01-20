@@ -234,6 +234,10 @@ jobs:
           service_account: ${{ env.SERVICE_ACCOUNT }}
           project_id: ${{ env.PROJECT_ID }}
 
+      # Install the Gcloud suite in order to install gke-gcloud-auth-plugin plugin
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
       - name: Authenticate with Kubernetes
         if: env.KUBERNETES_CLUSTER != ''
         run: |
