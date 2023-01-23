@@ -37,6 +37,7 @@ env:
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
   ATTESTOR_PROJECT_ID: binauth-attestor-5cc4
+  ATTESTATIONS_PROJECT_ID: binauth-attestations-e316
   REGISTRY: ghcr.io
   BRANCH: ${{ github.ref_name }}
   HEAD_REF: ${{ github.head_ref }}
@@ -154,7 +155,7 @@ jobs:
       - name: Check if already attested by Trivy Scan attestor
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/trivy-scan-attestor" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="$ATTESTATIONS_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/trivy-scan-attestor" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
           echo "$attestationoutput"
@@ -164,7 +165,7 @@ jobs:
         if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="$ATTESTOR_PROJECT_ID" \
+            --project="$ATTESTATIONS_PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
             --attestor="trivy-scan-attestor" \
             --attestor-project="$ATTESTOR_PROJECT_ID" \
