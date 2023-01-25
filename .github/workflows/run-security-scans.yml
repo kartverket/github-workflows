@@ -226,7 +226,6 @@ jobs:
           echo "is_high_vuln_present=$is_high_vuln_present" >> $GITHUB_OUTPUT
           echo "is_critical_vuln_present=$is_critical_vuln_present" >> $GITHUB_OUTPUT
 
-      # Returns 'true' if there is Code Scanning alert with 'high' or 'critical' security severity level
       - name: Succeed or fail based on severity
         id: severity_check
         run: |
