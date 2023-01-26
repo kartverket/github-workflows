@@ -31,9 +31,9 @@ on:
         default: true
         type: boolean
       allow_severity_level:
-        description: 'A string which determines the level of severity the security scans can find while still succeeding workflows. Only "none", "high" and "critical" values are allowed. Note that these values are case sensitive. Note also that a severity level of "none" still allows medium/low severities, as these are not considered dangerous.'
+        description: 'A string which determines the highest level of severity the security scans can find while still succeeding workflows. Only "medium", "high" and "critical" values are allowed. Any Note that these values are case sensitive.'
         required: false
-        default: none
+        default: medium
         type: string
 
 env:
@@ -63,9 +63,9 @@ jobs:
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
       - name: Check severity level
-        if: inputs.allow_severity_level != 'none' && inputs.allow_severity_level != 'high' && inputs.allow_severity_level != 'critical'
+        if: inputs.allow_severity_level != 'medium' && inputs.allow_severity_level != 'high' && inputs.allow_severity_level != 'critical'
         run: |
-          echo "Error: The input 'allow_severity_level' was not one of the allowed strings, 'high', 'critical' or 'none'. Found: "$ALLOW_SEVERITY_LEVEL".";
+          echo "Error: The input 'allow_severity_level' was not one of the allowed strings, 'high', 'critical' or 'medium'. Found: "$ALLOW_SEVERITY_LEVEL".";
           exit 1;
 
   tfsec:
@@ -243,7 +243,7 @@ jobs:
             exit 0;
           fi
 
-          if [[ ${{ env.ALLOW_SEVERITY_LEVEL }} == 'none' ]]
+          if [[ ${{ env.ALLOW_SEVERITY_LEVEL }} == 'medium' ]]
           then
             if [[ ${{ env.EVENT_NAME }} == 'pull_request' ]]
             then
