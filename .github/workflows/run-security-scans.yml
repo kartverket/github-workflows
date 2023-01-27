@@ -31,7 +31,7 @@ on:
         default: true
         type: boolean
       allow_severity_level:
-        description: 'A string which determines the highest level of severity the security scans can find while still succeeding workflows. Only "medium", "high" and "critical" values are allowed. Any Note that these values are case sensitive.'
+        description: 'A string which determines the highest level of severity the security scans can find while still succeeding workflows. Only "medium", "high" and "critical" values are allowed. Note that these values are case sensitive.'
         required: false
         default: medium
         type: string
