@@ -221,6 +221,7 @@ jobs:
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
       trivy: <optional>
       tfsec: <optional>
+      allow_severity_level: medium
 
   dev:
     needs: [build]
@@ -245,6 +246,7 @@ jobs:
 | image_url                           | string  |          | The Docker image url must be of the form `registry/repository:tag` for run-security-scans. It is not required; however, in order to run Trivy and aquire attestations an image_url must be supplied.                                                                                                                          |
 | trivy                               | boolean |          | An optional boolean that determines whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
 | tfsec                               | boolean |          | An optional boolean that determines whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
+| allow_severity_level                | string  |          | A string which determines the highest level of severity the security scans can find while still succeeding workflows. Only "medium", "high" and "critical" values are allowed. Note that these values are case sensitive.                                                                                                     |
 
 <br/>
 
@@ -596,11 +598,12 @@ this role.
 <br />
 
 # Troubleshooting
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md). 
-If you experience and fix an issue that isn't mentioned there, feel free to add it. 
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+If you experience and fix an issue that isn't mentioned there, feel free to add it.
 
 <br />
 
 # Contributing
 
-Get in touch with SKIP if you have any contribution suggestions, and feel free to create a pull-request. 
+Get in touch with SKIP if you have any contribution suggestions, and feel free to create a pull-request.
