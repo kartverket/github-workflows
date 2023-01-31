@@ -26,7 +26,8 @@ env:
   AUTH_PROJECT_NUMBER: ${{ inputs.auth_project_number }}
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   IMAGE_URL: ${{ inputs.image_url }}
-  ATTESTOR_PROJECT_ID: kubernetes-dev-94b9
+  ATTESTOR_PROJECT_ID: binauth-attestor-5cc4
+  ATTESTATIONS_PROJECT_ID: binauth-attestations-e316
   REGISTRY: ghcr.io
 
 jobs:
@@ -89,88 +90,22 @@ jobs:
       - name: Check if already attested
         id: get-attestation
         run: |
-          attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Build-Kartverket" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
+          attestation=$(gcloud container binauthz attestations list --project="$ATTESTATIONS_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/built-in-kartverket-context-attestor" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
           attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
           echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
 
-      - name: Perform Build-Kartverket attestation
+      - name: Perform Kartverket Context Build attestation
         id: attest-kartverket-kontekst
         if: steps.get-attestation.outputs.attestation == ''
         run: |
           gcloud beta container binauthz attestations sign-and-create \
-            --project="$ATTESTOR_PROJECT_ID" \
+            --project="$ATTESTATIONS_PROJECT_ID" \
             --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
-            --attestor="Build-Kartverket" \
+            --attestor="built-in-kartverket-context-attestor" \
             --attestor-project="$ATTESTOR_PROJECT_ID" \
             --keyversion-project="$ATTESTOR_PROJECT_ID" \
-            --keyversion-location="europe-north1" \
-            --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Build-Kartverket-Key" \
-            --keyversion="1"
-          echo Attestation succeded
-
-  attest-branch:
-    name: Image is on main or master branch
-    needs: [setup-env]
-    if: github.ref_type == 'branch' && github.ref_name == 'master' || github.ref_name == 'main'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    env:
-      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ env.SERVICE_ACCOUNT }}
-
-      - name: Log into registry
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get Image Digest URL from Image Tag URL
-        id: image-digest-url
-        run: |
-          # If image_url = registry/repository@digest
-          if [[ "$IMAGE_URL" == *"@"* ]] 
-          then
-            image_digest_url="$IMAGE_URL"
-          else
-            # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url="$IMAGE_URL"
-            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
-            base_image_url=${image_tag_url%:*}
-            image_digest_url="${base_image_url}@${digest}"
-          fi
-          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
-
-      - name: Check if already attested
-        id: get-attestation
-        run: |
-          attestation=$(gcloud container binauthz attestations list --project="$ATTESTOR_PROJECT_ID" --attestor="projects/$ATTESTOR_PROJECT_ID/attestors/Build-Master-Branch" --artifact-url="${{ steps.image-digest-url.outputs.image_url }}")
-          attestationoutput=$(printf '%s' $attestation | jq --raw-input --slurp '.' --join-output)
-          echo "attestation=$attestationoutput" >> $GITHUB_OUTPUT
-
-      - name: Perform Build-Master-Branch attestation
-        id: attest-branch
-        if: steps.get-attestation.outputs.attestation == ''
-        run: |
-          gcloud beta container binauthz attestations sign-and-create \
-            --project="$ATTESTOR_PROJECT_ID" \
-            --artifact-url="${{ steps.image-digest-url.outputs.image_url }}" \
-            --attestor="Build-Master-Branch" \
-            --attestor-project="$ATTESTOR_PROJECT_ID" \
-            --keyversion-project="$ATTESTOR_PROJECT_ID" \
-            --keyversion-location="europe-north1" \
-            --keyversion-keyring="Attestor-Keyring" \
-            --keyversion-key="Build-Master-Branch-Key" \
+            --keyversion-location="europe" \
+            --keyversion-keyring="binauth-attestor-key-ring" \
+            --keyversion-key="built-in-kartverket-context-attestor-key" \
             --keyversion="1"
           echo Attestation succeded

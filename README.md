@@ -133,7 +133,6 @@ jobs:
       auth_project_number: "123456789123"
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
       project_id: project-dev-123
-      image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by the build job
       destroy: <optional boolean>
       unlock: <optional LOCK_ID>
 
@@ -164,7 +163,6 @@ jobs:
 | terraform_option_X                  | string  |          | An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`. X may be an integer between 1-3, which allows at most 3 options.                                                                                                                 |
 | terraform_init_option_Y             | string  |          | An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`. Y may be an integer between 1-3, which allows at most 3 init options.                                                                                                                                                   |
 | add_comment_on_pr                   | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                                                                                                                    |
-| image_url                           | string  |          | An optional parameter; however, it is required for binary attestation. The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                     |
 | destroy                             | boolean |          | An optional boolean that determines whether terraform will be destroyed. Defaults to 'false'.                                                                                                                                                                                                                                 |
 | unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.                                                                                                                                                                                                                                       |
 
@@ -401,7 +399,6 @@ jobs:
       auth_project_number: "123456789123"
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
       project_id: project-dev-123
-      image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by the build job
 
   test:
     needs: [build, dev]
@@ -427,7 +424,6 @@ jobs:
       auth_project_number: "123456789123"
       service_account: sa-name@project-test-123.iam.gserviceaccount.com
       project_id: project-test-123
-      image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by the build job
 
   prod:
     needs: [build, dev, test, post-build-attest, security-scans]
@@ -453,7 +449,6 @@ jobs:
       auth_project_number: "123456789123"
       service_account: sa-name@project-prod-123.iam.gserviceaccount.com
       project_id: project-prod-123
-      image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by the build job
 ```
 
 ## Deploy on workflow dispatch
@@ -504,7 +499,6 @@ jobs:
       auth_project_number: "123456789123"
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
       project_id: project-dev-123
-      image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by the build job
       deploy_on: ${{ github.ref }}
 ```
 
@@ -577,7 +571,6 @@ jobs:
       auth_project_number: ${{ needs.setup-env.outputs.auth_project_number }}
       service_account: ${{ needs.setup-env.outputs.service_account }}
       project_id: ${{ needs.setup-env.outputs.project_id }}</pre></code>
-      image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by the build job
 </details>
 <br />
 
