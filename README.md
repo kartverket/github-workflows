@@ -182,7 +182,7 @@ Additionally, if image_url is not supplied neither Trivy nor Binary Attestation 
 - Runs Trivy, a comprehensive security scanner. Does not run on draft pull requests.
 - Creates a binary attestation on the supplied image if Trivy is run.
 - Calls the GitHub Security Code Scanning API and fails workflow if there are any _high_ or _critical_ errors.
-- The above step can be overriden using the `allow_severity_level` input.
+- The above step can be configured by specifying the `allow_severity_level` input parameter.
 
 ### Requirements
 
