@@ -186,7 +186,7 @@ Additionally, if image_url is not supplied neither Trivy nor Binary Attestation 
 
 ### Requirements
 
-- Code Scanning must be appropriatly set up in the Github Security tab.
+- Code Scanning must be appropriately set up in the Github Security tab.
 - Note that the image built during your build-job must be pushed to the registry on all but draft PRs for the workflow to work as intended (see example build job below, paying extra attention to lines following `# Note: ...`)
 
 ### Example
