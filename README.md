@@ -173,7 +173,7 @@ jobs:
 ## run-security-scans
 
 This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found.
-Note, in order to not limit/interfere with the developement process, the scans do not run on draft pull requests.
+Note, in order to not limit/interfere with the development process, the scans do not run on draft pull requests.
 Additionally, if image_url is not supplied neither Trivy nor Binary Attestation will be performed (i.e. only TFSec scan will run).
 
 ### Features
