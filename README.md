@@ -219,8 +219,8 @@ jobs:
       auth_project_number: "123456789123"
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
-      trivy: <optional>
-      tfsec: <optional>
+      trivy: true # default true, optional
+      tfsec: true # default true, optional
       allow_severity_level: medium
 
   dev:
@@ -374,8 +374,6 @@ jobs:
       auth_project_number: "123456789123"
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
       image_url: ${{ needs.build.outputs.image_tag_url}} # optional, must have format <registry>/<repository>:<tag>
-      trivy: <optional>
-      tfsec: <optional>
 
   dev:
     needs: [build]
