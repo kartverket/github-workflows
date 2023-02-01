@@ -181,7 +181,7 @@ Additionally, if image_url is not supplied neither Trivy nor Binary Attestation 
 - Runs TFSec, a static analysis security scanner for your Terraform code. Does not run on draft pull requests.
 - Runs Trivy, a comprehensive security scanner. Does not run on draft pull requests.
 - Creates a binary attestation on the supplied image if trivy is run.
-- Calls the Github Security Code Scanning API and fails with exit code 1 if there are any _high_ or _critical_ errors.
+- Calls the GitHub Security Code Scanning API and fails workflow if there are any _high_ or _critical_ errors.
 - The above step can be overriden using the `allow_severity_level` input.
 
 ### Requirements
