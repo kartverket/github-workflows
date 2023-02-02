@@ -20,6 +20,10 @@ on:
         description: "Setting an image_url of the form registry/repository:tag or registry/repository@digest enables the binary attestation of that image."
         required: true
         type: string
+    outputs:
+      full_image_url:
+        description: The full image as used during attestation. Must be used during deployments of said image.
+        value: ${{ jobs.attest-kartverket-kontekst.outputs.full_image_url }}
 
 env:
   WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
@@ -49,6 +53,8 @@ jobs:
     name: Image in context of kartverket
     needs: [setup-env]
     runs-on: ubuntu-latest
+    outputs:
+      full_image_url: ${{ steps.image-digest-url.outputs.image_url }}
     defaults:
       run:
         shell: bash
