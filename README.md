@@ -40,7 +40,8 @@ This workflow performs binary attestation on a built image.
 - Performs binary attestation on the image. Attests that the image was built in context of Kartverket by identifying with WIF in the earlier step and then performing an attestation after authorization.
 
 ### Note
-- An image *MUST* be of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest> when given as an input. Any other format will fail.
+
+- An image _MUST_ be of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest> when given as an input. Any other format will fail.
 
 ### Example
 
@@ -373,7 +374,7 @@ jobs:
     with:
       auth_project_number: "123456789123"
       service_account: sa-name@project-dev-123.iam.gserviceaccount.com
-      image_url: ${{ needs.build.outputs.image_tag_url}} # optional, must have format <registry>/<repository>:<tag>
+      image_url: ${{ needs.build.outputs.image_tag_url}}
 
   dev:
     needs: [build]
