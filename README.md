@@ -38,6 +38,7 @@ This workflow performs binary attestation on a built image.
 
 - Logs in to GCP automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
 - Performs binary attestation on the image. Attests (1) that the image was built in context of Kartverket and (2) that the image is on main/master branch.
+- Outputs the full_image_url regardless of your input, allowing you to use this output in the following deployment steps.
 
 ### Example
 
@@ -108,7 +109,7 @@ This workflow plans and applies Terraform config to deploy to an environment.
 jobs:
   build:
   # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
-  # and pushes it to the github registry. This is the image that must be used in all following jobs.
+  # and pushes it to the github registry.
   # See 'All Workflows Together' section for an example build job.
 
   post-build-attest:
@@ -116,7 +117,7 @@ jobs:
     # call to post-build-attest.yml with build image
 
   dev:
-    needs: [build]
+    needs: [build, post-build-attest]
     name: Deploy to dev
     permissions:
       # For logging on to Vault, GCP
@@ -133,7 +134,8 @@ jobs:
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
-      terraform_option_1: -var-file=dev.tfvars -var=image=<registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by the build job
+      terraform_option_1: -var-file=dev.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -399,7 +401,8 @@ jobs:
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
-      terraform_option_1: -var-file=dev.tfvars -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_1: -var-file=dev.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -424,7 +427,8 @@ jobs:
       environment: test
       kubernetes_cluster: atkv1-test
       terraform_workspace: test
-      terraform_option_1: -var-file=test.tfvars -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_1: -var-file=test.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=test.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -449,7 +453,8 @@ jobs:
       environment: prod
       kubernetes_cluster: atkv1-prod
       terraform_workspace: prod
-      terraform_option_1: -var-file=prod.tfvars -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_1: -var-file=prod.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=prod.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
