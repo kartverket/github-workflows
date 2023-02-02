@@ -22,7 +22,7 @@ on:
         type: string
     outputs:
       full_image_url:
-        description: The full image as used during attestation. Must be used during deployments of said image.
+        description: The full image path with digest as used during attestation. Must be used during deployments of said image.
         value: ${{ jobs.attest-kartverket-kontekst.outputs.full_image_url }}
 
 env:
