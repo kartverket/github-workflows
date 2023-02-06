@@ -38,6 +38,7 @@ This workflow performs binary attestation on a built image.
 
 - Logs in to GCP automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
 - Performs binary attestation on the image. Attests that the image was built in context of Kartverket by identifying with WIF in the earlier step and then performing an attestation after authorization.
+- Outputs the full_image_url regardless of your input, allowing you to use this output in the following deployment steps.
 
 ### Note
 
@@ -72,7 +73,7 @@ jobs:
       image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
 ```
 
-### Options
+### Inputs
 
 | Key                                 | Type   | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -80,6 +81,12 @@ jobs:
 | workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
 | image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
+
+### Outputs
+
+| Key            | Type   | Description                                                                                                |
+| -------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| full_image_url | string | The full image path with digest as used during attestation. Must be used during deployments of said image. |
 
 <br/>
 
@@ -105,7 +112,7 @@ This workflow plans and applies Terraform config to deploy to an environment.
 jobs:
   build:
   # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
-  # and pushes it to the github registry. This is the image that must be used in all following jobs.
+  # and pushes it to the github registry.
   # See 'All Workflows Together' section for an example build job.
 
   post-build-attest:
@@ -113,7 +120,7 @@ jobs:
     # call to post-build-attest.yml with build image
 
   dev:
-    needs: [build]
+    needs: [build, post-build-attest]
     name: Deploy to dev
     permissions:
       # For logging on to Vault, GCP
@@ -130,7 +137,8 @@ jobs:
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
-      terraform_option_1: -var-file=dev.tfvars -var=image=<registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by the build job
+      terraform_option_1: -var-file=dev.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -148,7 +156,7 @@ jobs:
     # approximately the same as 'dev' but for the prod environment
 ```
 
-### Options
+### Inputs
 
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -237,14 +245,14 @@ jobs:
     # call to run-terraform.yml for prod environment only after security-scans job, with build image
 ```
 
-### Options
+### Inputs
 
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. This project should be your dev environment project, as this is the environment where the attestors are located                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
-| image_url                           | string  |          | The Docker image url must be of the form `registry/repository:tag` for run-security-scans. It is not required; however, in order to run Trivy and aquire attestations an image_url must be supplied.                                                                                                                          |
+| image_url                           | string  |          | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest` for run-security-scans. It is not required; however, in order to run Trivy and aquire attestations an image_url must be supplied.                                                                                          |
 | trivy                               | boolean |          | An optional boolean that determines whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
 | tfsec                               | boolean |          | An optional boolean that determines whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
 | allow_severity_level                | string  |          | A string which determines the highest level of severity the security scans can find while still succeeding workflows. Only "medium", "high" and "critical" values are allowed. Note that these values are case sensitive.                                                                                                     |
@@ -377,7 +385,7 @@ jobs:
       image_url: ${{ needs.build.outputs.image_tag_url}}
 
   dev:
-    needs: [build]
+    needs: [post-build-attest]
     name: Deploy to dev
     permissions:
       # For logging on to Vault, GCP
@@ -394,7 +402,8 @@ jobs:
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
-      terraform_option_1: -var-file=dev.tfvars -var=image=${{ needs.build.outputs.image_tag_url}} # the image created by the build job
+      terraform_option_1: -var-file=dev.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -402,7 +411,7 @@ jobs:
       project_id: project-dev-123
 
   test:
-    needs: [build, dev]
+    needs: [post-build-attest, dev]
     name: Deploy to test
     permissions:
       # For logging on to Vault, GCP
@@ -419,7 +428,8 @@ jobs:
       environment: test
       kubernetes_cluster: atkv1-test
       terraform_workspace: test
-      terraform_option_1: -var-file=test.tfvars -var=image=${{ needs.build.outputs.image_tag_url}} # the image created by the build job
+      terraform_option_1: -var-file=test.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=test.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -444,7 +454,8 @@ jobs:
       environment: prod
       kubernetes_cluster: atkv1-prod
       terraform_workspace: prod
-      terraform_option_1: -var-file=prod.tfvars -var=image=${{ needs.build.outputs.image_tag_url}} # the image created by the build job
+      terraform_option_1: -var-file=prod.tfvars
+      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=prod.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -478,7 +489,7 @@ jobs:
 
   dev:
     name: Deploy to dev
-    needs: [build]
+    needs: [build, post-build-attest]
     permissions:
       # For logging on to Vault, GCP
       id-token: write
@@ -494,7 +505,7 @@ jobs:
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
-      terraform_option_1: -var-file=dev.tfvars -var=image=${{ needs.build.outputs.image_tag_url}} # the image created by the build job
+      terraform_option_1: -var-file=dev.tfvars -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"

@@ -21,7 +21,7 @@ on:
         required: true
         type: string
       trivy:
-        description: "A boolean which determines whether or not trivy vulnerability scan will be run. Defaults to true"
+        description: "A boolean which determines whether or not Trivy vulnerability scan will be run. Defaults to true"
         required: false
         default: true
         type: boolean
@@ -133,7 +133,7 @@ jobs:
         run: docker pull $IMAGE_URL
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@9ab158e8597f3b310480b9a69402b419bc03dbd5
+        uses: aquasecurity/trivy-action@cff3e9a7f62c41dd51975266d0ae235709e39c41
         with:
           image-ref: ${{ env.IMAGE_URL }}
           format: sarif
@@ -190,7 +190,7 @@ jobs:
             --keyversion-keyring="binauth-attestor-key-ring" \
             --keyversion-key="trivy-scan-attestor-key" \
             --keyversion="1"
-          echo Attestation succeded
+          echo Attestation succeeded!
 
   check-github-security:
     name: Check Github Security Code Scanning
@@ -237,7 +237,7 @@ jobs:
           is_critical_vuln_present=${{ steps.severity_check_outputs.outputs.is_critical_vuln_present }}
 
           error_start_message="Error: Vulnerabilities were found of level"
-          error_end_message="Go to the Code Scanning section of the Github Secuity tab to review these vulnerabilities."
+          error_end_message="Go to the Code Scanning section of the GitHub Security tab to review these vulnerabilities."
           error_search_pr_message="Search for is:open pr:"$pr_number" to find PR related vulnerabilities."
 
           if [[ $is_high_vuln_present == 'false' &&  $is_critical_vuln_present == 'false' ]]
