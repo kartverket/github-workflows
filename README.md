@@ -3,7 +3,6 @@
 Shared reusable workflows for GitHub Actions.
 
 - [Reusable Workflows](#reusable-workflows)
-  - [post-build-attest](#post-build-attest)
   - [run-terraform](#run-terraform)
   - [run-security-scans](#run-security-scans)
 - [Example usage](#example-usage)
@@ -22,71 +21,11 @@ Shared reusable workflows for GitHub Actions.
 
 # Reusable Workflows
 
-We currently have 3 reusable workflows (i.e. [run-terraform](#run-terraform), [post-build-attest](#post-build-attest) and [run-security-scans](#run-security-scans)) available for use.
+We currently have 2 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans](#run-security-scans)) available for use.
 
 See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
 See [Tips and Tricks](#tips-and-tricks) for supporting information regarding usage of the reusable workflows.
-
-<br/>
-
-## post-build-attest
-
-This workflow performs binary attestation on a built image.
-
-### Features
-
-- Logs in to GCP automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
-- Performs binary attestation on the image. Attests that the image was built in context of Kartverket by identifying with WIF in the earlier step and then performing an attestation after authorization.
-- Outputs the full_image_url regardless of your input, allowing you to use this output in the following deployment steps.
-
-### Note
-
-- An image _MUST_ be of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest> when given as an input. Any other format will fail.
-
-### Example
-
-```yaml
-jobs:
-  build:
-  # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
-  # and pushes it to the github registry. This is the image that must be used in all following jobs.
-  # See 'All Workflows Together' section for an example build job.
-
-  post-build-attest:
-    needs: [build]
-    name: Authentication and Attestation of Build
-    permissions:
-      # For fetching git repo
-      contents: read
-      # For accessing repository
-      packages: write
-      # required for authentication to GCP
-      id-token: write
-      actions: read
-      security-events: write
-      statuses: write
-    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
-    with:
-      auth_project_number: "123456789321"
-      service_account: sa-name@project-dev-123.iam.gserviceaccount.com
-      image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
-```
-
-### Inputs
-
-| Key                                 | Type   | Required | Description                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| auth_project_number                 | string | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. This project should be your dev environment project, as this is the environment where the attestors are located                                                        |
-| workload_identity_provider_override | string |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
-| service_account                     | string | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
-| image_url                           | string | X        | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest`                                                                                                                                                                                                                            |
-
-### Outputs
-
-| Key            | Type   | Description                                                                                                |
-| -------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
-| full_image_url | string | The full image path with digest as used during attestation. Must be used during deployments of said image. |
 
 <br/>
 
@@ -115,12 +54,8 @@ jobs:
   # and pushes it to the github registry.
   # See 'All Workflows Together' section for an example build job.
 
-  post-build-attest:
-    needs: [build]
-    # call to post-build-attest.yml with build image
-
   dev:
-    needs: [build, post-build-attest]
+    needs: [build]
     name: Deploy to dev
     permissions:
       # For logging on to Vault, GCP
@@ -138,7 +73,7 @@ jobs:
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
       terraform_option_1: -var-file=dev.tfvars
-      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_2: -var=image=${{ needs.build.outputs.image_url}}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -181,15 +116,14 @@ jobs:
 
 ## run-security-scans
 
-This workflow runs security scans and performs binary attestation if no _high_ or _critical_ vulnerabilities are found.
+This workflow runs security scans on a repository.
 Note, in order to not limit/interfere with the development process, the scans do not run on draft pull requests.
-Additionally, if image_url is not supplied neither Trivy nor Binary Attestation will be performed (i.e. only TFSec scan will run).
+Additionally, if image_url is not supplied Trivy scan will not be performed (i.e. only TFSec scan will run).
 
 ### Features
 
 - Runs TFSec, a static analysis security scanner for your Terraform code. Does not run on draft pull requests.
 - Runs Trivy, a comprehensive security scanner. Does not run on draft pull requests.
-- Creates a binary attestation on the supplied image if Trivy is run.
 - Calls the GitHub Security Code Scanning API and fails workflow if there are any _high_ or _critical_ errors.
 - The above step can be configured by specifying the `allow_severity_level` input parameter.
 
@@ -206,10 +140,6 @@ jobs:
     # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
   # and pushes it to the github registry. This is the image that must be used in all following jobs.
   # See 'All Workflows Together' section for an example build job.
-
-  post-build-attest:
-    needs: [build]
-    # call to post-build-attest.yml with build image
 
   security-scans:
     needs: [build]
@@ -241,7 +171,7 @@ jobs:
     # call to run-terraform.yml for test environment with build image
 
   prod:
-    needs: [build, dev, test, post-build-attest, security-scans]
+    needs: [build, dev, test, security-scans]
     # call to run-terraform.yml for prod environment only after security-scans job, with build image
 ```
 
@@ -265,7 +195,7 @@ Below are examples of how to use the reusable workflows for different scenarios
 
 ## Ideal Use of Reusable Workflows
 
-The following is an example of how to use run-terraform, run-security-scans and post-build-attest together to deploy to dev, test and prod environments.
+The following is an example of how to use run-terraform and run-security-scans together to deploy to dev, test and prod environments.
 Note the use of `jobs.<job_id>.needs` to specify the order in which jobs run.
 For details on how to use `jobs.<job_id>.outputs` see [Using outputs](#using-outputs).
 
@@ -351,23 +281,6 @@ jobs:
           echo "image_url=${{ env.REGISTRY }}/${{ github.repository }}@${{ steps.build-docker.outputs.digest }}" >> $GITHUB_OUTPUT
           echo "image_tag_url=${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }}" >> $GITHUB_OUTPUT
 
-  post-build-attest:
-    needs: [build]
-    name: Authentication and Attestation of Build
-    permissions:
-      contents: read
-      packages: write
-      # required for authentication to GCP
-      id-token: write
-      actions: read
-      security-events: write
-      statuses: write
-    uses: kartverket/github-workflows/.github/workflows/post-build-attest.yml@<release tag>
-    with:
-      auth_project_number: "123456789321"
-      service_account: sa-name@project-dev-123.iam.gserviceaccount.com
-      image_url: ${{ needs.build.outputs.image_tag_url}} # the image created by build job
-
   security-scans:
     needs: [build]
     name: Security Scans
@@ -385,7 +298,7 @@ jobs:
       image_url: ${{ needs.build.outputs.image_tag_url}}
 
   dev:
-    needs: [post-build-attest]
+    needs: [security-scans]
     name: Deploy to dev
     permissions:
       # For logging on to Vault, GCP
@@ -403,7 +316,7 @@ jobs:
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
       terraform_option_1: -var-file=dev.tfvars
-      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_2: -var=image=${{ needs.build.outputs.image_url}}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -411,7 +324,7 @@ jobs:
       project_id: project-dev-123
 
   test:
-    needs: [post-build-attest, dev]
+    needs: [dev]
     name: Deploy to test
     permissions:
       # For logging on to Vault, GCP
@@ -429,7 +342,7 @@ jobs:
       kubernetes_cluster: atkv1-test
       terraform_workspace: test
       terraform_option_1: -var-file=test.tfvars
-      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_2: -var=image=${{ needs.build.outputs.image_url}}
       terraform_init_option_1: -backend-config=test.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -437,7 +350,7 @@ jobs:
       project_id: project-test-123
 
   prod:
-    needs: [build, dev, test, post-build-attest, security-scans]
+    needs: [build, dev, test, security-scans]
     name: Deploy to prod
     permissions:
       # For logging on to Vault, GCP
@@ -455,7 +368,7 @@ jobs:
       kubernetes_cluster: atkv1-prod
       terraform_workspace: prod
       terraform_option_1: -var-file=prod.tfvars
-      terraform_option_2: -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_2: -var=image=${{ needs.build.outputs.image_url}}
       terraform_init_option_1: -backend-config=prod.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
@@ -479,17 +392,13 @@ jobs:
     # and pushes it to the github registry. This is the image that must be used in all following jobs.
     # See 'Using outputs' section for suggestions on how to do this.
 
-  post-build-attest:
-    needs: [build]
-    # call to post-build-attest.yml with build image
-
   security-scans:
     needs: [build]
     # call to run-security-scans.yml with build image
 
   dev:
     name: Deploy to dev
-    needs: [build, post-build-attest]
+    needs: [security-scans]
     permissions:
       # For logging on to Vault, GCP
       id-token: write
@@ -505,7 +414,7 @@ jobs:
       environment: dev
       kubernetes_cluster: atkv1-dev
       terraform_workspace: dev
-      terraform_option_1: -var-file=dev.tfvars -var=image=${{ needs.post-build-attest.outputs.full_image_url }}
+      terraform_option_1: -var-file=dev.tfvars -var=image=${{ needs.build.outputs.image_url}}
       terraform_init_option_1: -backend-config=dev.gcs.tfbackend
       working_directory: terraform
       auth_project_number: "123456789123"
