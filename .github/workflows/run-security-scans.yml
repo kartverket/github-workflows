@@ -144,28 +144,6 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ env.SERVICE_ACCOUNT }}
-
-      - name: Get Image Digest URL from Image Tag URL
-        id: image-digest-url
-        run: |
-          # If image_url = registry/repository@digest
-          if [[ "$IMAGE_URL" == *"@"* ]] 
-          then
-            image_digest_url="$IMAGE_URL"
-          else
-            # Convert registry/repository:tag to registry/repository@digest
-            image_tag_url=$IMAGE_URL
-            digest=$(docker manifest inspect $image_tag_url -v | jq -r .Descriptor.digest)
-            base_image_url=${image_tag_url%:*}
-            image_digest_url="${base_image_url}@${digest}"
-          fi
-          echo "image_url=$image_digest_url" >> $GITHUB_OUTPUT
-
   check-github-security:
     name: Check Github Security Code Scanning
     needs: [tfsec, trivy, setup-env]
