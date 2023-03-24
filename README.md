@@ -21,7 +21,7 @@ Shared reusable workflows for GitHub Actions.
 
 # Reusable Workflows
 
-We currently have 2 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans](#run-security-scans)) available for use.
+We currently have 2 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans (DEPRECATED)](#run-security-scans)) available for use.
 
 See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
@@ -115,6 +115,8 @@ jobs:
 <br />
 
 ## run-security-scans
+
+### _DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS_
 
 This workflow runs security scans on a repository.
 Note, in order to not limit/interfere with the development process, the scans do not run on draft pull requests.
