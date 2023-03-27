@@ -55,11 +55,7 @@ jobs:
     steps:
       - name: Deprecation Warning
         run: |
-          echo "
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          "
+          echo "::warning::DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS"
       - name: Set vars
         id: set-output
         run: |
@@ -88,13 +84,6 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Deprecation Warning
-        run: |
-          echo "
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          "
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -130,13 +119,6 @@ jobs:
     env:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
-      - name: Deprecation Warning
-        run: |
-          echo "
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          "
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
         uses: actions/checkout@v3
@@ -181,13 +163,6 @@ jobs:
     env:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
-      - name: Deprecation Warning
-        run: |
-          echo "
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          # DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS
-          "
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout repository
         uses: actions/checkout@v3
