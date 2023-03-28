@@ -53,6 +53,9 @@ jobs:
     outputs:
       WORKLOAD_IDENTITY_PROVIDER: ${{ steps.set-output.outputs.WORKLOAD_IDENTITY_PROVIDER }}
     steps:
+      - name: Deprecation Warning
+        run: |
+          echo "::warning::DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS"
       - name: Set vars
         id: set-output
         run: |
