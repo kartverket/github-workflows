@@ -237,7 +237,7 @@ jobs:
         if: env.KUBERNETES_CLUSTER != ''
         run: |
           gcloud components install gke-gcloud-auth-plugin
-          gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug
+          gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug --location global
 
       - name: Authenticate with Vault
         if: env.VAULT_ROLE != ''
@@ -495,7 +495,7 @@ jobs:
         if: env.KUBERNETES_CLUSTER != ''
         run: |
           gcloud components install gke-gcloud-auth-plugin
-          gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug
+          gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug --location global
 
       - name: Authenticate with Vault
         if: env.VAULT_ROLE != ''
