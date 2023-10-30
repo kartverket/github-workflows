@@ -149,7 +149,7 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2.0.3
+        uses: hashicorp/setup-terraform@v3.0.0
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
@@ -219,7 +219,7 @@ jobs:
       - name: Setup Terraform
         # Change to v2.1.0 when released. We require the below fix:
         # https://github.com/hashicorp/setup-terraform/pull/125
-        uses: hashicorp/setup-terraform@v2.0.3
+        uses: hashicorp/setup-terraform@v3.0.0
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
@@ -476,7 +476,7 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2.0.3
+        uses: hashicorp/setup-terraform@v3.0.0
         with:
           terraform_wrapper: false
 
