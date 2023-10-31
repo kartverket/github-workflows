@@ -134,7 +134,7 @@ jobs:
         run: docker pull $IMAGE_URL
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54
+        uses: aquasecurity/trivy-action@f78e9ecf42a1271402d4f484518b9313235990e1
         with:
           image-ref: ${{ env.IMAGE_URL }}
           format: sarif
