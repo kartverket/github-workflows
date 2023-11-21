@@ -337,7 +337,7 @@ jobs:
 
     steps:
       - name: Update Pull Request
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           # Passing via env vars to sanitize untrusted inputs
           PLAN_EXITCODE: ${{ needs.terraform_plan.outputs.plan_exitcode }}
