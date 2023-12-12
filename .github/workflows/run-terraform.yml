@@ -250,6 +250,7 @@ jobs:
         run: |
           which gcloud
           find .
+          find /opt/hostedtoolcache/gcloud/
       - name: Authenticate with Vault
         if: env.VAULT_ROLE != ''
         uses: kartverket/vault-jwt-auth-action@v2
