@@ -249,7 +249,7 @@ jobs:
       - name: Debug
         run: |
           which gcloud
-          find ~/gcloud-cloud-sdk
+          find .
       - name: Authenticate with Vault
         if: env.VAULT_ROLE != ''
         uses: kartverket/vault-jwt-auth-action@v2
