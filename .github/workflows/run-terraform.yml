@@ -246,6 +246,10 @@ jobs:
           gcloud components install ${{ env.GCLOUD_PACKAGES }}
           gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug --location global
 
+      - name: Debug
+        run: |
+          which gcloud
+          find ~/gcloud-cloud-sdk
       - name: Authenticate with Vault
         if: env.VAULT_ROLE != ''
         uses: kartverket/vault-jwt-auth-action@v2
