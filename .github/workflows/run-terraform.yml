@@ -216,11 +216,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up dependency cache
+      - name: Set up gcloud cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/google-cloud-sdk
+          path: ~/google-cloud-sdk
+          key: gcloud
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
@@ -481,11 +481,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up dependency cache
+      - name: Set up gcloud cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~/google-cloud-sdk
+          path: ~/google-cloud-sdk
+          key: gcloud
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
