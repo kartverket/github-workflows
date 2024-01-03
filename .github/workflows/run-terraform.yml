@@ -87,6 +87,16 @@ on:
         required: false
         type: string
         default: ""
+    secrets:
+      arm_client_id:
+        description: Azure Service Principal Client ID
+        required: false
+      arm_client_secret:
+        description: Azure Service Principal Client Secret
+        required: false
+      arm_tenant_id:
+        description: Azure AD Tenant ID
+        required: false
 
 env:
   WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
@@ -108,6 +118,9 @@ env:
   TF_OPTION_2: ${{ inputs.terraform_option_2 }}
   TF_OPTION_3: ${{ inputs.terraform_option_3 }}
   REGISTRY: ghcr.io
+  ARM_CLIENT_ID: ${{ secrets.arm_client_id }}
+  ARM_CLIENT_SECRET: ${{ secrets.arm_client_secret }}
+  ARM_TENANT_ID: ${{ secrets.arm_tenant_id }}
 
 jobs:
   setup-env:
