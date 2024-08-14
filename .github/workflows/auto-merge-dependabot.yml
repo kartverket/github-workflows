@@ -36,9 +36,9 @@ jobs:
             if (!data) return false;
             
             // Set this to true if we find a matching dependency update
-            const shouldMerge = data.?some(dependency => {
-                if (!dependencyNames.includes(dependency.dependency_name)) return false;
-                switch (dependency.update_type) {
+            const shouldMerge = data?.some(dependency => {
+                if (!dependencyNames?.includes(dependency?.dependency_name)) return false;
+                switch (dependency?.update_type) {
                   // Fallthrough until we hit a result. Major also matches minor and so on.
                   case 'semver:major': if (updateType === 'version-update:semver-major') return true;
                   case 'semver:minor': if (updateType === 'version-update:semver-minor') return true;
