@@ -5,7 +5,7 @@ on:
     inputs: {}
 
 env:
-  CONFIG_FILE: .github/auto-merge.yml
+  CONFIG_FILE: .github/auto-merge.json
 
 jobs:
   dependabot:
@@ -31,7 +31,8 @@ jobs:
           script: |
             const fs = require('fs');
             const { DEPENDENCY_NAMES, UPDATE_TYPE, CONFIG_FILE } = process.env;
-            console.log({ DEPENDENCY_NAMES, UPDATE_TYPE })
+            const dependencyNames = DEPENDENCY_NAMES?.split();
+            console.log({ dependencyNames, UPDATE_TYPE })
             // [{ match: { dependency_name: "..", update_type: "semver:.."}}]
             const data = fs.readFileSync(CONFIG_FILE, 'utf8');
             console.log({ data })
@@ -39,7 +40,7 @@ jobs:
             
             // Set this to true if we find a matching dependency update
             const shouldMerge = data?.some(dependency => {
-                if (!DEPENDENCY_NAMES?.includes(dependency?.dependency_name)) return false;
+                if (!dependencyNames?.includes(dependency?.dependency_name)) return false;
                 switch (dependency?.update_type) {
                   // Fallthrough until we hit a result. Major also matches minor and so on.
                   case 'semver:major': if (UPDATE_TYPE === 'version-update:semver-major') return true;
