@@ -93,6 +93,7 @@ permissions:
 The configfile is currently the only input. The configfile at `.github/auto-merge.json` supports the following values:
 
 | Key | Type | Required | Description |
+| --- | ---- | -------- | ----------- |
 | `[].match.dependency_name` | string | true | The name of the dependency as it appears on the Dependabot PR |
 | `[].match.update_type` | string | true | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
 
