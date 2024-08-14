@@ -35,11 +35,18 @@ jobs:
             console.log({ dependencyNames, UPDATE_TYPE })
             // [{ match: { dependency_name: "..", update_type: "semver:.."}}]
             const data = fs.readFileSync(CONFIG_FILE, 'utf8');
-            console.log({ data })
             if (!data) return false;
+            let json;
+            try {
+              json = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse configfile ' + CONFIG_FILE);
+              throw e;
+            }
+            console.log({ json })
             
             // Set this to true if we find a matching dependency update
-            const shouldMerge = data?.some(dependency => {
+            const shouldMerge = json?.some(dependency => {
                 if (!dependencyNames?.includes(dependency?.dependency_name)) return false;
                 switch (dependency?.update_type) {
                   // Fallthrough until we hit a result. Major also matches minor and so on.
