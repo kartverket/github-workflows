@@ -24,25 +24,27 @@ jobs:
       - name: Read configfile
         id: read-configfile
         uses: actions/github-script@v7
+        env:
+            DEPENDENCY_NAMES: ${{steps.dependabot-metadata.outputs.dependency-names}}
+            UPDATE_TYPE: ${{steps.dependabot-metadata.outputs.update-type}}
         with:
           script: |
             const fs = require('fs');
-            const dependencyNames = ${{steps.dependabot-metadata.outputs.dependency-names}};
-            const updateType = '${{steps.dependabot-metadata.outputs.update-type}}';
-            console.log({ dependencyNames })
+            const { DEPENDENCY_NAMES, UPDATE_TYPE, CONFIG_FILE } = process.env;
+            console.log({ DEPENDENCY_NAMES, UPDATE_TYPE })
             // [{ match: { dependency_name: "..", update_type: "semver:.."}}]
-            const data = fs.readFileSync(process.env.CONFIG_FILE, 'utf8');
+            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
             console.log({ data })
             if (!data) return false;
             
             // Set this to true if we find a matching dependency update
             const shouldMerge = data?.some(dependency => {
-                if (!dependencyNames?.includes(dependency?.dependency_name)) return false;
+                if (!DEPENDENCY_NAMES?.includes(dependency?.dependency_name)) return false;
                 switch (dependency?.update_type) {
                   // Fallthrough until we hit a result. Major also matches minor and so on.
-                  case 'semver:major': if (updateType === 'version-update:semver-major') return true;
-                  case 'semver:minor': if (updateType === 'version-update:semver-minor') return true;
-                  case 'semver:patch': if (updateType === 'version-update:semver-patch') return true;
+                  case 'semver:major': if (UPDATE_TYPE === 'version-update:semver-major') return true;
+                  case 'semver:minor': if (UPDATE_TYPE === 'version-update:semver-minor') return true;
+                  case 'semver:patch': if (UPDATE_TYPE === 'version-update:semver-patch') return true;
                   default: return false;
                 }
             })
