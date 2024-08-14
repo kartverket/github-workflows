@@ -62,7 +62,7 @@ jobs:
       - name: Enable auto-merge for Dependabot PRs
         if: ${{fromJSON(steps.read-configfile.outputs.result)}}
         run: |
-          gh pr review --approve -b "Dependency matches hashicorp/google-beta, merging" "$PR_URL"
+          gh pr review --approve -b "Dependency matches pattern found in auto-merge config, merging" "$PR_URL"
           gh pr merge --merge --admin "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
