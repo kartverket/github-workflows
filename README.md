@@ -45,6 +45,7 @@ A few requirements are necessary in order to make this work in addition to the e
 
 1. Legacy branch protection rules are not supported. Your repo needs to use the more modern branch rulesets
 2. The Octo STS app needs to be added to the rulesets bypass list so that it can merge the PR
+3. A trust file called `.github/chainguard/auto-update.sts.yaml` needs to exist to allow the workflow to get a valid GitHub token
 
 ### Example
 
@@ -59,7 +60,7 @@ jobs:
       id-token: write
       contents: write
       pull-requests: write
-    uses: kartverket/github-workflows/.github/workflows/auto-merge-dependabot.yml@add-dependabot-merge
+    uses: kartverket/github-workflows/.github/workflows/auto-merge-dependabot.yml@<release tag>
 ```
 
 Example configfile in `.github/auto-update.json`:
@@ -76,6 +77,24 @@ Example configfile in `.github/auto-update.json`:
   }
 }]
 ```
+
+Example STS trust file in `.github/chainguard/auto-update.sts.yaml`:
+```yaml
+issuer: https://token.actions.githubusercontent.com
+subject: repo:kartverket/gcp-service-accounts:pull_request
+
+permissions:
+  contents: write
+  pull_requests: write
+```
+
+### Inputs
+
+The configfile is currently the only input. The configfile at `.github/auto-merge.json` supports the following values:
+
+| Key | Type | Required | Description |
+| `[].match.dependency_name` | string | true | The name of the dependency as it appears on the Dependabot PR |
+| `[].match.update_type` | string | true | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
 
 ## run-terraform
 

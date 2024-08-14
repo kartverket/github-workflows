@@ -16,7 +16,7 @@ jobs:
       - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
         id: octo-sts
         with:
-            scope: kartverket/gcp-service-accounts
+            scope: ${{ github.repository }}
             identity: auto-update
       - name: Dependabot metadata
         id: dependabot-metadata
@@ -43,25 +43,24 @@ jobs:
               console.error('Failed to parse configfile ' + CONFIG_FILE);
               throw e;
             }
-            console.log({ json })
             
             // Set this to true if we find a matching dependency update
-            const shouldMerge = json?.some(dependency => {
-                if (!dependencyNames?.includes(dependency?.dependency_name)) return false;
-                switch (dependency?.update_type) {
+            const shouldMerge = !!json?.some(({ match }) => {
+                if (!dependencyNames?.includes(match?.dependency_name)) return false;
+                switch (match?.update_type) {
                   // Fallthrough until we hit a result. Major also matches minor and so on.
                   case 'semver:major': if (UPDATE_TYPE === 'version-update:semver-major') return true;
                   case 'semver:minor': if (UPDATE_TYPE === 'version-update:semver-minor') return true;
                   case 'semver:patch': if (UPDATE_TYPE === 'version-update:semver-patch') return true;
                   default: return false;
                 }
-            })
+            });
 
-            console.log({ shouldMerge })
+            console.log({ shouldMerge });
             return shouldMerge;
 
       - name: Enable auto-merge for Dependabot PRs
-        if: ${{steps.read-configfile.outputs.result}}
+        if: ${{fromJSON(steps.read-configfile.outputs.result)}}
         run: |
           gh pr review --approve -b "Dependency matches hashicorp/google-beta, merging" "$PR_URL"
           gh pr merge --merge --admin "$PR_URL"
