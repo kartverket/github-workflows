@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
         id: octo-sts
         with:
