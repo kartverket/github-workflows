@@ -21,13 +21,60 @@ Shared reusable workflows for GitHub Actions.
 
 # Reusable Workflows
 
-We currently have 2 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans (DEPRECATED)](#run-security-scans)) available for use.
+We currently have 4 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans (DEPRECATED)](#run-security-scans)) available for use.
 
 See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
 See [Tips and Tricks](#tips-and-tricks) for supporting information regarding usage of the reusable workflows.
 
 <br/>
+
+## run-kubectl
+
+Allows running kubectl commands against a Kubernetes cluster. This is useful for doing restarts of deployments for example.
+
+
+### Features
+
+- Connects to a google cluster as a deploy service account
+- Will always use connect gateway
+- Runs specified kubectl commands against the cluster
+
+### Requirements
+
+- Your gcp project is set up and given required permissions in skip-core-infrastructure and gcp-service-accounts
+
+
+### Example
+
+Example usage in `.github/workflows/auto-merge.yml`:
+```yaml
+name: Restart deployment
+on: pull_request_target
+
+jobs:
+  sandbox:
+    name: restart-app
+    uses: kartverket/github-workflows/.github/workflows/run-kubectl.yaml@latest
+    with:
+      cluster_name: atkv1-dev
+      service_account: mygcp-project-deploy@mygcp-project.iam.gserviceaccount.com
+      kubernetes_project_id: kube-dev-4329023
+      kubernetes_project_number: 43290432893
+      command: restart deployment my-deployment
+      namespace: default
+```
+### Inputs
+
+| Key                       | Type    | Required | Description                                                                                                        |
+|---------------------------|---------|----------|--------------------------------------------------------------------------------------------------------------------|
+| cluster_name              | string  | X        | Cluster name. Found with `gcloud container fleet memberships list`                                                 |
+| service_account           | string  | X        | The projects deploy service account in full format.                                                                |
+| kubernetes_project_id     | string  | X        | The kubernetes GCP project id.                                                                                     |
+| kubernetes_project_number | string  | X        | A 12-digit number used as a unique identifier for the project.                                                     |
+| command                   | boolean | X        | The kubectl command you want to run, exclude `kubectl` and include the namespace by adding the flag `-n namespace` |
+| namespace                 | string  | X        | which namespace to execute the command in                                                                          |
+| kubectl_version           | string  | X        | which kubectl version to use. format: v1.30.0. latest stable is default                                            |
 
 ## auto-merge-dependabot
 
