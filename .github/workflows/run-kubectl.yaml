@@ -1,0 +1,89 @@
+name: Run kubectl
+
+on:
+  workflow_call:
+    inputs:
+      cluster_name:
+        required: true
+        description: 'Name of the cluster to authenticate with. Example: atgcp1-sandbox'
+        type: string
+      kubernetes_project_id:
+        required: true
+        description: 'GCP project id to use for authentication. Example: kubernetes-dev-32432vf'
+        type: string
+      project_number:
+        required: true
+        description: 'GCP project number to use for authentication. Example: 10763836584382'
+        type: string
+      service_account:
+        required: true
+        description: 'Project service account to use for authentication. Full address is expected. Example: team-deploy@project-id.iam.gserviceaccount.com'
+        type: string
+      commands:
+        required: true
+        description: 'Multiline string of commands to run with kubectl. Example: "get pods\nget services".'
+        type: string
+      namespace:
+        required: true
+        description: 'Namespace to run the command in. Example: my-namespace'
+        type: string
+      kubectl_version:
+        required: false
+        description: 'Version of kubectl to install. Default is latest stable.'
+        type: string
+
+env:
+  AUTH_PROJECT_NUMBER: ${{ inputs.project_number }}
+  SERVICE_ACCOUNT: ${{ inputs.service_account }}
+  CLUSTER_NAME: ${{ inputs.cluster_name }}
+  KUBERNETES_PROJECT_ID: ${{ inputs.kubernetes_project_id }}
+  NAMESPACE: ${{ inputs.namespace }}
+  KUBECTL_VERSION: ${{ inputs.kubectl_version }}
+
+jobs:
+  deploy:
+    name: Run kubectl
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Set gcp project envs based on input environment
+        id: set-env
+        run: |
+          PRODUCT_NAME=$(echo $SERVICE_ACCOUNT | sed 's/-deploy.*//')
+          WORKLOAD_IDENTITY_PROVIDER="projects/$AUTH_PROJECT_NUMBER/locations/global/workloadIdentityPools/$PRODUCT_NAME-deploy-pool/providers/github-provider"
+          echo "WORKLOAD_IDENTITY_PROVIDER=$WORKLOAD_IDENTITY_PROVIDER" >> $GITHUB_ENV
+          
+          if [ -z "$KUBECTL_VERSION" ]; then
+            echo "KUBECTL_VERSION=latest" >> $GITHUB_ENV
+          fi
+
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+        id: install
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
+      - id: 'get-credentials'
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.CLUSTER_NAME }}
+          location: 'europe-north1'
+          use_connect_gateway: 'true'
+          project_id: ${{ env.KUBERNETES_PROJECT_ID }}
+          namespace: ${{ env.NAMESPACE }}
+
+      - name: 'Execute kubectl commands'
+        run: |
+          echo "${{ inputs.commands }}" | while IFS= read -r cmd; do
+            echo "Running command: kubectl $cmd"
+            kubectl $cmd
+          done
+        shell: bash
