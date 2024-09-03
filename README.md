@@ -66,15 +66,15 @@ jobs:
 ```
 ### Inputs
 
-| Key                       | Type    | Required | Description                                                                                                        |
-|---------------------------|---------|----------|--------------------------------------------------------------------------------------------------------------------|
-| cluster_name              | string  | X        | Cluster name. Found with `gcloud container fleet memberships list`                                                 |
-| service_account           | string  | X        | The projects deploy service account in full format.                                                                |
-| kubernetes_project_id     | string  | X        | The kubernetes GCP project id.                                                                                     |
-| kubernetes_project_number | string  | X        | A 12-digit number used as a unique identifier for the project.                                                     |
-| command                   | boolean | X        | The kubectl command you want to run, exclude `kubectl` and include the namespace by adding the flag `-n namespace` |
-| namespace                 | string  | X        | which namespace to execute the command in                                                                          |
-| kubectl_version           | string  | X        | which kubectl version to use. format: v1.30.0. latest stable is default                                            |
+| Key                   | Type             | Required | Description                                                             |
+|-----------------------|------------------|----------|-------------------------------------------------------------------------|
+| cluster_name          | string           | X        | Cluster name. Found with `gcloud container fleet memberships list`      |
+| service_account       | string           | X        | The projects deploy service account in full format.                     |
+| kubernetes_project_id | string           | X        | The kubernetes GCP project id.                                          |
+| project_number        | string           | X        | A 12-digit number used as a unique identifier for the product project.  |
+| namespace             | string           | X        | which namespace to execute the command in                               |
+| kubectl_version       | string           | X        | which kubectl version to use. format: v1.30.0. latest stable is default |
+| commands              | multiline string | X        | The kubectl commands you want to run, exclude `kubectl`. example: https://skip.kartverket.no/docs/github-actions/kubectl-fra-github      |
 
 ## auto-merge-dependabot
 

@@ -19,9 +19,9 @@ on:
         required: true
         description: 'Project service account to use for authentication. Full address is expected. Example: team-deploy@project-id.iam.gserviceaccount.com'
         type: string
-      command:
+      commands:
         required: true
-        description: 'Command to run with kubectl. Example: get pods.'
+        description: 'Multiline string of commands to run with kubectl. Example: "get pods\nget services".'
         type: string
       namespace:
         required: true
@@ -80,7 +80,10 @@ jobs:
           project_id: ${{ env.KUBERNETES_PROJECT_ID }}
           namespace: ${{ env.NAMESPACE }}
 
-      - name: 'execute kubectl command'
+      - name: 'Execute kubectl commands'
         run: |
-          echo "Running command: ${{ inputs.command }}"
-          kubectl ${{ inputs.command }} 
+          echo "${{ inputs.commands }}" | while IFS= read -r cmd; do
+            echo "Running command: kubectl $cmd"
+            kubectl $cmd
+          done
+        shell: bash
