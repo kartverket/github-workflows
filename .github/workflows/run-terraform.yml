@@ -181,6 +181,8 @@ jobs:
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: ${{ inputs.use_platform_modules == true && '1.5.7' || 'latest' }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
