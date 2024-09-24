@@ -171,8 +171,6 @@ jobs:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ steps.octo-sts.outputs.token || secrets.GITHUB_TOKEN }}
 
       - name: hack for github internal repo access
         if: ${{ inputs.use_platform_modules == true }}
@@ -239,6 +237,13 @@ jobs:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.workload_identity_provider }}
 
     steps:
+      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
+        id: octo-sts
+        if: ${{ inputs.use_platform_modules == true }}
+        with:
+          scope: kartverket/terraform-modules
+          identity: kartverket_repos
+
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v4
@@ -248,11 +253,15 @@ jobs:
         with:
           node-version: 16
 
+      - name: hack for github internal repo access
+        if: ${{ inputs.use_platform_modules == true }}
+        run: git config --global url."https://x-access-token:${{ steps.octo-sts.outputs.token }}@github.com".insteadOf ssh://git@github.com
+
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        # Change to v2.1.0 when released. We require the below fix:
-        # https://github.com/hashicorp/setup-terraform/pull/125
         uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_version: ${{ inputs.use_platform_modules == true && '1.5.7' || 'latest' }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
@@ -503,15 +512,25 @@ jobs:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
 
     steps:
+      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
+        id: octo-sts
+        if: ${{ inputs.use_platform_modules == true }}
+        with:
+          scope: kartverket/terraform-modules
+          identity: kartverket_repos
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: hack for github internal repo access
+        if: ${{ inputs.use_platform_modules == true }}
+        run: git config --global url."https://x-access-token:${{ steps.octo-sts.outputs.token }}@github.com".insteadOf ssh://git@github.com
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
-          terraform_wrapper: false
+          terraform_version: ${{ inputs.use_platform_modules == true && '1.5.7' || 'latest' }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
