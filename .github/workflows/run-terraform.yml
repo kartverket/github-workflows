@@ -372,7 +372,7 @@ jobs:
           INIT_OUTCOME: ${{ needs.terraform_plan.outputs.init_outcome }}
           VALIDATE_OUTCOME: ${{ needs.terraform_check.outputs.validate_outcome }}
           PLAN_OUTCOME: ${{ needs.terraform_plan.outputs.plan_outcome }}
-          PLAN_FILE: ${{ env.WORKING_DIRECTORY }}/plan-${{ env.ENVIRONMENT }}.tfplan
+          PLAN_FILE: ${{ env.WORKING_DIRECTORY }}/output.txt
 
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
