@@ -180,7 +180,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
-          terraform_version: ${{ inputs.use_platform_modules == true && '1.5.7' || 'latest' }}
+          terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
@@ -248,11 +248,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Node is required for terraform_wrapper on-prem
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 16
-
       - name: hack for github internal repo access
         if: ${{ inputs.use_platform_modules == true }}
         run: git config --global url."https://x-access-token:${{ steps.octo-sts.outputs.token }}@github.com".insteadOf ssh://git@github.com
@@ -261,7 +256,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
-          terraform_version: ${{ inputs.use_platform_modules == true && '1.5.7' || 'latest' }}
+          terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
@@ -366,25 +361,13 @@ jobs:
           path: ${{ env.WORKING_DIRECTORY }}/plan-${{ env.ENVIRONMENT }}.tfplan
           retention-days: 5
 
-  update_github:
-    if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
-    needs: [terraform_check, terraform_plan]
-    name: Update GitHub
-    runs-on: ubuntu-latest
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
-
-    steps:
       - name: Update Pull Request
         uses: actions/github-script@v7
+        if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
         env:
           # Passing via env vars to sanitize untrusted inputs
           PLAN_EXITCODE: ${{ needs.terraform_plan.outputs.plan_exitcode }}
           VALIDATE_OUTPUT: ${{ needs.terraform_check.outputs.validate_stdout }}
-          PLAN_OUTPUT: ${{ needs.terraform_plan.outputs.plan_stdout }}
           FORMAT_OUTCOME: ${{ needs.terraform_check.outputs.format_outcome }}
           INIT_OUTCOME: ${{ needs.terraform_plan.outputs.init_outcome }}
           VALIDATE_OUTCOME: ${{ needs.terraform_check.outputs.validate_outcome }}
@@ -393,6 +376,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const run_url = process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/actions/runs/' + process.env.GITHUB_RUN_ID;
+            const run_link = '<a href="' + run_url + '">Actions</a>.'
+            const fs = require('fs')
+            const plan_file = fs.readFileSync('plan-' + process.env.ENVIRONMENT + '.tfplan', 'utf8')
+            const plan = plan_file.length > 65000 ? plan_file.toString().substring(0, 65000) + '...' : plan_file
+            const truncated_message = plan_file.length > 65000 ? "Output is too long and was truncated. You can read full Plan in " + run_link + "<br /><br />" : ""
             const { data: comments } = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -404,7 +393,6 @@ jobs:
               PLAN_EXITCODE,
               DEPLOY_ON,
               VALIDATE_OUTPUT,
-              PLAN_OUTPUT,
               FORMAT_OUTCOME,
               INIT_OUTCOME,
               VALIDATE_OUTCOME,
@@ -449,10 +437,11 @@ jobs:
             <details><summary>Show Plan</summary>
 
             \`\`\`\n
-            ${PLAN_OUTPUT}
+            ${plan}
             \`\`\`
 
             </details>
+            ${truncated_message}
 
             #### Next action 🚀
             ${action}
@@ -530,7 +519,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3.1.2
         with:
-          terraform_version: ${{ inputs.use_platform_modules == true && '1.5.7' || 'latest' }}
+          terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
