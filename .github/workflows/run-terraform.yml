@@ -372,6 +372,7 @@ jobs:
           INIT_OUTCOME: ${{ needs.terraform_plan.outputs.init_outcome }}
           VALIDATE_OUTCOME: ${{ needs.terraform_check.outputs.validate_outcome }}
           PLAN_OUTCOME: ${{ needs.terraform_plan.outputs.plan_outcome }}
+          PLAN_FILE: ${{ env.WORKING_DIRECTORY }}/plan-${{ env.ENVIRONMENT }}.tfplan
 
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -379,7 +380,7 @@ jobs:
             const run_url = process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/actions/runs/' + process.env.GITHUB_RUN_ID;
             const run_link = '<a href="' + run_url + '">Actions</a>.'
             const fs = require('fs')
-            const plan_file = fs.readFileSync('plan-' + process.env.ENVIRONMENT + '.tfplan', 'utf8')
+            const plan_file = fs.readFileSync(process.env.PLAN_FILE, 'utf8')
             const plan = plan_file.length > 65000 ? plan_file.toString().substring(0, 65000) + '...' : plan_file
             const truncated_message = plan_file.length > 65000 ? "Output is too long and was truncated. You can read full Plan in " + run_link + "<br /><br />" : ""
             const { data: comments } = await github.rest.issues.listComments({
