@@ -273,7 +273,7 @@ jobs:
       # Install the Gcloud suite in order to install gke-gcloud-auth-plugin plugin
       - name: Set up Cloud SDK
         if: env.KUBERNETES_CLUSTER != ''
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Authenticate with Kubernetes
         if: env.KUBERNETES_CLUSTER != ''
@@ -541,7 +541,7 @@ jobs:
 
       - name: Set up Cloud SDK
         if: env.KUBERNETES_CLUSTER != ''
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Authenticate with Kubernetes
         if: env.KUBERNETES_CLUSTER != ''
