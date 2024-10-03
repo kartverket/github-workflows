@@ -66,15 +66,15 @@ jobs:
 ```
 ### Inputs
 
-| Key                   | Type             | Required | Description                                                             |
-|-----------------------|------------------|----------|-------------------------------------------------------------------------|
-| cluster_name          | string           | X        | Cluster name. Found with `gcloud container fleet memberships list`      |
-| service_account       | string           | X        | The projects deploy service account in full format.                     |
-| kubernetes_project_id | string           | X        | The kubernetes GCP project id.                                          |
-| project_number        | string           | X        | A 12-digit number used as a unique identifier for the product project.  |
-| namespace             | string           | X        | which namespace to execute the command in                               |
-| kubectl_version       | string           | X        | which kubectl version to use. format: v1.30.0. latest stable is default |
-| commands              | multiline string | X        | The kubectl commands you want to run, exclude `kubectl`. example: https://skip.kartverket.no/docs/github-actions/kubectl-fra-github      |
+| Key                   | Type             | Required | Description                                                                                                                         |
+|-----------------------|------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------|
+| cluster_name          | string           | X        | Cluster name. Found with `gcloud container fleet memberships list`                                                                  |
+| service_account       | string           | X        | The projects deploy service account in full format.                                                                                 |
+| kubernetes_project_id | string           | X        | The kubernetes GCP project id.                                                                                                      |
+| project_number        | string           | X        | A 12-digit number used as a unique identifier for the product project.                                                              |
+| namespace             | string           | X        | which namespace to execute the command in                                                                                           |
+| kubectl_version       | string           | X        | which kubectl version to use. format: v1.30.0. latest stable is default                                                             |
+| commands              | multiline string | X        | The kubectl commands you want to run, exclude `kubectl`. example: https://skip.kartverket.no/docs/github-actions/kubectl-fra-github |
 
 ## auto-merge-dependabot
 
@@ -139,10 +139,10 @@ permissions:
 
 The configfile is currently the only input. The configfile at `.github/auto-merge.json` supports the following values:
 
-| Key | Type | Required | Description |
-| --- | ---- | -------- | ----------- |
-| `[].match.dependency_name` | string | true | The name of the dependency as it appears on the Dependabot PR |
-| `[].match.update_type` | string | true | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
+| Key                        | Type   | Required | Description                                                                                                                                                                                |
+|----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `[].match.dependency_name` | string | true     | The name of the dependency as it appears on the Dependabot PR                                                                                                                              |
+| `[].match.update_type`     | string | true     | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
 
 ## run-terraform
 
@@ -150,7 +150,7 @@ This workflow plans and applies Terraform config to deploy to an environment.
 
 ### Features
 
-- Logs in to GCP, Kubernetes and Vault automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
+- Logs in to GCP and Kubernetes automatically with [Workload Identity Federation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
 - Posts comments with relevant information to Pull Requests
 - Runs validate, format and plan to verify deployment follows conventions before running apply
 - Posts summaries on relevant steps on the Action pipeline view to improve visibility
@@ -209,17 +209,16 @@ jobs:
 ### Inputs
 
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------------------------------------|---------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform. Service account and auth_project_number environment must coincide.                                                                                                                                                                     |
 | auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. Project number and SA environment must coincide                                                                                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
-| runner                              | string  | X        | The GitHub runner to use when running the deploy. This can for example be `ubuntu-latest`. When using vault, you **have** to use an on-premise runner. These are usually in the format of `atkv1-$ENVIRONMENT`.                                                                                                               |
+| runner                              | string  | X        | The GitHub runner to use when running the deploy. This can for example be `ubuntu-latest`.                                                                                                                                                                                                                                    |
 | deploy_on                           | string  |          | Which branch will be the only branch allowed to deploy. This defaults to the main branch so that other branches only run check and plan. Defaults to `refs/heads/main`.                                                                                                                                                       |
 | working_directory                   | string  |          | The directory in which to run terraform, i.e. where the Terraform files are placed. The path is relative to the root of the repository.                                                                                                                                                                                       |
 | project_id                          | string  |          | The GCP Project ID to use as the "active project" when running Terraform. When deploying to Kubernetes, this must match the project in which the Kubernetes cluster is registered.                                                                                                                                            |
 | kubernetes_cluster                  | string  |          | An optional kubernetes cluster to authenticate to. Note that the project_id must match where the cluster is registered.                                                                                                                                                                                                       |
 | environment                         | string  |          | The GitHub environment to use when deploying. See [using environments for deployment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) for more info on this.                                                                                                |
-| vault_role                          | string  |          | Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work. Note also that you must use an on-premise runner when using vault. See `runner ` for information.                                                                                                    |
 | terraform_workspace                 | string  |          | When provided will set a workspace as the active workspace when planning and deploying.                                                                                                                                                                                                                                       |
 | terraform_option_X                  | string  |          | An additional terraform option to be passed to plan and apply. For example `-var-file=dev.tfvars` and `-var=<variableName>=<variableValue>`. X may be an integer between 1-3, which allows at most 3 options.                                                                                                                 |
 | terraform_init_option_Y             | string  |          | An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`. Y may be an integer between 1-3, which allows at most 3 init options.                                                                                                                                                   |
@@ -295,7 +294,7 @@ jobs:
 ### Inputs
 
 | Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------------------------------------|---------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. This project should be your dev environment project, as this is the environment where the attestors are located                                                        |
 | workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
 | service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
@@ -614,17 +613,10 @@ jobs:
 
 ## Passing secrets to reusable workflows
 
-Secrets should be administered through vault and thus there is no explicit
+Secrets should be administered through Google Secret Manager and thus there is no explicit
 support for taking GitHub secrets into the action. GitHub will also stop you
 from sending secrets as arguments using the `with` argument, so this will not
 work either.
-
-Use the [vault_generic_secret](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/data-sources/generic_secret)
-Terraform data source along with the `vault_role` argument to run-terraform to
-fetch secrets required at deploy-time.
-
-Each repo needs its own unique `vault_role`. Contact SKIP if you do not have
-this role.
 
 <br />
 
