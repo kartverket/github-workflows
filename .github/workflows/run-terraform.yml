@@ -360,7 +360,7 @@ jobs:
           echo "stdout=$STDOUT" >> $GITHUB_OUTPUT
 
       - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: plan-${{ env.ENVIRONMENT }}.tfplan
           path: ${{ env.WORKING_DIRECTORY }}/plan-${{ env.ENVIRONMENT }}.tfplan
