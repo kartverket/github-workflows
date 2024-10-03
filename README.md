@@ -21,13 +21,128 @@ Shared reusable workflows for GitHub Actions.
 
 # Reusable Workflows
 
-We currently have 2 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans (DEPRECATED)](#run-security-scans)) available for use.
+We currently have 4 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans (DEPRECATED)](#run-security-scans)) available for use.
 
 See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
 See [Tips and Tricks](#tips-and-tricks) for supporting information regarding usage of the reusable workflows.
 
 <br/>
+
+## run-kubectl
+
+Allows running kubectl commands against a Kubernetes cluster. This is useful for doing restarts of deployments for example.
+
+
+### Features
+
+- Connects to a google cluster as a deploy service account
+- Will always use connect gateway
+- Runs specified kubectl commands against the cluster
+
+### Requirements
+
+- Your gcp project is set up and given required permissions in skip-core-infrastructure and gcp-service-accounts
+
+
+### Example
+
+Example usage in `.github/workflows/auto-merge.yml`:
+```yaml
+name: Restart deployment
+on: pull_request_target
+
+jobs:
+  sandbox:
+    name: restart-app
+    uses: kartverket/github-workflows/.github/workflows/run-kubectl.yaml@latest
+    with:
+      cluster_name: atkv1-dev
+      service_account: mygcp-project-deploy@mygcp-project.iam.gserviceaccount.com
+      kubernetes_project_id: kube-dev-4329023
+      kubernetes_project_number: 43290432893
+      command: restart deployment my-deployment
+      namespace: default
+```
+### Inputs
+
+| Key                   | Type             | Required | Description                                                             |
+|-----------------------|------------------|----------|-------------------------------------------------------------------------|
+| cluster_name          | string           | X        | Cluster name. Found with `gcloud container fleet memberships list`      |
+| service_account       | string           | X        | The projects deploy service account in full format.                     |
+| kubernetes_project_id | string           | X        | The kubernetes GCP project id.                                          |
+| project_number        | string           | X        | A 12-digit number used as a unique identifier for the product project.  |
+| namespace             | string           | X        | which namespace to execute the command in                               |
+| kubectl_version       | string           | X        | which kubectl version to use. format: v1.30.0. latest stable is default |
+| commands              | multiline string | X        | The kubectl commands you want to run, exclude `kubectl`. example: https://skip.kartverket.no/docs/github-actions/kubectl-fra-github      |
+
+## auto-merge-dependabot
+
+Allows auto-merging dependabot PRs that match given patterns. Useful when you are drowning in PRs and have built up trust in a set of dependencies that release often and never break. It's recommended to have a sane CI setup so that anything merged to main at least passes CI tests before going into prod
+
+### Features
+
+- Allows configuring a set of dependencies in a configfile that can be merged
+- Each dependency will allow either major, minor or patch updates (only supports semver)
+- A bot approves and merges the PR
+
+### Requirements
+
+A few requirements are necessary in order to make this work in addition to the example below. 
+
+1. Legacy branch protection rules are not supported. Your repo needs to use the more modern branch rulesets
+2. The Octo STS app needs to be added to the rulesets bypass list so that it can merge the PR
+3. A trust file called `.github/chainguard/auto-update.sts.yaml` needs to exist to allow the workflow to get a valid GitHub token
+
+### Example
+
+Example usage in `.github/workflows/auto-merge.yml`:
+```yaml
+name: Dependabot auto-merge
+on: pull_request_target
+
+jobs:
+  auto-merge-dependabot:
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    uses: kartverket/github-workflows/.github/workflows/auto-merge-dependabot.yml@<release tag>
+```
+
+Example configfile in `.github/auto-update.json`:
+```json
+[{
+  "match": {
+    "dependency_name": "hashicorp/google",
+    "update_type": "semver:minor"
+  }
+}, {
+  "match": {
+    "dependency_name": "hashicorp/google-beta",
+    "update_type": "semver:minor"
+  }
+}]
+```
+
+Example STS trust file in `.github/chainguard/auto-update.sts.yaml`:
+```yaml
+issuer: https://token.actions.githubusercontent.com
+subject: repo:kartverket/gcp-service-accounts:pull_request
+
+permissions:
+  contents: write
+  pull_requests: write
+```
+
+### Inputs
+
+The configfile is currently the only input. The configfile at `.github/auto-merge.json` supports the following values:
+
+| Key | Type | Required | Description |
+| --- | ---- | -------- | ----------- |
+| `[].match.dependency_name` | string | true | The name of the dependency as it appears on the Dependabot PR |
+| `[].match.update_type` | string | true | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
 
 ## run-terraform
 

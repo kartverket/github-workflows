@@ -1,2 +1,5 @@
-version: 1.0
-organisasjon: IT
+version: 3.0
+organization: IT
+product: 
+repo_types: [Library]
+platforms: []

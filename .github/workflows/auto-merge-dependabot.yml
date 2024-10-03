@@ -1,0 +1,69 @@
+name: Dependabot auto-merge
+
+on:
+  workflow_call:
+    inputs: {}
+
+env:
+  CONFIG_FILE: .github/auto-merge.json
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
+        id: octo-sts
+        with:
+            scope: ${{ github.repository }}
+            identity: auto-update
+      - name: Dependabot metadata
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@v2
+      - name: Read configfile
+        id: read-configfile
+        uses: actions/github-script@v7
+        env:
+            DEPENDENCY_NAMES: ${{steps.dependabot-metadata.outputs.dependency-names}}
+            UPDATE_TYPE: ${{steps.dependabot-metadata.outputs.update-type}}
+        with:
+          script: |
+            const fs = require('fs');
+            const { DEPENDENCY_NAMES, UPDATE_TYPE, CONFIG_FILE } = process.env;
+            const dependencyNames = DEPENDENCY_NAMES?.split();
+            console.log({ dependencyNames, UPDATE_TYPE })
+            // [{ match: { dependency_name: "..", update_type: "semver:.."}}]
+            const data = fs.readFileSync(CONFIG_FILE, 'utf8');
+            if (!data) return false;
+            let json;
+            try {
+              json = JSON.parse(data);
+            } catch (e) {
+              console.error('Failed to parse configfile ' + CONFIG_FILE);
+              throw e;
+            }
+            
+            // Set this to true if we find a matching dependency update
+            const shouldMerge = !!json?.some(({ match }) => {
+                if (!dependencyNames?.includes(match?.dependency_name)) return false;
+                switch (match?.update_type) {
+                  // Fallthrough until we hit a result. Major also matches minor and so on.
+                  case 'semver:major': if (UPDATE_TYPE === 'version-update:semver-major') return true;
+                  case 'semver:minor': if (UPDATE_TYPE === 'version-update:semver-minor') return true;
+                  case 'semver:patch': if (UPDATE_TYPE === 'version-update:semver-patch') return true;
+                  default: return false;
+                }
+            });
+
+            console.log({ shouldMerge });
+            return shouldMerge;
+
+      - name: Enable auto-merge for Dependabot PRs
+        if: ${{fromJSON(steps.read-configfile.outputs.result)}}
+        run: |
+          gh pr review --approve -b "Dependency matches pattern found in auto-merge config, merging" "$PR_URL"
+          gh pr merge --merge --admin "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
