@@ -68,10 +68,6 @@ on:
         description: "An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`"
         required: false
         type: string
-      vault_role:
-        description: "Required when using vault in terraform. Enables fetching jwt and logging in to vault for the terraform provider to work"
-        required: false
-        type: string
       add_comment_on_pr:
         description: "Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`"
         required: false
@@ -113,7 +109,6 @@ env:
   ENVIRONMENT: ${{ inputs.environment }}
   KUBERNETES_CLUSTER: ${{ inputs.kubernetes_cluster }}
   TF_TMP_WORKSPACE: ${{ inputs.terraform_workspace }}
-  VAULT_ROLE: ${{ inputs.vault_role }}
   DESTROY: ${{ inputs.destroy }}
   UNLOCK: ${{ inputs.unlock }}
   TF_INIT_OPTION_1: ${{ inputs.terraform_init_option_1 }}
@@ -142,75 +137,6 @@ jobs:
           PROVIDER=${OVERRIDE:-$DEFAULT_WORKLOAD_IDENTITY}
           echo "WORKLOAD_IDENTITY_PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
 
-  terraform_check:
-    needs: [setup-env]
-    name: Terraform Validate
-    runs-on: ubuntu-latest
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-
-    outputs:
-      validate_outcome: ${{ steps.validate.outcome }}
-      validate_stdout: ${{ steps.validate.outputs.stdout}}
-      format_outcome: ${{ steps.format.outcome }}
-
-    env:
-      WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
-
-    steps:
-      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
-        id: octo-sts
-        if: ${{ inputs.use_platform_modules == true }}
-        with:
-          scope: kartverket/terraform-modules
-          identity: kartverket_repos
-
-      # Checkout the repository to the GitHub Actions runner
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: hack for github internal repo access
-        if: ${{ inputs.use_platform_modules == true }}
-        run: git config --global url."https://x-access-token:${{ steps.octo-sts.outputs.token }}@github.com".insteadOf ssh://git@github.com
-
-      # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3.1.2
-        with:
-          terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
-
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ env.SERVICE_ACCOUNT }}
-          project_id: ${{ env.PROJECT_ID }}
-
-      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-      - name: Terraform Init
-        run: terraform init -backend=false -input=false
-
-      - name: Terraform Validate
-        id: validate
-        continue-on-error: true
-        run: |
-          echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
-          terraform validate -no-color | tee -a output.txt
-          cat output.txt | sed '/^::/d' >> $GITHUB_STEP_SUMMARY
-
-      # Checks that all Terraform configuration files adhere to a canonical format
-      - name: Terraform Format
-        id: format
-
-        run: |
-          echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
-          terraform fmt -check -no-color || { echo '
-          FAILURE! The above files are not properly formatted.
-          Run `terraform fmt` in $WORKING_DIRECTORY, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
-
   terraform_plan:
     needs: [setup-env]
     name: Terraform Plan
@@ -224,12 +150,6 @@ jobs:
       run:
         shell: bash
         working-directory: ${{ env.WORKING_DIRECTORY }}
-
-    outputs:
-      init_outcome: ${{ steps.init.outcome }}
-      plan_exitcode: ${{ steps.plan.outputs.exitcode }}
-      plan_outcome: ${{ steps.plan.outcome }}
-      plan_stdout: ${{ steps.plan.outputs.stdout }}
 
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
@@ -276,15 +196,6 @@ jobs:
           gcloud components install gke-gcloud-auth-plugin
           gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug --location global
 
-      - name: Authenticate with Vault
-        if: env.VAULT_ROLE != ''
-        uses: kartverket/vault-jwt-auth-action@v2
-        with:
-          vaultaddr: https://vault.${{ env.ENVIRONMENT }}.skip.statkart.no
-          path: jwt-${{ env.ENVIRONMENT }}
-          role: ${{ env.VAULT_ROLE }}
-          certb64: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
-
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Pre-Init
         if: env.TF_TMP_WORKSPACE != ''
@@ -316,6 +227,23 @@ jobs:
         run: |
           terraform force-unlock -force $UNLOCK
 
+      - name: Terraform Validate
+        id: validate
+        run: |
+          echo 'Run validate' | tee $GITHUB_STEP_SUMMARY
+          terraform validate -no-color | tee -a output.txt
+          cat output.txt | sed '/^::/d' >> $GITHUB_STEP_SUMMARY
+
+      # Checks that all Terraform configuration files adhere to a canonical format
+      - name: Terraform Format
+        id: format
+
+        run: |
+          echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
+          terraform fmt -check -no-color || { echo '
+          FAILURE! The above files are not properly formatted.
+          Run `terraform fmt` in $WORKING_DIRECTORY, commit the changed files and push to fix the issue' | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
+
       - name: Terraform Plan
         id: plan
         run: |
@@ -337,7 +265,7 @@ jobs:
 
           # 2. Remove some github commands and fluff
           # This removes any line containing "Reading...", "Read complete after", and "Refreshing state...", which are terraform lines spewed out during state reading
-          STDOUT="$(sed '/^::/d' output.txt | grep -v -E '(.*Reading\.\.\..*)|(.*Read complete after.*)|(.*Refreshing state\.\.\..*)')"
+          STDOUT="$(sed '/^::/d' output.txt | grep -v -E '(.*Reading\.\.\..*)|(.*Read complete after.*)|(.*Refreshing state\.\.\..*)' | tee output.txt)"
 
           # 3. Write to step summary
           cat >> $GITHUB_STEP_SUMMARY <<EOF
@@ -366,12 +294,12 @@ jobs:
         if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
         env:
           # Passing via env vars to sanitize untrusted inputs
-          PLAN_EXITCODE: ${{ needs.terraform_plan.outputs.plan_exitcode }}
-          VALIDATE_OUTPUT: ${{ needs.terraform_check.outputs.validate_stdout }}
-          FORMAT_OUTCOME: ${{ needs.terraform_check.outputs.format_outcome }}
-          INIT_OUTCOME: ${{ needs.terraform_plan.outputs.init_outcome }}
-          VALIDATE_OUTCOME: ${{ needs.terraform_check.outputs.validate_outcome }}
-          PLAN_OUTCOME: ${{ needs.terraform_plan.outputs.plan_outcome }}
+          VALIDATE_OUTPUT: ${{ steps.validate.outputs.stdout }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          FORMAT_OUTCOME: ${{ steps.format.outcome}}
+          INIT_OUTCOME: ${{ steps.init.outcome }}
+          PLAN_EXITCODE: ${{ steps.plan.outputs.exitcode }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
           PLAN_FILE: ${{ env.WORKING_DIRECTORY }}/output.txt
 
         with:
@@ -480,7 +408,7 @@ jobs:
             }
 
   run_terraform:
-    needs: [terraform_check, terraform_plan, setup-env]
+    needs: [setup-env, terraform_plan]
     if: ((github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') || (github.ref == inputs.deploy_on || github.ref_name == inputs.deploy_on)) && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (needs.terraform_plan.outputs.plan_exitcode == '2' || inputs.destroy == true)
     name: Terraform Apply or Destroy
     runs-on: ${{ inputs.runner }}
@@ -538,15 +466,6 @@ jobs:
         run: |
           gcloud components install gke-gcloud-auth-plugin
           gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug --location global
-
-      - name: Authenticate with Vault
-        if: env.VAULT_ROLE != ''
-        uses: kartverket/vault-jwt-auth-action@v2
-        with:
-          vaultaddr: https://vault.${{ env.ENVIRONMENT }}.skip.statkart.no
-          path: jwt-${{ env.ENVIRONMENT }}
-          role: ${{ env.VAULT_ROLE }}
-          certb64: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoakNDQW02Z0F3SUJBZ0lRSHhRNCszNDQ1TFJDazN6ZlVUUENPekFOQmdrcWhraUc5dzBCQVFzRkFEQkwKTVJJd0VBWUtDWkltaVpQeUxHUUJHUllDYm04eEdEQVdCZ29Ka2lhSmsvSXNaQUVaRmdoemRHRjBhMkZ5ZERFYgpNQmtHQTFVRUF4TVNTMkZ5ZEhabGNtdGxkQ0JTYjI5MElFTkJNQjRYRFRFMk1ETXlNakUwTURJek0xb1hEVFEyCk1ETXlNakUwTVRJek0xb3dTekVTTUJBR0NnbVNKb21UOGl4a0FSa1dBbTV2TVJnd0ZnWUtDWkltaVpQeUxHUUIKR1JZSWMzUmhkR3RoY25ReEd6QVpCZ05WQkFNVEVrdGhjblIyWlhKclpYUWdVbTl2ZENCRFFUQ0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFKSjBaMWExNEpYblkxSUptaDgweGgwSFhKZmZZZ2lXCjVFRGtxOUVFUXRPYk1SUlVDbm16aUlDQ3lPM3hLQUdqWEJ1aFowL21vVUJnUXFwbWtDSlIvQ1pubnNJMVZ6QVkKMHNPbWlRaFVNSVdCUzhDRkltVWNoTmJOREM1SzZYVStwNGZodWxFN0lPL3FTZDd3V2dNSFZLdUE5eVBvVFJsMwowaVpZdG5IcUlCb3dZS3dJVHBBSmpwME5hTmNIalY2TWVOdlBrR1RURk45S1MxcG53QjhZVnFVYUZXdDJGVDh1CjBSTE9kUUgyeFFva1l4YW1RRWNqaEFBSnlzVDdkK25YemRzYUEwYXQrYlNwUExxTURVOW5JZFpuRGc1TlgyY0oKcnNlRm5tWTJ3Q2NLL2tMUUpVSWxSQVQ0UHI5Y08rZDRvSytRTFFOaGZpVmxUa0RaZU1ISHhia0NBd0VBQWFObQpNR1F3RXdZSkt3WUJCQUdDTnhRQ0JBWWVCQUJEQUVFd0N3WURWUjBQQkFRREFnR0dNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRk5xNUhyME9mV3kzbWMvckxXUEZrMHpmSWhlck1CQUdDU3NHQVFRQmdqY1YKQVFRREFnRUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUJkdHFVbDdvWFFTYWxIWjh6Y2dRZllvZWVxTGNwRQp5RjhFUngwdnFQc0hmY2VnL0ZXZEhFUVh4TWtPN1JER1Fzb2NmTVZvR0FBT1R3VlFPTHZCNmg4MnhCRVozSjBqCjBGMWkvcSs0WEd2NjdvOW43Z2NLNUFGOVNhcy9MVFB4N3dqQjV2dS85TkxyRkE1eXgyUG1iRnpNNFZRcXkwZnQKd2loaTdxMlhoQlVYUGo0SEdhTVE2aE1CYkRhSVl0Z0ovWWlkTFpSeGZWQVpGVEN4UDlPcDZVR3d0Zi9DeHdPSQo5ZkxtaWIwUDZCWG9sR3h1eU5XdHU2K0Vxc1JtMGtvcE5jcDkyZWpiOGsyb3R4VWdRcGNoVzRwd2RLMWZ3azhECndVblY5emhTc2k5eVZGMVVRUDZRcEJCeFNDZE5PT3JSSEg0N1djZmF0VUg0SWhuQW9PS0VyUVpBCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
 
       - name: Download Plan Artifact
         uses: actions/download-artifact@v4
