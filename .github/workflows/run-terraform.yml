@@ -150,6 +150,8 @@ jobs:
       run:
         shell: bash
         working-directory: ${{ env.WORKING_DIRECTORY }}
+    outputs:
+      plan_exitcode: ${{ steps.plan.outputs.exitcode }}
 
     env:
       # makes some minor adjustments to Terraforms output to de-emphasize specific commands to run
