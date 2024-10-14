@@ -61,8 +61,9 @@ jobs:
       service_account: mygcp-project-deploy@mygcp-project.iam.gserviceaccount.com
       kubernetes_project_id: kube-dev-4329023
       kubernetes_project_number: 43290432893
-      command: restart deployment my-deployment
       namespace: default
+      command: |
+        restart deployment my-deployment
 ```
 ### Inputs
 

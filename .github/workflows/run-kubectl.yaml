@@ -19,13 +19,13 @@ on:
         required: true
         description: 'Project service account to use for authentication. Full address is expected. Example: team-deploy@project-id.iam.gserviceaccount.com'
         type: string
+      namespace:
+        required: true
+        description: 'Kubernetes namespace to use for kubectl commands. Example: default'
+        type: string
       commands:
         required: true
         description: 'Multiline string of commands to run with kubectl. Example: "get pods\nget services".'
-        type: string
-      namespace:
-        required: true
-        description: 'Namespace to run the command in. Example: my-namespace'
         type: string
       kubectl_version:
         required: false
@@ -37,8 +37,8 @@ env:
   SERVICE_ACCOUNT: ${{ inputs.service_account }}
   CLUSTER_NAME: ${{ inputs.cluster_name }}
   KUBERNETES_PROJECT_ID: ${{ inputs.kubernetes_project_id }}
-  NAMESPACE: ${{ inputs.namespace }}
   KUBECTL_VERSION: ${{ inputs.kubectl_version }}
+  NAMESPACE: ${{ inputs.namespace }}
 
 jobs:
   deploy:
@@ -70,15 +70,19 @@ jobs:
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
-
-      - id: 'get-credentials'
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ env.CLUSTER_NAME }}
-          location: 'europe-north1'
-          use_connect_gateway: 'true'
           project_id: ${{ env.KUBERNETES_PROJECT_ID }}
-          namespace: ${{ env.NAMESPACE }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authenticate with Kubernetes
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+          gcloud container hub memberships get-credentials $CLUSTER_NAME --verbosity debug 
+
+      - name: Set kubectl namespace
+        run: |
+          kubectl config set-context --current --namespace=$NAMESPACE
 
       - name: 'Execute kubectl commands'
         run: |
