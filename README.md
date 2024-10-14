@@ -31,7 +31,7 @@ See [Tips and Tricks](#tips-and-tricks) for supporting information regarding usa
 
 ## run-kubectl
 
-Allows running kubectl commands against a Kubernetes cluster. This is useful for doing restarts of deployments for example.
+Allows running kubectl commands against a GKE Kubernetes cluster. Does not work with GDC. This is useful for doing restarts of deployments for example.
 
 
 ### Features
