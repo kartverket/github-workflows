@@ -10,29 +10,3 @@ spec:
   lifecycle: "production"
   owner: "skip"
   system: "skip"
----
-apiVersion: "backstage.io/v1alpha1"
-kind: "Group"
-metadata:
-  name: "security_champion_github-workflows"
-  title: "Security Champion github-workflows"
-spec:
-  type: "security_champion"
-  parent: "it_security_champions"
-  members:
-  - "omaen"
-  children:
-  - "resource:github-workflows"
----
-apiVersion: "backstage.io/v1alpha1"
-kind: "Resource"
-metadata:
-  name: "github-workflows"
-  links:
-  - url: "https://github.com/kartverket/github-workflows"
-    title: "github-workflows på GitHub"
-spec:
-  type: "repo"
-  owner: "security_champion_github-workflows"
-  dependencyOf:
-  - "component:github-workflows"
