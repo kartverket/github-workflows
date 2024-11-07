@@ -98,6 +98,12 @@ on:
       arm_tenant_id:
         description: Azure AD Tenant ID
         required: false
+      ts_client_id:
+        description: "The client ID for the Tailscale OAuth application"
+        required: false
+      ts_client_secret:
+        description: "The client secret for the Tailscale OAuth application"
+        required: false
 
 env:
   WORKLOAD_IDENTITY_PROVIDER_OVERRIDE: ${{ inputs.workload_identity_provider_override }}
@@ -263,8 +269,8 @@ jobs:
         if: env.NEED_TAILSCALE == 'true'
         uses: tailscale/github-action@v2
         with:
-          oauth-client-id: ${{ secrets.TS_CLOUDSQL_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_CLOUDSQL_OAUTH_SECRET }}
+          oauth-client-id: ${{ secrets.ts_client_id }}
+          oauth-secret: ${{ secrets.ts_client_secret }}
           tags: tag:cloudsql-user
 
       - name: Terraform Plan
@@ -506,6 +512,26 @@ jobs:
             ${TF_INIT_OPTION_1:+"$TF_INIT_OPTION_1"} \
             ${TF_INIT_OPTION_2:+"$TF_INIT_OPTION_2"} \
             ${TF_INIT_OPTION_3:+"$TF_INIT_OPTION_3"}
+
+      - name: Check for PostgreSQL Provider
+        id: check_postgresql
+        run: |
+          PROVIDER_CHECK=$(terraform providers | grep cyrilgdn/postgresql) || true
+          if [ -n "$PROVIDER_CHECK" ]; then
+            echo "PostgreSQL provider found."
+            echo "NEED_TAILSCALE=true" >> $GITHUB_ENV
+          else
+            echo "PostgreSQL provider not found."
+            echo "NEED_TAILSCALE=false" >> $GITHUB_ENV
+          fi
+
+      - name: Tailscale
+        if: env.NEED_TAILSCALE == 'true'
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.ts_client_id }}
+          oauth-secret: ${{ secrets.ts_client_secret }}
+          tags: tag:cloudsql-user
 
       # Run terraform destroy on push to main if 'destroy' is set to true
       - name: Terraform Destroy
