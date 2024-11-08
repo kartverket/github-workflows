@@ -160,6 +160,7 @@ This workflow plans and applies Terraform config to deploy to an environment.
 - Prevents deploys running in parallel against the same environment crashing due to failing to acquire state lock
 - Allows for the choice of deploying and/or destroying terraform config
 - Will only deploy on push or workflow_dispatch event to main by default. Can be configured to deploy on a different branch using the `deploy_on` input.
+- Logs into tailscale if using the postgresql provider
 
 ### Example
 
@@ -183,6 +184,7 @@ jobs:
       # For accessing repository
       packages: write
     uses: kartverket/github-workflows/.github/workflows/run-terraform.yml@<release tag>
+    secrets: inherit # Optional, but required if you need to use tailscale
     with:
       runner: ubuntu-latest
       environment: dev
@@ -226,6 +228,12 @@ jobs:
 | add_comment_on_pr                   | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                                                                                                                    |
 | destroy                             | boolean |          | An optional boolean that determines whether terraform will be destroyed. Defaults to 'false'.                                                                                                                                                                                                                                 |
 | unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.                                                                                                                                                                                                                                       |
+
+### Tailscale
+
+If the `cyrilgdn/postgresql` provider is present, the `secrets: inherit` input is required to use the tailscale provider. 
+The provider will set the environment variable `NEED_TAILSCALE` to true, which will trigger the tailscale login.
+As long as your repository is internal, the tailscale secrets should be present on your repository.
 
 <br />
 
