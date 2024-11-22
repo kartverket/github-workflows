@@ -88,6 +88,11 @@ on:
         required: false
         type: boolean
         default: false
+      checkout_submodules:
+        description: "An optional boolean which enables checking out submodules. Defaults to false"
+        required: false
+        type: boolean
+        default: false
     secrets:
       arm_client_id:
         description: Azure Service Principal Client ID
@@ -170,6 +175,9 @@ jobs:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.checkout_submodules == true && 'recursive' || 'false' }}
+          token: ${{ steps.octo-sts.outputs.token }}
 
       - name: hack for github internal repo access
         if: ${{ inputs.use_platform_modules == true }}
@@ -465,6 +473,9 @@ jobs:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.checkout_submodules == true && 'recursive' || 'false' }}
+          token: ${{ steps.octo-sts.outputs.token }}
 
       - name: hack for github internal repo access
         if: ${{ inputs.use_platform_modules == true }}
