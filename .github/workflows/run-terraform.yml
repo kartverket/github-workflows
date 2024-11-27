@@ -88,6 +88,11 @@ on:
         required: false
         type: boolean
         default: false
+      checkout_submodules:
+        description: "An optional boolean which enables checking out submodules. Defaults to false"
+        required: false
+        type: boolean
+        default: false
     secrets:
       arm_client_id:
         description: Azure Service Principal Client ID
@@ -162,14 +167,17 @@ jobs:
     steps:
       - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
         id: octo-sts
-        if: ${{ inputs.use_platform_modules == true }}
+        if: ${{ inputs.use_platform_modules == true || inputs.checkout_submodules == true}}
         with:
-          scope: kartverket/terraform-modules
+          scope: kartverket
           identity: kartverket_repos
 
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.checkout_submodules == true && 'recursive' || 'false' }}
+          token: ${{ inputs.checkout_submodules == true && steps.octo-sts.outputs.token || github.token }}
 
       - name: hack for github internal repo access
         if: ${{ inputs.use_platform_modules == true }}
@@ -458,13 +466,16 @@ jobs:
     steps:
       - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
         id: octo-sts
-        if: ${{ inputs.use_platform_modules == true }}
+        if: ${{ inputs.use_platform_modules == true || inputs.checkout_submodules == true}}
         with:
           scope: kartverket/terraform-modules
           identity: kartverket_repos
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: ${{ inputs.checkout_submodules == true && 'recursive' || 'false' }}
+          token: ${{ inputs.checkout_submodules == true && steps.octo-sts.outputs.token || github.token }}
 
       - name: hack for github internal repo access
         if: ${{ inputs.use_platform_modules == true }}
