@@ -468,7 +468,7 @@ jobs:
         id: octo-sts
         if: ${{ inputs.use_platform_modules == true || inputs.checkout_submodules == true}}
         with:
-          scope: kartverket/terraform-modules
+          scope: kartverket
           identity: kartverket_repos
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
