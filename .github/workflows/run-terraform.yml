@@ -93,6 +93,11 @@ on:
         required: false
         type: boolean
         default: false
+      output_file_path:
+        description: "An optional path to a file that will be uploaded as an artifact after the terraform run"
+        required: false
+        type: string
+        default: ""
     secrets:
       arm_client_id:
         description: Azure Service Principal Client ID
@@ -551,3 +556,10 @@ jobs:
       - name: Run Terraform
         if: env.DESTROY == 'false'
         run: terraform apply -input=false plan-$ENVIRONMENT.tfplan
+
+      - name: Upload output artifact
+        if: ${{ inputs.output_file_path != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-file
+          path: ${{ inputs.output_file_path }}
