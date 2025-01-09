@@ -4,7 +4,6 @@ Shared reusable workflows for GitHub Actions.
 
 - [Reusable Workflows](#reusable-workflows)
   - [run-terraform](#run-terraform)
-  - [run-security-scans](#run-security-scans)
 - [Example usage](#example-usage)
   - [Ideal Use of Reusable Workflows](#ideal-use-of-reusable-workflows)
   - [Deploy on workflow dispatch](#deploy-on-workflow-dispatch)
@@ -21,7 +20,7 @@ Shared reusable workflows for GitHub Actions.
 
 # Reusable Workflows
 
-We currently have 4 reusable workflows (i.e. [run-terraform](#run-terraform) and [run-security-scans (DEPRECATED)](#run-security-scans)) available for use.
+We currently have 4 reusable workflows (i.e. [run-terraform](#run-terraform)) available for use.
 
 See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
@@ -89,7 +88,7 @@ Allows auto-merging dependabot PRs that match given patterns. Useful when you ar
 
 ### Requirements
 
-A few requirements are necessary in order to make this work in addition to the example below. 
+A few requirements are necessary in order to make this work in addition to the example below.
 
 1. Legacy branch protection rules are not supported. Your repo needs to use the more modern branch rulesets
 2. The Octo STS app needs to be added to the rulesets bypass list so that it can merge the PR
@@ -240,90 +239,13 @@ As long as your repository is internal, the tailscale secrets should be present 
 
 <br />
 
-## run-security-scans
-
-### _DEPRECATED: THIS WORKFLOW IS DEPRECATED AND WILL NOT RECEIVE FURTHER UPDATES. PLEASE CHECK OUT [Pharos](https://github.com/kartverket/pharos/) FOR SECURITY SCANS_
-
-This workflow runs security scans on a repository.
-Note, in order to not limit/interfere with the development process, the scans do not run on draft pull requests.
-Additionally, if image_url is not supplied Trivy scan will not be performed (i.e. only TFSec scan will run).
-
-### Features
-
-- Runs TFSec, a static analysis security scanner for your Terraform code. Does not run on draft pull requests.
-- Runs Trivy, a comprehensive security scanner. Does not run on draft pull requests.
-- Calls the GitHub Security Code Scanning API and fails workflow if there are any _high_ or _critical_ errors.
-- The above step can be configured by specifying the `allow_severity_level` input parameter.
-
-### Requirements
-
-- Code Scanning must be appropriately set up in the Github Security tab.
-- Note that the image built during your build-job must be pushed to the registry on all but draft PRs for the workflow to work as intended (see example build job below, paying extra attention to lines following `# Note: ...`)
-
-### Example
-
-```yaml
-jobs:
-  build:
-    # Builds an image of the format <registry>/<repository>:<tag> or <registry>/<repository>@<digest>
-  # and pushes it to the github registry. This is the image that must be used in all following jobs.
-  # See 'All Workflows Together' section for an example build job.
-
-  security-scans:
-    needs: [build]
-    name: Security Scans
-    permissions:
-      # For fetching git repo
-      contents: read
-      # For accessing repository
-      packages: write
-      # required for authentication to GCP
-      id-token: write
-      actions: read
-      security-events: write
-    uses: kartverket/github-workflows/.github/workflows/run-security-scans.yml@<release tag>
-    with:
-      auth_project_number: "123456789123"
-      service_account: sa-name@project-dev-123.iam.gserviceaccount.com
-      image_url: <registry>/<repository>:<tag> or <registry>/<repository>@<digest> # the image created by build job
-      trivy: true # default true, optional
-      tfsec: true # default true, optional
-      allow_severity_level: medium
-
-  dev:
-    needs: [build]
-    # call to run-terraform.yml for dev environment with build image
-
-  test:
-    needs: [build, dev]
-    # call to run-terraform.yml for test environment with build image
-
-  prod:
-    needs: [build, dev, test, security-scans]
-    # call to run-terraform.yml for prod environment only after security-scans job, with build image
-```
-
-### Inputs
-
-| Key                                 | Type    | Required | Description                                                                                                                                                                                                                                                                                                                   |
-|-------------------------------------|---------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| auth_project_number                 | string  | X        | The GCP Project Number used as the active project. A 12-digit number used as a unique identifier for the project. Used to find workload identity pool. This project should be your dev environment project, as this is the environment where the attestors are located                                                        |
-| workload_identity_provider_override | string  |          | The ID of the provider to use for authentication. Only used for overriding the default workload identity provider based on project number. It should be in the format of `projects/{{project_number}}/locations/global/workloadIdentityPools/{{workload_identity_pool_id}}/providers/{{workload_identity_pool_provider_id}}`. |
-| service_account                     | string  | X        | The GCP service account connected to the identity pool that will be used by Terraform. Should be the dev environment deploy service account                                                                                                                                                                                   |
-| image_url                           | string  |          | The Docker image url must be of the form `registry/repository:tag` or `registry/repository@digest` for run-security-scans. It is not required; however, in order to run Trivy and aquire attestations an image_url must be supplied.                                                                                          |
-| trivy                               | boolean |          | An optional boolean that determines whether trivy-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
-| tfsec                               | boolean |          | An optional boolean that determines whether tfsec-scan will be run. Defaults to 'true'.                                                                                                                                                                                                                                       |
-| allow_severity_level                | string  |          | A string which determines the highest level of severity the security scans can find while still succeeding workflows. Only "medium", "high" and "critical" values are allowed. Note that these values are case sensitive.                                                                                                     |
-
-<br/>
-
 # Example Usage
 
 Below are examples of how to use the reusable workflows for different scenarios
 
 ## Ideal Use of Reusable Workflows
 
-The following is an example of how to use run-terraform and run-security-scans together to deploy to dev, test and prod environments.
+The following is an example of how to use run-terraform together with Pharos to deploy to dev, test and prod environments.
 Note the use of `jobs.<job_id>.needs` to specify the order in which jobs run.
 For details on how to use `jobs.<job_id>.outputs` see [Using outputs](#using-outputs).
 
@@ -342,7 +264,7 @@ on:
 
 jobs:
   build:
-    # Example of how to build an image and supply appropriate inputs to run-security-scans reusable workflow
+    # Example of how to build an image and supply appropriate inputs to pharos workflow
     # Note outputs derived in the setOutput step and 'tags' set in the meta step
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -410,20 +332,19 @@ jobs:
           echo "image_tag_url=${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.version }}" >> $GITHUB_OUTPUT
 
   security-scans:
+    name: Run Pharos
     needs: [build]
-    name: Security Scans
     permissions:
-      contents: read
-      packages: write
-      # required for authentication to GCP
-      id-token: write
       actions: read
+      packages: read
+      contents: read
       security-events: write
-    uses: kartverket/github-workflows/.github/workflows/run-security-scans.yml@<release tag>
-    with:
-      auth_project_number: "123456789123"
-      service_account: sa-name@project-dev-123.iam.gserviceaccount.com
-      image_url: ${{ needs.build.outputs.image_tag_url}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Run Pharos"
+        uses: kartverket/pharos@v0.1.0
+        with:
+          image_url: ${{ needs.build.outputs.image_tag_url}}
 
   dev:
     needs: [security-scans]
@@ -522,7 +443,7 @@ jobs:
 
   security-scans:
     needs: [build]
-    # call to run-security-scans.yml with build image
+    # call to kartverket/pharos, like example above
 
   dev:
     name: Deploy to dev
