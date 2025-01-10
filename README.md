@@ -227,7 +227,10 @@ jobs:
 | terraform_init_option_Y             | string  |          | An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`. Y may be an integer between 1-3, which allows at most 3 init options.                                                                                                                                                   |
 | add_comment_on_pr                   | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                                                                                                                    |
 | destroy                             | boolean |          | An optional boolean that determines whether terraform will be destroyed. Defaults to 'false'.                                                                                                                                                                                                                                 |
-| unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.                                                                                                                                                                                                                                       |
+| unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.        
+| use_platform_modules                | boolean |          | An optional boolean which enables the octo sts identity for the terraform-modules repo, among others. Defaults to false
+| checkout_submodules                 | boolean |          | An optional boolean which enables checking out git submodules. Defaults to false
+| output_file_path                    | string  |          | An optional path to a file that will be uploaded as an artifact after the terraform run
 
 ### Tailscale
 
