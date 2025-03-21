@@ -104,7 +104,7 @@ on:
                 type: string
         outputs:
             tf_outputs:
-                value: ${{ jobs.run_terraform.outputs.tf_outputs }}
+                value: ${{ jobs.run_terraform.outputs.tf_outputs || '{}' }}
         secrets:
             arm_client_id:
                 description: Azure Service Principal Client ID
@@ -461,7 +461,7 @@ jobs:
         runs-on: ${{ inputs.runner }}
         environment: ${{ inputs.environment }}
         outputs:
-            tf_outputs: ${{ steps.extract.outputs.tf_outputs }}
+            tf_outputs: ${{ steps.extract.outputs.tf_outputs || '{}' }}
 
         # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
         concurrency: ${{ inputs.environment }}
