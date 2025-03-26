@@ -98,6 +98,13 @@ on:
         required: false
         type: string
         default: ""
+      extract_terraform_outputs:
+        description: "An optional, comma-separated list of Terraform outputs to extract"
+        required: false
+        type: string
+    outputs:
+      tf_outputs:
+        value: ${{ jobs.run_terraform.outputs.tf_outputs || '{}' }}
     secrets:
       arm_client_id:
         description: Azure Service Principal Client ID
@@ -132,6 +139,7 @@ env:
   ARM_CLIENT_SECRET: ${{ secrets.arm_client_secret }}
   ARM_TENANT_ID: ${{ secrets.arm_tenant_id }}
   NEED_TAILSCALE: false
+  EXTRACT_TERRAFORM_OUTPUTS: ${{ inputs.extract_terraform_outputs }}
 
 jobs:
   setup-env:
@@ -302,7 +310,7 @@ jobs:
           # 2. Remove some github commands and fluff
           # This removes any line containing "Reading...", "Read complete after", and "Refreshing state...", which are terraform lines spewed out during state reading
           STDOUT="$(grep -v -E '(.*Reading\.\.\..*)|(.*Read complete after.*)|(.*Refreshing state\.\.\..*)' output.txt)"
-          
+
           # Insert cleaned output back into output.txt
           echo "$STDOUT" > output.txt
 
@@ -452,6 +460,8 @@ jobs:
     name: Terraform Apply or Destroy
     runs-on: ${{ inputs.runner }}
     environment: ${{ inputs.environment }}
+    outputs:
+      tf_outputs: ${{ steps.extract.outputs.tf_outputs || '{}' }}
 
     # Disallow parallel jobs for same env to allow aquiring state lock instead of crashing
     concurrency: ${{ inputs.environment }}
@@ -556,6 +566,17 @@ jobs:
       - name: Run Terraform
         if: env.DESTROY == 'false'
         run: terraform apply -input=false plan-$ENVIRONMENT.tfplan
+
+      - name: Extract Terraform Outputs
+        if: env.EXTRACT_TERRAFORM_OUTPUTS != ''
+        id: extract
+        run: |
+          OUTPUTS=$(terraform output -json)
+          REQUESTED_OUTPUTS="${{ env.EXTRACT_TERRAFORM_OUTPUTS }}"
+          JQ_KEYS=$(echo "$REQUESTED" | awk -F',' '{for(i=1;i<=NF;i++) printf "\"%s\": .%s,", $i, $i}' | sed 's/,$//')
+
+          FILTERED=$(echo "$OUTPUTS" | jq "{ $JQ_KEYS }")
+          echo "tf_outputs=$FILTERED" >> $GITHUB_OUTPUT
 
       - name: Upload output artifact
         if: ${{ inputs.output_file_path != '' }}
