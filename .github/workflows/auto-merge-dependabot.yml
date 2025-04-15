@@ -27,15 +27,14 @@ jobs:
         env:
             DEPENDENCY_NAMES: ${{steps.dependabot-metadata.outputs.dependency-names}}
             UPDATE_TYPE: ${{steps.dependabot-metadata.outputs.update-type}}
+            PACKAGE_ECOSYSTEM: ${{steps.dependabot-metadata.outputs.package-ecosystem}}
         with:
           script: |
             const fs = require('fs');
             const { DEPENDENCY_NAMES, UPDATE_TYPE, CONFIG_FILE, PACKAGE_ECOSYSTEM } = process.env;
             const dependencyNames = DEPENDENCY_NAMES?.split();
             console.log({ dependencyNames, UPDATE_TYPE, PACKAGE_ECOSYSTEM })
-            
-            if (PACKAGE_ECOSYSTEM === 'go') return true;
-            
+                        
             // [{ match: { dependency_name: "..", update_type: "semver:.."}}]
             const data = fs.readFileSync(CONFIG_FILE, 'utf8');
             if (!data) return false;
@@ -49,7 +48,7 @@ jobs:
             
             // Set this to true if we find a matching dependency update
             const shouldMerge = !!json?.some(({ match }) => {
-                if (!dependencyNames?.includes(match?.dependency_name)) return false;
+                if (!dependencyNames?.includes(match?.dependency_name) && !(PACKAGE_ECOSYSTEM?.includes(match?.package_ecosystem))) return false;
                 switch (match?.update_type) {
                   // Fallthrough until we hit a result. Major also matches minor and so on.
                   case 'semver:major': if (UPDATE_TYPE === 'version-update:semver-major') return true;
