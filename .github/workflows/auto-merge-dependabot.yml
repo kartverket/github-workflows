@@ -30,9 +30,12 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const { DEPENDENCY_NAMES, UPDATE_TYPE, CONFIG_FILE } = process.env;
+            const { DEPENDENCY_NAMES, UPDATE_TYPE, CONFIG_FILE, PACKAGE_ECOSYSTEM } = process.env;
             const dependencyNames = DEPENDENCY_NAMES?.split();
-            console.log({ dependencyNames, UPDATE_TYPE })
+            console.log({ dependencyNames, UPDATE_TYPE, PACKAGE_ECOSYSTEM })
+            
+            if (PACKAGE_ECOSYSTEM === 'go') return true;
+            
             // [{ match: { dependency_name: "..", update_type: "semver:.."}}]
             const data = fs.readFileSync(CONFIG_FILE, 'utf8');
             if (!data) return false;
