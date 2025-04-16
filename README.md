@@ -83,6 +83,7 @@ Allows auto-merging dependabot PRs that match given patterns. Useful when you ar
 ### Features
 
 - Allows configuring a set of dependencies in a configfile that can be merged
+- Can also configure ecosystems to merge automatically, for example go_modules
 - Each dependency will allow either major, minor or patch updates (only supports semver)
 - A bot approves and merges the PR
 
@@ -110,18 +111,25 @@ jobs:
     uses: kartverket/github-workflows/.github/workflows/auto-merge-dependabot.yml@<release tag>
 ```
 
-Example configfile in `.github/auto-update.json`:
+Example configfile in `.github/auto-merge.json`:
 ```json
 [{
   "match": {
     "dependency_name": "hashicorp/google",
     "update_type": "semver:minor"
   }
-}, {
-  "match": {
-    "dependency_name": "hashicorp/google-beta",
-    "update_type": "semver:minor"
-  }
+},
+  {
+    "match": {
+      "dependency_name": "hashicorp/google-beta",
+      "update_type": "semver:minor"
+    }
+  },
+  {
+   "match": {
+     "package_ecosystem": "golang",
+     "update_type": "semver:minor"
+   } 
 }]
 ```
 
@@ -139,10 +147,11 @@ permissions:
 
 The configfile is currently the only input. The configfile at `.github/auto-merge.json` supports the following values:
 
-| Key                        | Type   | Required | Description                                                                                                                                                                                |
-|----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `[].match.dependency_name` | string | true     | The name of the dependency as it appears on the Dependabot PR                                                                                                                              |
-| `[].match.update_type`     | string | true     | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
+| Key                          | Type   | Required | Description                                                                                                                                                                                |
+|------------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `[].match.dependency_name`   | string | true     | The name of the dependency as it appears on the Dependabot PR                                                                                                                              |
+| `[].match.update_type`       | string | true     | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
+| `[].match.package_ecosystem` | string | true     | The name of the package ecosystem which the update belongs to, examples; terraform, golang                                                                                                 |
 
 ## run-terraform
 
