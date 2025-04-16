@@ -77,14 +77,24 @@ jobs:
           
             echo "Current check states: $states"
           
-            # If any state is not SUCCESS, wait and retry
-            if echo "$states" | grep -qv 'SUCCESS'; then
-              echo "Not all checks succeeded yet. Sleeping 10s..."
-              sleep 10
-            else
-              echo "✅ All checks succeeded."
-              break
+            if echo "$states" | grep -q 'FAILURE'; then
+              echo "❌ One or more checks failed."
+              exit 1
             fi
+          
+            if echo "$states" | grep -Eq 'PENDING|IN_PROGRESS|QUEUED'; then
+              echo "🔄 Checks still running. Sleeping 10s..."
+              sleep 10
+              continue
+            fi
+          
+            if echo "$states" | grep -vq 'SUCCESS'; then
+              echo "⚠️ Unknown or unexpected check state detected. Failing."
+              exit 1
+            fi
+          
+            echo "✅ All checks succeeded."
+            break
           done
       
           echo "Approving PR..."
