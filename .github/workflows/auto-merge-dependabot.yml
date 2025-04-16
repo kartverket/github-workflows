@@ -67,7 +67,25 @@ jobs:
           set -e
       
           echo "Waiting for all checks to complete..."
-          gh pr checks --watch "$PR_URL"
+          sleep 10
+          while true; do
+            # Get all check runs excluding "Dependabot auto-merge"
+            checks=$(gh pr checks "$PR_URL" --json workflow,state --jq '[.[] | select(.workflow != "Dependabot auto-merge")]')
+          
+            # Extract all states
+            states=$(echo "$checks" | jq -r '.[].state')
+          
+            echo "Current check states: $states"
+          
+            # If any state is not SUCCESS, wait and retry
+            if echo "$states" | grep -qv 'SUCCESS'; then
+              echo "Not all checks succeeded yet. Sleeping 10s..."
+              sleep 10
+            else
+              echo "✅ All checks succeeded."
+              break
+            fi
+          done
       
           echo "Approving PR..."
           gh pr review --approve -b "Dependency matches pattern found in auto-merge config, merging" "$PR_URL"
@@ -75,7 +93,7 @@ jobs:
           echo "Attempting to merge directly..."
           if ! gh pr merge --admin --merge "$PR_URL"; then
             echo "Direct merge failed — adding to merge queue instead..."
-            gh pr queue --add "$PR_URL"
+            gh pr merge --merge "$PR_URL"
           fi
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
