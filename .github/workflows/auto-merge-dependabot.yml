@@ -67,7 +67,7 @@ jobs:
         run: |
           set -e
           sleep 10
-
+          
           echo "Check if PR is mergeable..."
           mergeable=$(gh pr view "$PR_URL" --json mergeable --jq '.mergeable')
   
@@ -115,7 +115,23 @@ jobs:
             echo "✅ All checks succeeded."
             break
           done
-      
+          
+          echo "Checking if any terraform changes are present..."
+          tf_bot_commented_changes=$(gh pr view "$PR_URL" --json comments \
+              --jq '.comments
+                    | map(select(.author.login == "github-actions"))
+                    | last.body // ""
+                    | contains("Changes detected.")')
+            
+          echo "Terraform changes detected: $tf_bot_commented_changes"
+          
+          if [[ "$tf_bot_commented_changes" == "true" ]]; then
+            echo "❌ Changes detected in Terraform plan. Aborting merge."
+            exit 1
+          else
+            echo "✅ No changes detected. Proceeding."
+          fi
+          
           echo "Approving PR..."
           gh pr review --approve -b "Dependency matches pattern found in auto-merge config, merging" "$PR_URL"
       
