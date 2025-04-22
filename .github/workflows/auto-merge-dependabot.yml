@@ -66,6 +66,23 @@ jobs:
         run: |
           set -e
       
+          echo "Check if PR is mergeable..."
+          mergeable=$(gh pr view "$PR_URL" --json mergeable --jq '.mergeable')
+  
+          case "$mergeable" in
+            MERGEABLE)
+              echo "✅ No merge conflicts."
+              ;;
+            CONFLICTING)
+              echo "❌ Merge conflicts detected."
+              exit 1
+              ;;
+            *)
+              echo "❓ Unexpected mergeable value: $mergeable"
+              exit 1
+              ;;
+          esac
+  
           echo "Waiting for all checks to complete..."
           sleep 10
           while true; do
