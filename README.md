@@ -46,7 +46,7 @@ Allows running kubectl commands against a Kubernetes cluster. This is useful for
 
 ### Example
 
-Example usage in `.github/workflows/auto-merge.yml`:
+Example usage in `.github/workflows/run-kubectl.yml`:
 ```yaml
 name: Restart deployment
 on: pull_request_target
@@ -94,7 +94,8 @@ A few requirements are necessary in order to make this work in addition to the e
 1. Legacy branch protection rules are not supported. Your repo needs to use the more modern branch rulesets
 2. The Octo STS app needs to be added to the rulesets bypass list so that it can merge the PR
 3. A trust file called `.github/chainguard/auto-update.sts.yaml` needs to exist to allow the workflow to get a valid GitHub token
-
+4. If you use branch protection rules, and `Restrict who can push to matching branches` is checked, then you must add the octo-sts app to the allowlist. 
+5. If you use branch protection rules, and `Require a pull request before merging` is checked, then you must add octo-sts to `Allow specified actors to bypass required pull requests`.
 ### Example
 
 Example usage in `.github/workflows/auto-merge.yml`:
