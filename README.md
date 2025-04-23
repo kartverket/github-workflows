@@ -46,7 +46,7 @@ Allows running kubectl commands against a Kubernetes cluster. This is useful for
 
 ### Example
 
-Example usage in `.github/workflows/auto-merge.yml`:
+Example usage in `.github/workflows/run-kubectl.yml`:
 ```yaml
 name: Restart deployment
 on: pull_request_target
@@ -83,6 +83,7 @@ Allows auto-merging dependabot PRs that match given patterns. Useful when you ar
 ### Features
 
 - Allows configuring a set of dependencies in a configfile that can be merged
+- Can also configure ecosystems to merge automatically, for example go_modules
 - Each dependency will allow either major, minor or patch updates (only supports semver)
 - A bot approves and merges the PR
 
@@ -93,7 +94,8 @@ A few requirements are necessary in order to make this work in addition to the e
 1. Legacy branch protection rules are not supported. Your repo needs to use the more modern branch rulesets
 2. The Octo STS app needs to be added to the rulesets bypass list so that it can merge the PR
 3. A trust file called `.github/chainguard/auto-update.sts.yaml` needs to exist to allow the workflow to get a valid GitHub token
-
+4. If you use branch protection rules, and `Restrict who can push to matching branches` is checked, then you must add the octo-sts app to the allowlist. 
+5. If you use branch protection rules, and `Require a pull request before merging` is checked, then you must add octo-sts to `Allow specified actors to bypass required pull requests`.
 ### Example
 
 Example usage in `.github/workflows/auto-merge.yml`:
@@ -110,18 +112,25 @@ jobs:
     uses: kartverket/github-workflows/.github/workflows/auto-merge-dependabot.yml@<release tag>
 ```
 
-Example configfile in `.github/auto-update.json`:
+Example configfile in `.github/auto-merge.json`:
 ```json
 [{
   "match": {
     "dependency_name": "hashicorp/google",
     "update_type": "semver:minor"
   }
-}, {
-  "match": {
-    "dependency_name": "hashicorp/google-beta",
-    "update_type": "semver:minor"
-  }
+},
+  {
+    "match": {
+      "dependency_name": "hashicorp/google-beta",
+      "update_type": "semver:minor"
+    }
+  },
+  {
+   "match": {
+     "package_ecosystem": "golang",
+     "update_type": "semver:minor"
+   } 
 }]
 ```
 
@@ -139,10 +148,11 @@ permissions:
 
 The configfile is currently the only input. The configfile at `.github/auto-merge.json` supports the following values:
 
-| Key                        | Type   | Required | Description                                                                                                                                                                                |
-|----------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `[].match.dependency_name` | string | true     | The name of the dependency as it appears on the Dependabot PR                                                                                                                              |
-| `[].match.update_type`     | string | true     | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
+| Key                          | Type   | Required | Description                                                                                                                                                                                |
+|------------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `[].match.dependency_name`   | string | true     | The name of the dependency as it appears on the Dependabot PR                                                                                                                              |
+| `[].match.update_type`       | string | true     | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
+| `[].match.package_ecosystem` | string | true     | The name of the package ecosystem which the update belongs to, examples; terraform, golang                                                                                                 |
 
 ## run-terraform
 
