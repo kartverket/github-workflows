@@ -142,6 +142,8 @@ subject: repo:kartverket/gcp-service-accounts:pull_request
 permissions:
   contents: write
   pull_requests: write
+  checks: read
+  actions: read
 ```
 
 ### Inputs
