@@ -107,7 +107,7 @@ jobs:
               continue
             fi
           
-            if echo "$states" | grep -vq 'SUCCESS|NEUTRAL|SKIPPED'; then
+            if echo "$states" | grep -Ev '^(SUCCESS|SKIPPED|NEUTRAL)$' | grep -q .; then
               echo "⚠️ Unknown or unexpected check state detected. Failing."
               exit 1
             fi
