@@ -308,7 +308,7 @@ jobs:
 
           # 3. Write to step summary
           cat >> $GITHUB_STEP_SUMMARY <<EOF
-          \`\`\`
+          \`\`\`terraform
           ${STDOUT}
           \`\`\`
           EOF
@@ -404,7 +404,7 @@ jobs:
 
             <details><summary>Show Plan</summary>
 
-            \`\`\`\n
+            \`\`\`terraform\n
             ${plan}
             \`\`\`
 
