@@ -9,8 +9,8 @@ on:
         default: 1.23
       jsonnetfmt_version: 
         description: 'Which jsonnetfmt version to use'
-        type: number
-        default: 0.21.0
+        type: string
+        default: v0.21.0
       
 jobs:
   validate:
