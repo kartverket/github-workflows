@@ -2,7 +2,16 @@ name: Check Validity of Jsonnet Files
 
 on:
   workflow_call:
-
+    inputs: 
+      go_version: 
+        description: 'Which go version to use'
+        type: number
+        default: 1.23
+      jsonnetfmt_version: 
+        description: 'Which jsonnetfmt version to use'
+        type: number
+        default: 0.21.0
+      
 jobs:
   validate:
     name: Validate
@@ -15,10 +24,10 @@ jobs:
       - name: Install go for jsonnetfmt
         uses: actions/setup-go@v5
         with: 
-          go-version: 1.22
+          go-version: ${{inputs.go_version}}
 
       - name: Install jsonnetfmt
-        run: go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
+        run: go install github.com/google/go-jsonnet/cmd/jsonnetfmt@${{inputs.jsonnetfmt_version}}
 
       - name: Validate jsonnet formatting
         run: |
