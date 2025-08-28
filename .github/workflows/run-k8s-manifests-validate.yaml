@@ -1,0 +1,38 @@
+name: Run Kubernetes Manifests Validate
+
+on:
+  workflow_call:
+    inputs:
+      path: 
+        type: string
+        description: Path to file or directory in which to look for manifests to validate
+        default: env
+
+jobs:
+  validate:
+    name: Validate k8s manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout calling repository code
+        uses: actions/checkout@v4
+
+      - name: Install Homebrew
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+      - name: Add Homebrew to PATH and set up permissions
+        run: |
+          sudo chown -R $(whoami) /home/linuxbrew/.linuxbrew
+          chmod u+w /home/linuxbrew/.linuxbrew
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH" >> $GITHUB_PATH
+
+      - name: Install `skipctl`
+        run: |
+          brew update --verbose
+          brew tap kartverket/taps --verbose
+          brew install skipctl --verbose
+
+      - name: Run manifests validation
+        run: |
+          skipctl manifests validate --path=${{inputs.path}}
