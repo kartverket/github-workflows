@@ -9,8 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Show full repository name
-        run: "echo \"Repository: ${{ github.repository }}\""
       - name: Checkout code
         uses: actions/checkout@v4
 
