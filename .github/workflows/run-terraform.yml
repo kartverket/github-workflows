@@ -195,7 +195,7 @@ jobs:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
@@ -493,7 +493,7 @@ jobs:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
