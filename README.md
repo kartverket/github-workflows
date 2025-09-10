@@ -84,7 +84,8 @@ jobs:
 
 Runs validation of Kubernetes manifest files using Skiperators custom resource definitions (CRDs). 
 Useful not only to check for correct syntax in `yaml` and `jsonnet` files, but to validate that all required fields are included and are of correct type.
-Uses `skipctl` under the hood and installed using `Homebrew`. For more info see the [`skipctl` documentation](https://github.com/kartverket/skipctl/).
+Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](https://github.com/kartverket/skipctl/).
+The workflow implements per-repo caching, meaning `skipctl` is cached as a dependency and only installed once per each combination of OS + go version + `skipctl` version.
 
 ### Features
 
@@ -93,10 +94,6 @@ Uses `skipctl` under the hood and installed using `Homebrew`. For more info see 
 - Checks for invalid manifests according to the API reference as defined in `skiperator.kartverket.no/v1alpha1` [0]
 
 [0] Skiperator API Reference - https://skip.kartverket.no/docs/applikasjon-utrulling/skiperator/api-docs
-
-<!-- ### Requirements -->
-
-<!-- - Your gcp project is set up and given required permissions in skip-core-infrastructure and gcp-service-accounts -->
 
 
 ### Example
@@ -113,12 +110,15 @@ jobs:
     uses: kartverket/github-workflows/.github/workflows/run-k8s-manifests-validate.yaml@latest
     with:
         path: env
+        skipctl-version: 'v1.3.1'
 ```
 ### Inputs
 
-| Key                   | Type             | Required | Description                                                                            |
-|-----------------------|------------------|----------|----------------------------------------------------------------------------------------|
-| path                  | string           |          | The path for a specific file or a directory in which to look for manifests to validate |
+| Key                   | Type             | Required | Description                                                                                             |
+|-----------------------|------------------|----------|---------------------------------------------------------------------------------------------------------|
+| path                  | string           |          | The path for a specific file or a directory in which to look for manifests to validate (default: 'env') |
+| skipctl-version       | string           |          | The version of `skipctl` to use (default: 'latest')                                                     |
+
 
 
 ## auto-merge-dependabot
