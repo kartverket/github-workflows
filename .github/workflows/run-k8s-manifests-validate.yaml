@@ -16,41 +16,17 @@ jobs:
   validate:
     name: Validate k8s manifests
     runs-on: ubuntu-latest
-    env:
-      SKIPCTL_VERSION: ${{ inputs.skipctl-version }}
-      GO_VERSION: '1.25.1'
 
     steps:
       - name: Checkout calling repository code
         uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Create `~/go/bin` directory for caching purposes
-        run: mkdir -p ~/go/bin
-
-      - name: Get `skipctl` version ${{ env.SKIPCTL_VERSION }}
-        id: get-version
-        run: |
-          if [ "$SKIPCTL_VERSION" = "latest" ]; then
-            echo "version=$(curl -s https://api.github.com/repos/kartverket/skipctl/releases/latest | jq -r .tag_name)" >> $GITHUB_OUTPUT
-          else
-            echo "version=$SKIPCTL_VERSION" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Cache `skipctl` binary
-        id: cache-skipctl
-        uses: actions/cache@v4
-        with:
-          path: ~/go/bin/skipctl
-          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-skipctl-${{ steps.get-version.outputs.version }}
-
-      - name: Install `skipctl`
-        if: steps.cache-skipctl.outputs.cache-hit != 'true'
-        run: go install github.com/kartverket/skipctl@${{ steps.get-version.outputs.version }}
+      - name: Install `skipctl` @ ${{ inputs.skipctl-version }}
+        uses: jaxxstorm/action-install-gh-release@v2.1.0
+        with: 
+          repo: kartverket/skipctl
+          tag: ${{ inputs.skipctl-version }}
+          cache: enable
 
       - name: Run manifests validation
         run: |

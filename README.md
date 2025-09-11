@@ -85,7 +85,6 @@ jobs:
 Runs validation of Kubernetes manifest files using Skiperators custom resource definitions (CRDs). 
 Useful not only to check for correct syntax in `yaml` and `jsonnet` files, but to validate that all required fields are included and are of correct type.
 Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](https://github.com/kartverket/skipctl/).
-The workflow implements per-repo caching, meaning `skipctl` is cached as a dependency and only installed once per each combination of OS + go version + `skipctl` version.
 
 ### Features
 
