@@ -3,6 +3,9 @@
 Shared reusable workflows for GitHub Actions.
 
 - [Reusable Workflows](#reusable-workflows)
+  - [run-kubectl](#run-kubectl)
+  - [run-k8s-manifests-validate](#run-k8s-manifests-validate)
+  - [auto-merge-dependabot](#auto-merge-dependabot)
   - [run-terraform](#run-terraform)
 - [Example usage](#example-usage)
   - [Ideal Use of Reusable Workflows](#ideal-use-of-reusable-workflows)
@@ -75,6 +78,47 @@ jobs:
 | namespace             | string           | X        | which namespace to execute the command in                                                                                           |
 | kubectl_version       | string           | X        | which kubectl version to use. format: v1.30.0. latest stable is default                                                             |
 | commands              | multiline string | X        | The kubectl commands you want to run, exclude `kubectl`. example: https://skip.kartverket.no/docs/github-actions/kubectl-fra-github |
+
+
+## run-k8s-manifests-validate
+
+Runs validation of Kubernetes manifest files using Skiperators custom resource definitions (CRDs). 
+Useful not only to check for correct syntax in `yaml` and `jsonnet` files, but to validate that all required fields are included and are of correct type.
+Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](https://github.com/kartverket/skipctl/).
+
+### Features
+
+- Recursively looks up `yaml` and `jsonnet` files in the provided path
+- Checks for syntax errors in `yaml` and `jsonnet` files
+- Checks for invalid manifests according to the API reference as defined in `skiperator.kartverket.no/v1alpha1` [0]
+
+[0] Skiperator API Reference - https://skip.kartverket.no/docs/applikasjon-utrulling/skiperator/api-docs
+
+
+### Example
+
+Example usage in `.github/workflows/run-k8s-validation.yml`:
+```yaml
+name: Verify Kubernetes Manifest Validity
+
+on: pull_request
+
+jobs:
+  validate:
+    name: validate-k8s-manifests
+    uses: kartverket/github-workflows/.github/workflows/run-k8s-manifests-validate.yaml@latest
+    with:
+        path: env
+        skipctl-version: 'v1.3.1'
+```
+### Inputs
+
+| Key                   | Type             | Required | Description                                                                                             |
+|-----------------------|------------------|----------|---------------------------------------------------------------------------------------------------------|
+| path                  | string           |          | The path for a specific file or a directory in which to look for manifests to validate (default: 'env') |
+| skipctl-version       | string           |          | The version of `skipctl` to use (default: 'latest')                                                     |
+
+
 
 ## auto-merge-dependabot
 
