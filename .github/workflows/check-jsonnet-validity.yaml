@@ -1,0 +1,40 @@
+name: Check Validity of Jsonnet Files
+
+on:
+  workflow_call:
+    inputs: 
+      go_version: 
+        description: 'Which go version to use'
+        type: number
+        default: 1.23
+      jsonnetfmt_version: 
+        description: 'Which jsonnetfmt version to use'
+        type: string
+        default: v0.21.0
+      
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install go for jsonnetfmt
+        uses: actions/setup-go@v5
+        with: 
+          go-version: ${{inputs.go_version}}
+
+      - name: Install jsonnetfmt
+        run: go install github.com/google/go-jsonnet/cmd/jsonnetfmt@${{inputs.jsonnetfmt_version}}
+
+      - name: Validate jsonnet formatting
+        run: |
+          jsonnetfmt --test $(git ls-files '*.jsonnet' '*.libsonnet')
+
+      - name: Print errors
+        if: ${{ failure() }}
+        run: |
+          jsonnetfmt -i $(git ls-files '*.jsonnet' '*.libsonnet')
+          git diff
