@@ -13,7 +13,7 @@ on:
         default: latest
 env:
   MANIFESTS_PATH: ${{ inputs.path }}
-  ACTION_INSTALL_SHA: b3473ce464694a09adb7b66ed3cf1ae01a9b9c17
+  ACTION_INSTALL_SHA: 6096f2a2bbfee498ced520b6922ac2c06e990ed2
 
 jobs:
   validate:
