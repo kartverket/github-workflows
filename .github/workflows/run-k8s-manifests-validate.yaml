@@ -3,14 +3,16 @@ name: Run Kubernetes Manifests Validate
 on:
   workflow_call:
     inputs:
-      path: 
+      path:
         type: string
         description: "Path to file or directory in which to look for manifests to validate (default: env)"
         default: env
-      skipctl-version: 
+      skipctl-version:
         type: string
         description: "Which version of `skipctl` to use (default: latest)"
         default: latest
+env:
+  MANIFESTS_PATH: ${{ inputs.path }}
 
 jobs:
   validate:
@@ -20,14 +22,18 @@ jobs:
     steps:
       - name: Checkout calling repository code
         uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Install `skipctl` @ ${{ inputs.skipctl-version }}
-        uses: jaxxstorm/action-install-gh-release@v2.1.0
-        with: 
+        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2.1.0
+        with:
           repo: kartverket/skipctl
           tag: ${{ inputs.skipctl-version }}
           cache: enable
 
       - name: Run manifests validation
         run: |
-          skipctl manifests validate --path=${{ inputs.path }}
+          skipctl manifests validate --path="$MANIFESTS_PATH"
