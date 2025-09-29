@@ -13,8 +13,8 @@ jobs:
     timeout-minutes: 60
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
+      - uses: actions/checkout@v4
+      - uses: octo-sts/action@a26b0c6455c7f13316f29a8766287f939e75f6c8 # v1.0.2
         id: octo-sts
         with:
             scope: ${{ github.repository }}
@@ -24,7 +24,7 @@ jobs:
         uses: dependabot/fetch-metadata@v2
       - name: Read configfile
         id: read-configfile
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
             DEPENDENCY_NAMES: ${{steps.dependabot-metadata.outputs.dependency-names}}
             UPDATE_TYPE: ${{steps.dependabot-metadata.outputs.update-type}}

@@ -170,7 +170,7 @@ jobs:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.workload_identity_provider }}
 
     steps:
-      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
+      - uses: octo-sts/action@a26b0c6455c7f13316f29a8766287f939e75f6c8 # v1.0.2
         id: octo-sts
         if: ${{ inputs.use_platform_modules == true || inputs.checkout_submodules == true}}
         with:
@@ -329,7 +329,7 @@ jobs:
           retention-days: 5
 
       - name: Update Pull Request
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
         env:
           # Passing via env vars to sanitize untrusted inputs
@@ -469,7 +469,7 @@ jobs:
       WORKLOAD_IDENTITY_PROVIDER: ${{ needs.setup-env.outputs.WORKLOAD_IDENTITY_PROVIDER }}
 
     steps:
-      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0
+      - uses: octo-sts/action@a26b0c6455c7f13316f29a8766287f939e75f6c8 # v1.0.2
         id: octo-sts
         if: ${{ inputs.use_platform_modules == true || inputs.checkout_submodules == true}}
         with:
