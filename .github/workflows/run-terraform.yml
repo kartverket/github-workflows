@@ -510,7 +510,7 @@ jobs:
           gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug --location global
 
       - name: Download Plan Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: plan-${{ env.ENVIRONMENT }}.tfplan
           path: ${{ env.WORKING_DIRECTORY }}
