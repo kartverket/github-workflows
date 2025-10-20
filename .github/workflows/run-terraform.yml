@@ -274,7 +274,7 @@ jobs:
 
       - name: Tailscale
         if: env.NEED_TAILSCALE == 'true'
-        uses: tailscale/github-action@v3
+        uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ secrets.TS_CLOUDSQL_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_CLOUDSQL_OAUTH_SECRET }}
@@ -537,7 +537,7 @@ jobs:
 
       - name: Tailscale
         if: env.NEED_TAILSCALE == 'true'
-        uses: tailscale/github-action@v3
+        uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ secrets.TS_CLOUDSQL_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_CLOUDSQL_OAUTH_SECRET }}
