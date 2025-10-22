@@ -77,7 +77,7 @@ jobs:
             ```diff
             ${{ env.DIFF_OUTPUT_PROD }}
             ```
-            sammenligner ${{ inputs.path }} mot ${{ inputs.ref }} / ${{ inputs.path }}
+            sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
 
       - name: Delete PROD diff comment if empty
         if: ${{ env.DIFF_OUTPUT_PROD == '' }}
@@ -101,7 +101,7 @@ jobs:
             ```diff
             ${{ env.DIFF_OUTPUT_DEV }}
             ```
-            sammenligner ${{ inputs.path }} mot ${{ inputs.ref }} / ${{ inputs.path }}
+            sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
 
       - name: Delete DEV diff comment if empty
         if: ${{ env.DIFF_OUTPUT_DEV == '' }}
