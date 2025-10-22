@@ -1,0 +1,111 @@
+name: Diff manifests against ref
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        type: string
+        description: "Path to file or directory in which to look for manifests to diff (default: env)"
+        default: env
+      skipctl-version:
+        type: string
+        description: "Which version of `skipctl` to use (default: latest)"
+        default: latest
+      ref:
+        type: string
+        description: "Which git ref to compare agains (default: origin/main)"
+        default: origin/main
+
+jobs:
+  diff-file:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+          submodules: true
+
+      - name: Install `skipctl` @ ${{ inputs.skipctl-version }}
+        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2.1.0
+        with:
+          repo: kartverket/skipctl
+          tag: ${{ inputs.skipctl-version }}
+          cache: enable
+
+      - name: Run diff CLI against main
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DIFF_OUTPUT_PROD="$(
+              find ${{ inputs.path }} -maxdepth 1 -type d -name '*-prod' -print0 | sort -z \
+              | xargs -0 -I{} bash -c 'skipctl manifests diff -p "{}" --ref ${{ inputs.ref }} --diff-format patch || true'
+          )"
+
+          DIFF_OUTPUT_DEV="$(
+              find ${{ inputs.path }} -maxdepth 1 -type d -name '*-dev' -print0 | sort -z \
+              | xargs -0 -I{} bash -c 'skipctl manifests diff -p "{}" --ref ${{ inputs.ref }} --diff-format patch || true'
+          )"
+
+          {
+              echo 'DIFF_OUTPUT_PROD<<EOF'
+              echo "$DIFF_OUTPUT_PROD"
+              echo 'EOF'
+              echo 'DIFF_OUTPUT_DEV<<EOF'
+              echo "$DIFF_OUTPUT_DEV"
+              echo 'EOF'
+          } >> "$GITHUB_ENV"
+
+      # PROD comments
+      - name: Post/Update PROD diff comment
+        if: ${{ env.DIFF_OUTPUT_PROD != '' }}
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          comment-tag: prod-diff
+          mode: upsert
+          create-if-not-exists: true
+          message: |
+            > [!CAUTION]
+            > <h1> Denne PR-en treffer produksjon.</h1>
+
+            ```diff
+            ${{ env.DIFF_OUTPUT_PROD }}
+            ```
+            sammenligner ${{ inputs.path }} mot ${{ inputs.ref }} / ${{ inputs.path }}
+
+      - name: Delete PROD diff comment if empty
+        if: ${{ env.DIFF_OUTPUT_PROD == '' }}
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          comment-tag: prod-diff
+          mode: delete
+
+      # DEV comments
+      - name: Post/Update DEV diff comment
+        if: ${{ env.DIFF_OUTPUT_DEV != '' }}
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          comment-tag: dev-diff
+          mode: upsert
+          create-if-not-exists: true
+          message: |
+            > [!NOTE]
+            > <h1> Denne PR-en treffer:</h1>
+
+            ```diff
+            ${{ env.DIFF_OUTPUT_DEV }}
+            ```
+            sammenligner ${{ inputs.path }} mot ${{ inputs.ref }} / ${{ inputs.path }}
+
+      - name: Delete DEV diff comment if empty
+        if: ${{ env.DIFF_OUTPUT_DEV == '' }}
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          comment-tag: dev-diff
+          mode: delete
