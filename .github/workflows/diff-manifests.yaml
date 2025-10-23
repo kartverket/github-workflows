@@ -43,22 +43,51 @@ jobs:
         run: |
           set -euo pipefail
 
-          DIFF_OUTPUT_PROD="$(
-              find ${{ inputs.path }} -maxdepth 1 -type d -name '*-prod' -print0 | sort -z \
-              | xargs -0 -I{} bash -c 'skipctl manifests diff -p "{}" --ref ${{ inputs.ref }} --diff-format patch || true'
-          )"
+          # Function to generate diff output with individual file toggles
+          generate_diff_output() {
+              local pattern=$1
+              local output=""
 
-          DIFF_OUTPUT_DEV="$(
-              find ${{ inputs.path }} -maxdepth 1 -type d -name '*-dev' -print0 | sort -z \
-              | xargs -0 -I{} bash -c 'skipctl manifests diff -p "{}" --ref ${{ inputs.ref }} --diff-format patch || true'
-          )"
+              # First find all directories matching the pattern, then find files in them
+              while IFS= read -r -d '' dir; do
+                  while IFS= read -r -d '' file; do
+                      local diff_result
+                      diff_result=$(skipctl manifests diff -p "$file" --ref ${{ inputs.ref }} --diff-format patch 2>/dev/null || true)
+
+                      if [ -n "$diff_result" ]; then
+                          local file_path="$file"
+                          # Remove the input path prefix for cleaner display
+                          local display_path="${file_path#${{ inputs.path }}/}"
+
+                          output+="<details>"
+                          output+=$'\n'
+                          output+="  <summary><b>$display_path</b></summary>"
+                          output+=$'\n'
+                          output+=$'\n'
+                          output+='```diff'
+                          output+=$'\n'
+                          output+="$diff_result"
+                          output+=$'\n'
+                          output+='```'
+                          output+=$'\n'
+                          output+="</details>"
+                          output+=$'\n'
+                      fi
+                  done < <(find "$dir" -type f -print0 | sort -z)
+              done < <(find ${{ inputs.path }} -type d -name "$pattern" -print0 | sort -z)
+
+              echo "$output"
+          }
+
+          DIFF_OUTPUT_PROD="$(generate_diff_output '*-prod')"
+          DIFF_OUTPUT_DEV="$(generate_diff_output '*-dev')"
 
           {
               echo 'DIFF_OUTPUT_PROD<<EOF'
-              echo "$DIFF_OUTPUT_PROD"
+              printf '%s\n' "$DIFF_OUTPUT_PROD"
               echo 'EOF'
               echo 'DIFF_OUTPUT_DEV<<EOF'
-              echo "$DIFF_OUTPUT_DEV"
+              printf '%s\n' "$DIFF_OUTPUT_DEV"
               echo 'EOF'
           } >> "$GITHUB_ENV"
 
@@ -74,9 +103,8 @@ jobs:
             > [!CAUTION]
             > <h1> Denne PR-en treffer produksjon.</h1>
 
-            ```diff
             ${{ env.DIFF_OUTPUT_PROD }}
-            ```
+
             sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
 
       - name: Delete PROD diff comment if empty
@@ -98,12 +126,8 @@ jobs:
             > [!NOTE]
             > <h1> Denne PR-en treffer:</h1>
 
-            <details>
-                <summary><strong>Vis/skjul diff</strong></summary>
-                ~~~diff
-                ${{ env.DIFF_OUTPUT_DEV }}
-                ~~~
-            </details>
+            ${{ env.DIFF_OUTPUT_DEV }}
+
             sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
 
       - name: Delete DEV diff comment if empty
