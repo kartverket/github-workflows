@@ -13,7 +13,7 @@ on:
         default: latest
       ref:
         type: string
-        description: "Which git ref to compare agains (default: origin/main)"
+        description: "Which git ref to compare against (default: origin/main)"
         default: origin/main
 
 jobs:
@@ -64,7 +64,7 @@ jobs:
 
                           output+="<details>"
                           output+=$'\n'
-                          output+="  <summary><b>$display_path</b></summary>"
+                          output+="  <summary><b>$display_path DIFF</b></summary>"
                           output+=$'\n'
                           output+=$'\n'
                           output+='```diff'
@@ -106,7 +106,7 @@ jobs:
           create-if-not-exists: true
           message: |
             > [!CAUTION]
-            > <h1> Denne PR-en treffer produksjon.</h1>
+            > # Denne PR-en treffer produksjon:
 
             ${{ env.DIFF_OUTPUT_PROD }}
 
@@ -126,7 +126,7 @@ jobs:
           create-if-not-exists: true
           message: |
             > [!NOTE]
-            > <h1> Denne PR-en treffer:</h1>
+            > # Denne PR-en treffer:
 
             ${{ env.DIFF_OUTPUT_DEV }}
 
