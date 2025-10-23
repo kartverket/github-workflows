@@ -1,4 +1,4 @@
-name: Diff manifests against ref
+name: Manifest diff to PR comment
 
 on:
   workflow_call:
@@ -41,7 +41,7 @@ jobs:
         env:
           SKIPCTL_VERSION: ${{ inputs.skipctl-version }}
 
-      - name: Run diff CLI against main
+      - name: Run skipctl manifests diff
         shell: bash
         run: |
           set -euo pipefail
@@ -97,7 +97,6 @@ jobs:
           INPUTS_REF: ${{ inputs.ref }}
           INPUTS_PATH: ${{ inputs.path }}
 
-      # PROD comments
       - name: Post/Update PROD diff comment
         if: ${{ env.DIFF_OUTPUT_PROD != '' }}
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
@@ -118,7 +117,6 @@ jobs:
           comment-tag: prod-diff
           mode: delete
 
-      # DEV comments
       - name: Post/Update DEV diff comment
         if: ${{ env.DIFF_OUTPUT_DEV != '' }}
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
