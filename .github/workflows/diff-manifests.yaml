@@ -105,8 +105,6 @@ jobs:
 
             ${{ env.DIFF_OUTPUT_PROD }}
 
-            sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
-
       - name: Delete PROD diff comment if empty
         if: ${{ env.DIFF_OUTPUT_PROD == '' }}
         uses: thollander/actions-comment-pull-request@v3
@@ -127,8 +125,6 @@ jobs:
             > <h1> Denne PR-en treffer:</h1>
 
             ${{ env.DIFF_OUTPUT_DEV }}
-
-            sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
 
       - name: Delete DEV diff comment if empty
         if: ${{ env.DIFF_OUTPUT_DEV == '' }}
