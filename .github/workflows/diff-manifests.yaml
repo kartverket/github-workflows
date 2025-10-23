@@ -100,9 +100,9 @@ jobs:
 
             <details>
                 <summary><strong>Vis/skjul diff</strong></summary>
-                ```diff
+                ~~~diff
                 ${{ env.DIFF_OUTPUT_DEV }}
-                ```
+                ~~~
             </details>
             sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
 
