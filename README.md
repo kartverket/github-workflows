@@ -5,6 +5,7 @@ Shared reusable workflows for GitHub Actions.
 - [Reusable Workflows](#reusable-workflows)
   - [run-kubectl](#run-kubectl)
   - [run-k8s-manifests-validate](#run-k8s-manifests-validate)
+  - [manifest-diff-to-pr-comment](#manifest-diff-to-pr-comment)
   - [auto-merge-dependabot](#auto-merge-dependabot)
   - [run-terraform](#run-terraform)
 - [Example usage](#example-usage)
@@ -82,7 +83,7 @@ jobs:
 
 ## run-k8s-manifests-validate
 
-Runs validation of Kubernetes manifest files using Skiperators custom resource definitions (CRDs). 
+Runs validation of Kubernetes manifest files using Skiperators custom resource definitions (CRDs).
 Useful not only to check for correct syntax in `yaml` and `jsonnet` files, but to validate that all required fields are included and are of correct type.
 Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](https://github.com/kartverket/skipctl/).
 
@@ -120,6 +121,48 @@ jobs:
 
 
 
+## manifest-diff-to-pr-comment
+
+Runs diff of kubernetes manifests
+
+This worklfow will post a comment in the RP showing the diff of each file in a [git-diff](https://git-scm.com/docs/git-diff) format.
+File-changes in `*-prod/` folders will be highlighted with a warning in a separate comment for visibility.
+Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](https://github.com/kartverket/skipctl/).
+
+### Features
+
+- Recursively looks up `yaml` and `jsonnet` files in the provided path, grouped by `dev` and `prod` files.
+- Diff these files against a given `ref` (default orign/main)
+- Posts diffs as comment in the PR
+
+### Example
+
+```yaml
+name: Manifests diff to PR comment
+
+on: pull_request
+
+jobs:
+  diff-manifests:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: kartverket/github-workflows/.github/workflows/manifest-diff-to-pr-comment.yaml@latest
+    with:
+      path: env
+      ref: origin/main
+      skipctl-version: latest
+```
+
+### Inputs
+
+| Key                   | Type             | Required | Description |
+|-----------------------|------------------|----------|-------------|
+| path                  | string           |          | Path to file or directory in which to look for manifests to diff (default: env) |
+| ref                   | string           |          | Which git ref to compare against (default: origin/main)                         |
+| skipctl-version       | string           |          | The version of `skipctl` to use (default: 'latest')                             |
+
+
 ## auto-merge-dependabot
 
 Allows auto-merging dependabot PRs that match given patterns. Useful when you are drowning in PRs and have built up trust in a set of dependencies that release often and never break. It's recommended to have a sane CI setup so that anything merged to main at least passes CI tests before going into prod
@@ -138,7 +181,7 @@ A few requirements are necessary in order to make this work in addition to the e
 1. Legacy branch protection rules are not supported. Your repo needs to use the more modern branch rulesets
 2. The Octo STS app needs to be added to the rulesets bypass list so that it can merge the PR
 3. A trust file called `.github/chainguard/auto-update.sts.yaml` needs to exist to allow the workflow to get a valid GitHub token
-4. If you use branch protection rules, and `Restrict who can push to matching branches` is checked, then you must add the octo-sts app to the allowlist. 
+4. If you use branch protection rules, and `Restrict who can push to matching branches` is checked, then you must add the octo-sts app to the allowlist.
 5. If you use branch protection rules, and `Require a pull request before merging` is checked, then you must add octo-sts to `Allow specified actors to bypass required pull requests`.
 ### Example
 
@@ -174,7 +217,7 @@ Example configfile in `.github/auto-merge.json`:
    "match": {
      "package_ecosystem": "golang",
      "update_type": "semver:minor"
-   } 
+   }
 }]
 ```
 
@@ -282,14 +325,14 @@ jobs:
 | terraform_init_option_Y             | string  |          | An additional config to be passed to terraform init. For example `-backend-config=dev.gcs.tfbackend`. Y may be an integer between 1-3, which allows at most 3 init options.                                                                                                                                                   |
 | add_comment_on_pr                   | boolean |          | Setting this to `false` disables the creation of comments with info of the Terraform run on Pull Requests. When `true` the `pull-request` permission is required to be set to `write`. Defaults to `true`.                                                                                                                    |
 | destroy                             | boolean |          | An optional boolean that determines whether terraform will be destroyed. Defaults to 'false'.                                                                                                                                                                                                                                 |
-| unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.        
+| unlock                              | string  |          | An optional string which runs terraform force-unlock on the provided `LOCK_ID`, if set.
 | use_platform_modules                | boolean |          | An optional boolean which enables the octo sts identity for the terraform-modules repo, among others. Defaults to false
 | checkout_submodules                 | boolean |          | An optional boolean which enables checking out git submodules. Defaults to false
 | output_file_path                    | string  |          | An optional path to a file that will be uploaded as an artifact after the terraform run
 
 ### Tailscale
 
-If the `cyrilgdn/postgresql` provider is present, the `secrets: inherit` input is required to use the tailscale provider. 
+If the `cyrilgdn/postgresql` provider is present, the `secrets: inherit` input is required to use the tailscale provider.
 The provider will set the environment variable `NEED_TAILSCALE` to true, which will trigger the tailscale login.
 As long as your repository is internal, the tailscale secrets should be present on your repository.
 
