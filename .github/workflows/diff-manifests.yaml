@@ -30,13 +30,16 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref }}
           submodules: true
+          persist-credentials: false
 
-      - name: Install `skipctl` @ ${{ inputs.skipctl-version }}
+      - name: Install `skipctl` @ ${SKIPCTL_VERSION}
         uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2.1.0
         with:
           repo: kartverket/skipctl
-          tag: ${{ inputs.skipctl-version }}
+          tag: ${SKIPCTL_VERSION}
           cache: enable
+        env:
+          SKIPCTL_VERSION: ${{ inputs.skipctl-version }}
 
       - name: Run diff CLI against main
         shell: bash
@@ -52,12 +55,12 @@ jobs:
               while IFS= read -r -d '' dir; do
                   while IFS= read -r -d '' file; do
                       local diff_result
-                      diff_result=$(skipctl manifests diff -p "$file" --ref ${{ inputs.ref }} --diff-format patch 2>/dev/null || true)
+                      diff_result=$(skipctl manifests diff -p "$file" --ref ${INPUTS_REF} --diff-format patch 2>/dev/null || true)
 
                       if [ -n "$diff_result" ]; then
                           local file_path="$file"
                           # Remove the input path prefix for cleaner display
-                          local display_path="${file_path#${{ inputs.path }}/}"
+                          local display_path="${file_path#${INPUTS_PATH}/}"
 
                           output+="<details>"
                           output+=$'\n'
@@ -74,7 +77,7 @@ jobs:
                           output+=$'\n'
                       fi
                   done < <(find "$dir" -type f -print0 | sort -z)
-              done < <(find ${{ inputs.path }} -type d -name "$pattern" -print0 | sort -z)
+              done < <(find ${INPUTS_PATH} -type d -name "$pattern" -print0 | sort -z)
 
               echo "$output"
           }
@@ -90,11 +93,14 @@ jobs:
               printf '%s\n' "$DIFF_OUTPUT_DEV"
               echo 'EOF'
           } >> "$GITHUB_ENV"
+        env:
+          INPUTS_REF: ${{ inputs.ref }}
+          INPUTS_PATH: ${{ inputs.path }}
 
       # PROD comments
       - name: Post/Update PROD diff comment
         if: ${{ env.DIFF_OUTPUT_PROD != '' }}
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: prod-diff
           mode: upsert
@@ -107,7 +113,7 @@ jobs:
 
       - name: Delete PROD diff comment if empty
         if: ${{ env.DIFF_OUTPUT_PROD == '' }}
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: prod-diff
           mode: delete
@@ -115,7 +121,7 @@ jobs:
       # DEV comments
       - name: Post/Update DEV diff comment
         if: ${{ env.DIFF_OUTPUT_DEV != '' }}
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: dev-diff
           mode: upsert
@@ -128,7 +134,7 @@ jobs:
 
       - name: Delete DEV diff comment if empty
         if: ${{ env.DIFF_OUTPUT_DEV == '' }}
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: dev-diff
           mode: delete
