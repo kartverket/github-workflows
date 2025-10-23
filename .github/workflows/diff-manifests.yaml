@@ -98,9 +98,12 @@ jobs:
             > [!NOTE]
             > <h1> Denne PR-en treffer:</h1>
 
-            ```diff
-            ${{ env.DIFF_OUTPUT_DEV }}
-            ```
+            <details>
+                <summary><strong>Vis/skjul diff</strong></summary>
+                ```diff
+                ${{ env.DIFF_OUTPUT_DEV }}
+                ```
+            </details>
             sammenligner manifester i `${{ inputs.path }}` mot `${{ inputs.ref }}`
 
       - name: Delete DEV diff comment if empty
