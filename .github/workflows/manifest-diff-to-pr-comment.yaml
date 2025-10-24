@@ -37,73 +37,16 @@ jobs:
         env:
           INPUTS_REF: ${{ inputs.ref }}
 
-      - name: Install `skipctl` @ ${{ env.SKIPCTL_VERSION }}
-        uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2.1.0
+      - name: Generate manifest diffs
+        id: diff
+        uses: Andreas-Espelund/actions/manifests/diff@diff-action # TODO use latest/main # TODO use Kartverket
         with:
-          repo: kartverket/skipctl
-          tag: ${{ env.SKIPCTL_VERSION }}
-          cache: enable
-        env:
-          SKIPCTL_VERSION: ${{ inputs.skipctl-version }}
-
-      - name: Run skipctl manifests diff
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # Function to generate diff output with individual file toggles
-          generate_diff_output() {
-              local pattern=$1
-              local output=""
-
-              # First find all directories matching the pattern, then find files in them
-              while IFS= read -r -d '' dir; do
-                  while IFS= read -r -d '' file; do
-                      local diff_result
-                      diff_result=$(skipctl manifests diff -p "$file" --ref ${INPUTS_REF} --diff-format patch 2>/dev/null || true)
-
-                      if [ -n "$diff_result" ]; then
-                          local file_path="$file"
-                          # Remove the input path prefix for cleaner display
-                          local display_path="${file_path#${INPUTS_PATH}/}"
-
-                          output+="<details>"
-                          output+=$'\n'
-                          output+="  <summary><b>$display_path DIFF</b></summary>"
-                          output+=$'\n'
-                          output+=$'\n'
-                          output+='```diff'
-                          output+=$'\n'
-                          output+="$diff_result"
-                          output+=$'\n'
-                          output+='```'
-                          output+=$'\n'
-                          output+="</details>"
-                          output+=$'\n'
-                      fi
-                  done < <(find "$dir" -type f -print0 | sort -z)
-              done < <(find ${INPUTS_PATH} -type d -name "$pattern" -print0 | sort -z)
-
-              echo "$output"
-          }
-
-          DIFF_OUTPUT_PROD="$(generate_diff_output '*-prod')"
-          DIFF_OUTPUT_DEV="$(generate_diff_output '*-dev')"
-
-          {
-              echo 'DIFF_OUTPUT_PROD<<EOF'
-              printf '%s\n' "$DIFF_OUTPUT_PROD"
-              echo 'EOF'
-              echo 'DIFF_OUTPUT_DEV<<EOF'
-              printf '%s\n' "$DIFF_OUTPUT_DEV"
-              echo 'EOF'
-          } >> "$GITHUB_ENV"
-        env:
-          INPUTS_REF: ${{ inputs.ref }}
-          INPUTS_PATH: ${{ inputs.path }}
+          path: ${{ inputs.path }}
+          ref: ${{ inputs.ref }}
+          skipctl-version: ${{ inputs.skipctl-version }}
 
       - name: Post/Update PROD diff comment
-        if: ${{ env.DIFF_OUTPUT_PROD != '' }}
+        if: steps.diff.outputs.prod != ''
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: prod-diff
@@ -113,17 +56,17 @@ jobs:
             > [!CAUTION]
             > # Denne PR-en treffer produksjon:
 
-            ${{ env.DIFF_OUTPUT_PROD }}
+            ${{ steps.diff.outputs.prod }}
 
       - name: Delete PROD diff comment if empty
-        if: ${{ env.DIFF_OUTPUT_PROD == '' }}
+        if: steps.diff.outputs.prod == ''
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: prod-diff
           mode: delete
 
       - name: Post/Update DEV diff comment
-        if: ${{ env.DIFF_OUTPUT_DEV != '' }}
+        if: steps.diff.outputs.dev != ''
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: dev-diff
@@ -133,10 +76,10 @@ jobs:
             > [!NOTE]
             > # Denne PR-en treffer:
 
-            ${{ env.DIFF_OUTPUT_DEV }}
+            ${{ steps.diff.outputs.dev }}
 
       - name: Delete DEV diff comment if empty
-        if: ${{ env.DIFF_OUTPUT_DEV == '' }}
+        if: steps.diff.outputs.dev == ''
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           comment-tag: dev-diff
