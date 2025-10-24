@@ -60,12 +60,12 @@ jobs:
               while IFS= read -r -d '' dir; do
                   while IFS= read -r -d '' file; do
                       local diff_result
-                      diff_result=$(skipctl manifests diff -p "$file" --ref ${{ env.INPUTS_REF }} --diff-format patch 2>/dev/null || true)
+                      diff_result=$(skipctl manifests diff -p "$file" --ref ${INPUTS_REF} --diff-format patch 2>/dev/null || true)
 
                       if [ -n "$diff_result" ]; then
                           local file_path="$file"
                           # Remove the input path prefix for cleaner display
-                          local display_path="${file_path#${{ env.INPUTS_PATH }}/}"
+                          local display_path="${file_path#${INPUTS_PATH}/}"
 
                           output+="<details>"
                           output+=$'\n'
@@ -82,7 +82,7 @@ jobs:
                           output+=$'\n'
                       fi
                   done < <(find "$dir" -type f -print0 | sort -z)
-              done < <(find ${{ env.INPUTS_PATH }} -type d -name "$pattern" -print0 | sort -z)
+              done < <(find ${INPUTS_PATH} -type d -name "$pattern" -print0 | sort -z)
 
               echo "$output"
           }
