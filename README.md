@@ -125,8 +125,8 @@ jobs:
 
 Runs diff of kubernetes manifests
 
-This worklfow will post a comment in the RP showing the diff of each file in a [git-diff](https://git-scm.com/docs/git-diff) format.
-File-changes in `*-prod/` folders will be highlighted with a warning in a separate comment for visibility.
+This workflow will post a comment in the PR showing the diff of each file in a [git-diff](https://git-scm.com/docs/git-diff) format.
+File changes in `*-prod/` folders will be highlighted with a warning in a separate comment for visibility.
 Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](https://github.com/kartverket/skipctl/).
 
 ### Features
@@ -137,6 +137,20 @@ Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](h
 
 ### Example
 
+Add the workflow with this simple variant with default values. (Defaults are specified below in the inputs-section)
+```yaml
+name: Manifests diff to PR comment
+
+on: pull_request
+
+jobs:
+  diff-manifests:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: kartverket/github-workflows/.github/workflows/manifest-diff-to-pr-comment.yaml@latest
+```
+Alternatively, add the workflow with arguments for `path`, `ref` and `skipctl-version`
 ```yaml
 name: Manifests diff to PR comment
 
@@ -149,9 +163,9 @@ jobs:
       pull-requests: write
     uses: kartverket/github-workflows/.github/workflows/manifest-diff-to-pr-comment.yaml@latest
     with:
-      path: env
-      ref: origin/main
-      skipctl-version: latest
+      path: env # set custom dir for manifest files
+      ref: origin/main # specify what gif ref to diff against
+      skipctl-version: latest # use other skipctl version
 ```
 
 ### Inputs
