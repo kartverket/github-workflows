@@ -39,7 +39,7 @@ jobs:
 
       - name: Generate manifest diffs
         id: diff
-        uses: Andreas-Espelund/actions/manifests/diff@diff-action # TODO use latest/main # TODO use Kartverket
+        uses: kartverket/actions/manifests/diff@296a6d30b6661538fdb31e7522c7a01d30fabea0
         with:
           path: ${{ inputs.path }}
           ref: ${{ inputs.ref }}
