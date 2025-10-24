@@ -1,0 +1,86 @@
+name: Manifest diff to PR comment
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        type: string
+        description: "Path to file or directory in which to look for manifests to diff (default: env)"
+        default: env
+      skipctl-version:
+        type: string
+        description: "Which version of `skipctl` to use (default: latest)"
+        default: latest
+      ref:
+        type: string
+        description: "Which git ref to compare against (default: origin/main)"
+        default: origin/main
+
+jobs:
+  diff-file:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - name: Fetch ref for comparison
+        run: |
+          REF_NAME="${INPUTS_REF#origin/}"
+          git fetch origin "$REF_NAME" --depth=1
+        env:
+          INPUTS_REF: ${{ inputs.ref }}
+
+      - name: Generate manifest diffs
+        id: diff
+        uses: kartverket/actions/manifests/diff@296a6d30b6661538fdb31e7522c7a01d30fabea0
+        with:
+          path: ${{ inputs.path }}
+          ref: ${{ inputs.ref }}
+          skipctl-version: ${{ inputs.skipctl-version }}
+
+      - name: Post/Update PROD diff comment
+        if: steps.diff.outputs.prod != ''
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
+        with:
+          comment-tag: prod-diff
+          mode: upsert
+          create-if-not-exists: true
+          message: |
+            > [!CAUTION]
+            > # Denne PR-en treffer produksjon:
+
+            ${{ steps.diff.outputs.prod }}
+
+      - name: Delete PROD diff comment if empty
+        if: steps.diff.outputs.prod == ''
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
+        with:
+          comment-tag: prod-diff
+          mode: delete
+
+      - name: Post/Update DEV diff comment
+        if: steps.diff.outputs.dev != ''
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
+        with:
+          comment-tag: dev-diff
+          mode: upsert
+          create-if-not-exists: true
+          message: |
+            > [!NOTE]
+            > # Denne PR-en treffer:
+
+            ${{ steps.diff.outputs.dev }}
+
+      - name: Delete DEV diff comment if empty
+        if: steps.diff.outputs.dev == ''
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
+        with:
+          comment-tag: dev-diff
+          mode: delete
