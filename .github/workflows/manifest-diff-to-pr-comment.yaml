@@ -27,9 +27,15 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           submodules: true
           persist-credentials: false
+
+      - name: Fetch ref for comparison
+        run: |
+          REF_NAME="${INPUTS_REF#origin/}"
+          git fetch origin "$REF_NAME" --depth=1
+        env:
+          INPUTS_REF: ${{ inputs.ref }}
 
       - name: Install `skipctl` @ ${{ env.SKIPCTL_VERSION }}
         uses: jaxxstorm/action-install-gh-release@6096f2a2bbfee498ced520b6922ac2c06e990ed2 # v2.1.0
