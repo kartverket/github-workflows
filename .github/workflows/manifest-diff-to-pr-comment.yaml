@@ -28,7 +28,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-          persist-credentials: false
 
       - name: Fetch ref for comparison
         run: |
