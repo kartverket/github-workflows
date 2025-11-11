@@ -1,0 +1,53 @@
+name: Create a pull request to update ArgoKit v2 documentation on skip.kartverket.no
+
+on:
+  push:
+    branches:
+      - main
+      - updated-documentation
+    paths:
+      - "v2/api-reference.md"
+jobs:
+  sync-docs:
+    name: Update target repository
+    permissions:
+      contents: write
+      id-token: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0 from https://skip.kartverket.no/docs/applikasjon-utrulling/argo-cd/hva-er-et-apps-repo
+        id: octo-sts
+        with:
+          scope: kartverket/skip.kartverket.no
+          identity: argokit
+
+      - name: Checkout source repo
+        uses: actions/checkout@v5
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Checkout target repo
+        uses: actions/checkout@v5
+        with:
+          path: target
+          repository: kartverket/skip.kartverket.no
+          token: ${{steps.octo-sts.outputs.token}}
+          persist-credentials: false
+
+      - name: Copy updated v2/README.md into target
+        run: |
+          cp source/v2/api-reference.md target/docs/03-applikasjon-utrulling/10-argokit/09-argokit-v2.md
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e
+        with:
+          path: target
+          token: ${{ steps.octo-sts.outputs.token }}
+          branch: update-argokitv2-docs-branch
+          commit-message: "📝 Update ArgoKit v2 documentation"
+          title: "Update ArgoKit v2 documentation"
+          body: "Automated updating of ArgoKit v2 README documentation"
+          labels: documentation
+          author: GithubActions <argokit@kartverket.no>
