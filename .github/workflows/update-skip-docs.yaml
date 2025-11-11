@@ -10,14 +10,27 @@ on:
 
   workflow_call:
     inputs:
-      sourcepaths:
+      source_path:
         type: string
         required: true
         description: "Path to the source file to copy"
-      targetpaths:
+      target_path:
         type: string
         required: true
         description: "Path to the target file to copy to"
+      branch_name:
+        type: string
+        required: false
+        default: "update-docs-branch"
+        description: "Branch name for the PR"
+      author_name:
+        type: string
+        required: true
+        default: "GithubActions <user@kartverket.no>"
+      identity:
+        type: string
+        required: true
+        description: "The OIDC identity to use for authentication"
 
 jobs:
   sync-docs:
@@ -32,7 +45,7 @@ jobs:
         id: octo-sts
         with:
           scope: kartverket/skip.kartverket.no
-          identity: argokit
+          identity: ${{ inputs.identity }}
 
       - name: Checkout source repo
         uses: actions/checkout@v5
@@ -50,16 +63,16 @@ jobs:
 
       - name: Copy updated /README.md into target
         run: |
-          cp ${{ inputs.sourcepath }} ${{ inputs.targetpath }}
+          cp ${{ inputs.source_path }} ${{ inputs.target_path }}
 
       - name: Create PR
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e
         with:
           path: target
           token: ${{ steps.octo-sts.outputs.token }}
-          branch: update-argokitv2-docs-branch
-          commit-message: "📝 Update ArgoKit v2 documentation"
-          title: "Update ArgoKit v2 documentation"
-          body: "Automated updating of ArgoKit v2 README documentation"
+          branch: ${{ inputs.branch_name }}
+          commit-message: "Update documentation"
+          title: "Update documentation"
+          body: "Automated update of documentation"
           labels: documentation
-          author: GithubActions <argokit@kartverket.no>
+          author: ${{ inputs.author_name }}
