@@ -1,4 +1,4 @@
-name: Create a pull request to update ArgoKit v2 documentation on skip.kartverket.no
+name: Create a pull request to update documentation on skip.kartverket.no
 
 on:
   push:
@@ -7,6 +7,18 @@ on:
       - updated-documentation
     paths:
       - "v2/api-reference.md"
+
+  workflow_call:
+    inputs:
+      sourcepaths:
+        type: string
+        required: true
+        description: "Path to the source file to copy"
+      targetpaths:
+        type: string
+        required: true
+        description: "Path to the target file to copy to"
+
 jobs:
   sync-docs:
     name: Update target repository
@@ -36,9 +48,9 @@ jobs:
           token: ${{steps.octo-sts.outputs.token}}
           persist-credentials: false
 
-      - name: Copy updated v2/README.md into target
+      - name: Copy updated /README.md into target
         run: |
-          cp source/v2/api-reference.md target/docs/03-applikasjon-utrulling/10-argokit/09-argokit-v2.md
+          cp ${{ inputs.sourcepath }} ${{ inputs.targetpath }}
 
       - name: Create PR
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e
