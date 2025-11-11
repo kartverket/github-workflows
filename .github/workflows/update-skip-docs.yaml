@@ -1,13 +1,6 @@
 name: Create a pull request to update documentation on skip.kartverket.no
 
 on:
-  push:
-    branches:
-      - main
-      - updated-documentation
-    paths:
-      - "v2/api-reference.md"
-
   workflow_call:
     inputs:
       source_path:
