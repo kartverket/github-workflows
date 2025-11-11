@@ -18,8 +18,8 @@ on:
         description: "Branch name for the PR"
       author_name:
         type: string
-        required: true
-        default: "GithubActions <user@kartverket.no>"
+        required: false
+        default: "GithubActions <workflow@kartverket.no>"
       identity:
         type: string
         required: true
@@ -54,9 +54,9 @@ jobs:
           token: ${{steps.octo-sts.outputs.token}}
           persist-credentials: false
 
-      - name: Copy updated /README.md into target
+      - name: Copy source file to target
         run: |
-          cp ${{ inputs.source_path }} ${{ inputs.target_path }}
+          cp source/${{ inputs.source_path }} target/${{ inputs.target_path }}
 
       - name: Create PR
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e
