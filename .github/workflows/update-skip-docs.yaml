@@ -56,7 +56,10 @@ jobs:
 
       - name: Copy source file to target
         run: |
-          cp source/${{ inputs.source_path }} target/${{ inputs.target_path }}
+          cp source/${SOURCE_PATH} target/${TARGET_PATH}
+        env:
+          SOURCE_PATH: ${{ inputs.source_path }}
+          TARGET_PATH: ${{ inputs.target_path }}
 
       - name: Create PR
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e
