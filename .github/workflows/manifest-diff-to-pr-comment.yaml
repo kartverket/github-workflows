@@ -38,7 +38,7 @@ jobs:
 
       - name: Generate manifest diffs
         id: diff
-        uses: kartverket/actions/manifests/diff@fdeaebe7181da1befa0a8de2cad2f1b1a1666fb7
+        uses: Andreas-Espelund/actions/manifests/diff@1559337d6180167671a4fcb8087fe6aa4aea4d31       
         with:
           path: ${{ inputs.path }}
           ref: ${{ inputs.ref }}
@@ -64,22 +64,22 @@ jobs:
           comment-tag: prod-diff
           mode: delete
 
-      - name: Post/Update DEV diff comment
-        if: steps.diff.outputs.dev != ''
+      - name: Post/Update OTHER diff comment
+        if: steps.diff.outputs.other != ''
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
-          comment-tag: dev-diff
+          comment-tag: other-diff
           mode: upsert
           create-if-not-exists: true
           message: |
             > [!NOTE]
             > # Denne PR-en treffer:
 
-            ${{ steps.diff.outputs.dev }}
+            ${{ steps.diff.outputs.other }}
 
-      - name: Delete DEV diff comment if empty
-        if: steps.diff.outputs.dev == ''
+      - name: Delete OTHER diff comment if empty
+        if: steps.diff.outputs.other == ''
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
-          comment-tag: dev-diff
+          comment-tag: other-diff
           mode: delete
