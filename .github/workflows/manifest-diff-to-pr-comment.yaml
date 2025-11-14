@@ -38,7 +38,7 @@ jobs:
 
       - name: Generate manifest diffs
         id: diff
-        uses: Andreas-Espelund/actions/manifests/diff@1559337d6180167671a4fcb8087fe6aa4aea4d31       
+        uses: Andreas-Espelund/actions/manifests/diff@1747c7b9cdbdebfaa58818fab8677d60cb9635f4     
         with:
           path: ${{ inputs.path }}
           ref: ${{ inputs.ref }}
