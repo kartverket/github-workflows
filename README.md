@@ -308,11 +308,11 @@ jobs:
 
 | Key           | Type   | Required | Description                                                                                      |
 |---------------|--------|----------|--------------------------------------------------------------------------------------------------|
-| source_path   | string | X        | Path to the documentation file in the source repository                                          |
-| target_path   | string | X        | Path where the documentation should be placed in the target repository                           |
-| branch_name   | string |         | Name of the branch to create in the target repository with the documentation updates             |
-| author_name   | string |         | Git author name and email in the format "Name <email@domain.com>" for the commit                 |
-| identity      | string | X        | The identity to use for authentication with the target repository (must match STS configuration) |
+| `source_path`   | string | true        | Path to the documentation file in the source repository                                          |
+| `target_path`   | string | true        | Path where the documentation should be placed in the target repository                           |
+| `branch_name`   | string | false        | Name of the branch to create in the target repository with the documentation updates             |
+| `author_name`   | string | false        | Git author name and email in the format "Name <email@domain.com>" for the commit                 |
+| `identity`      | string | true        | The `identity` to use for authentication with the target repository (must match STS configuration) |
 
 ## run-terraform
 
