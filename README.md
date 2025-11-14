@@ -7,6 +7,7 @@ Shared reusable workflows for GitHub Actions.
   - [run-k8s-manifests-validate](#run-k8s-manifests-validate)
   - [manifest-diff-to-pr-comment](#manifest-diff-to-pr-comment)
   - [auto-merge-dependabot](#auto-merge-dependabot)
+  - [update-skip-docs](#update-skip-docs)
   - [run-terraform](#run-terraform)
 - [Example usage](#example-usage)
   - [Ideal Use of Reusable Workflows](#ideal-use-of-reusable-workflows)
@@ -24,7 +25,7 @@ Shared reusable workflows for GitHub Actions.
 
 # Reusable Workflows
 
-We currently have 4 reusable workflows (i.e. [run-terraform](#run-terraform)) available for use.
+We currently have 6 reusable workflows (i.e. [run-terraform](#run-terraform)) available for use.
 
 See [Ideal Use of Workflows](#ideal-use-of-reusable-workflows) for an example of how to optimally use all 3 workflows together.
 
@@ -256,6 +257,62 @@ The configfile is currently the only input. The configfile at `.github/auto-merg
 | `[].match.dependency_name`   | string | true     | The name of the dependency as it appears on the Dependabot PR                                                                                                                              |
 | `[].match.update_type`       | string | true     | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
 | `[].match.package_ecosystem` | string | true     | The name of the package ecosystem which the update belongs to, examples; terraform, golang                                                                                                 |
+
+## update-skip-docs
+
+Automatically creates a pull request for updating documentation on skip.kartverket.no when documentation changes are pushed.
+
+### Features
+
+- Syncs changes to documentation files in the source repository to target in skip.kartverket.no
+- Automatically creates or updates documentation in the target repository
+- Creates a branch with the changes in the target repository
+- Requires manual merge of the created branch/PR to allow for review
+
+### Requirements
+
+- The workflow needs write permissions for both `contents` and `id-token`
+- An STS trust file needs to be configured for the target repository
+- The specified identity must have access to the target repository
+
+### Example
+
+Example usage in `.github/workflows/update-docs.yml`:
+```yaml
+name: Update documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'README.md'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  update-docs:
+    name: Update documentation in target repository
+    uses: kartverket/github-workflows/.github/workflows/update-skip-docs.yaml@latest
+    with:
+      source_path: "README.md"
+      target_path: "docs/03-applikasjon-utrulling/10-argokit/09-argokit-v2.md"
+      branch_name: "update-argokitv2-docs-branch"
+      author_name: "GithubActions <argokit@kartverket.no>"
+      identity: "argokit"
+```
+
+### Inputs
+
+| Key           | Type   | Required | Description                                                                                      |
+|---------------|--------|----------|--------------------------------------------------------------------------------------------------|
+| `source_path`   | string | true        | Path to the documentation file in the source repository                                          |
+| `target_path`   | string | true        | Path where the documentation should be placed in the target repository                           |
+| `branch_name`   | string | false        | Name of the branch to create in the target repository with the documentation updates             |
+| `author_name`   | string | false        | Git author name and email in the format "Name <email@domain.com>" for the commit                 |
+| `identity`      | string | true        | The `identity` to use for authentication with the target repository (must match STS configuration) |
 
 ## run-terraform
 

@@ -1,0 +1,74 @@
+name: Create a pull request to update documentation on skip.kartverket.no
+
+on:
+  workflow_call:
+    inputs:
+      source_path:
+        type: string
+        required: true
+        description: "Path to the source file to copy"
+      target_path:
+        type: string
+        required: true
+        description: "Path to the target file to copy to"
+      branch_name:
+        type: string
+        required: false
+        default: "update-docs-branch"
+        description: "Branch name for the PR"
+      author_name:
+        type: string
+        required: false
+        default: "GithubActions <workflow@kartverket.no>"
+      identity:
+        type: string
+        required: true
+        description: "The OIDC identity to use for authentication"
+
+jobs:
+  sync-docs:
+    name: Update target repository
+    permissions:
+      contents: write
+      id-token: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f # v1.0.0 from https://skip.kartverket.no/docs/applikasjon-utrulling/argo-cd/hva-er-et-apps-repo
+        id: octo-sts
+        with:
+          scope: kartverket/skip.kartverket.no
+          identity: ${{ inputs.identity }}
+
+      - name: Checkout source repo
+        uses: actions/checkout@v5
+        with:
+          path: source
+          persist-credentials: false
+
+      - name: Checkout target repo
+        uses: actions/checkout@v5
+        with:
+          path: target
+          repository: kartverket/skip.kartverket.no
+          token: ${{steps.octo-sts.outputs.token}}
+          persist-credentials: false
+
+      - name: Copy source file to target
+        run: |
+          cp source/${SOURCE_PATH} target/${TARGET_PATH}
+        env:
+          SOURCE_PATH: ${{ inputs.source_path }}
+          TARGET_PATH: ${{ inputs.target_path }}
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e
+        with:
+          path: target
+          token: ${{ steps.octo-sts.outputs.token }}
+          branch: ${{ inputs.branch_name }}
+          commit-message: "Update documentation"
+          title: "Update documentation"
+          body: "Automated update of documentation"
+          labels: documentation
+          author: ${{ inputs.author_name }}
