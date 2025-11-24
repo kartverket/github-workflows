@@ -41,13 +41,13 @@ jobs:
           identity: ${{ inputs.identity }}
 
       - name: Checkout source repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: source
           persist-credentials: false
 
       - name: Checkout target repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: target
           repository: kartverket/skip.kartverket.no
