@@ -38,7 +38,7 @@ jobs:
 
       - name: Generate manifest diffs
         id: diff
-        uses: kartverket/actions/manifests/diff@65b4aead1f79c5a1a0df2c8b96a40bbf89b5a6fd     
+        uses: kartverket/actions/manifests/diff@e050f719d9fa459512515fea9ca4bf60fd05c611     
         with:
           path: ${{ inputs.path }}
           ref: ${{ inputs.ref }}
