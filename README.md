@@ -415,7 +415,7 @@ As long as your repository is internal, the tailscale secrets should be present 
 
 ## synthetic-monitoring
 
-This workflow validates a YAML file using [schema.yaml](kartverket/blackbox-exporter/configs/schema.yaml) on PR and then creates a PR for the validated file to `blackbox-exporter` on push to your default branch (main or other).
+This workflow validates a YAML file using [schema.yaml](https://github.com/kartverket/blackbox-exporter/tree/main/configs/schema.yaml) on PR and then creates a PR for the validated file to [`blackbox-exporter`](https://github.com/kartverket/blackbox-exporter) on push to your default branch (main or other).
 
 ### Features
 
