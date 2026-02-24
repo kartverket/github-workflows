@@ -62,7 +62,7 @@ jobs:
           TARGET_PATH: ${{ inputs.target_path }}
 
       - name: Create PR
-        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
         with:
           path: target
           token: ${{ steps.octo-sts.outputs.token }}
