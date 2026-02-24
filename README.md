@@ -415,12 +415,12 @@ As long as your repository is internal, the tailscale secrets should be present 
 
 ## synthetic-monitoring
 
-This workflow verifies a [file_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config) syntaxed file using a pre-defined schema and then creates a PR to a repo using said file.
+This workflow validates a YAML file using [schema.yaml](kartverket/blackbox-exporter/configs/schema.yaml) on PR and then creates a PR for the validated file to `blackbox-exporter` on push to your default branch (main or other).
 
 ### Features
 
 - Uses Octo STS for auth repo to repo
-- yaml validation with Yamale via nrkno/yaml-schema-validator-github-action
+- YAML validation with Yamale via nrkno/yaml-schema-validator-github-action
 - Automatically creates a PR in the wanted/remote repo, but only on push to your default branch for a well behaved PR process in local repo
 
 ### Example
@@ -431,7 +431,7 @@ name: Validate Synthetic Monitoring Config
 on:
   push:
     branches:
-      - main
+      - main  # Change this if you use another name for the default branch
   pull_request:
 
 jobs:
