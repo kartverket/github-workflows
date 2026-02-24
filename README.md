@@ -9,6 +9,7 @@ Shared reusable workflows for GitHub Actions.
   - [auto-merge-dependabot](#auto-merge-dependabot)
   - [update-skip-docs](#update-skip-docs)
   - [run-terraform](#run-terraform)
+  - [synthetic-monitoring](#synthetic-monitoring)
 - [Example usage](#example-usage)
   - [Ideal Use of Reusable Workflows](#ideal-use-of-reusable-workflows)
   - [Deploy on workflow dispatch](#deploy-on-workflow-dispatch)
@@ -37,7 +38,6 @@ See [Tips and Tricks](#tips-and-tricks) for supporting information regarding usa
 
 Allows running kubectl commands against a Kubernetes cluster. This is useful for doing restarts of deployments for example.
 
-
 ### Features
 
 - Connects to a google cluster as a deploy service account
@@ -48,10 +48,10 @@ Allows running kubectl commands against a Kubernetes cluster. This is useful for
 
 - Your gcp project is set up and given required permissions in skip-core-infrastructure and gcp-service-accounts
 
-
 ### Example
 
 Example usage in `.github/workflows/run-kubectl.yml`:
+
 ```yaml
 name: Restart deployment
 on: pull_request_target
@@ -69,6 +69,7 @@ jobs:
       command: |
         restart deployment my-deployment
 ```
+
 ### Inputs
 
 | Key                   | Type             | Required | Description                                                                                                                         |
@@ -79,8 +80,7 @@ jobs:
 | project_number        | string           | X        | A 12-digit number used as a unique identifier for the product project.                                                              |
 | namespace             | string           | X        | which namespace to execute the command in                                                                                           |
 | kubectl_version       | string           | X        | which kubectl version to use. format: v1.30.0. latest stable is default                                                             |
-| commands              | multiline string | X        | The kubectl commands you want to run, exclude `kubectl`. example: https://skip.kartverket.no/docs/github-actions/kubectl-fra-github |
-
+| commands              | multiline string | X        | The kubectl commands you want to run, exclude `kubectl`. example: <https://skip.kartverket.no/docs/github-actions/kubectl-fra-github> |
 
 ## run-k8s-manifests-validate
 
@@ -94,12 +94,12 @@ Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](h
 - Checks for syntax errors in `yaml` and `jsonnet` files
 - Checks for invalid manifests according to the API reference as defined in `skiperator.kartverket.no/v1alpha1` [0]
 
-[0] Skiperator API Reference - https://skip.kartverket.no/docs/applikasjon-utrulling/skiperator/api-docs
-
+[0] Skiperator API Reference - <https://skip.kartverket.no/docs/applikasjon-utrulling/skiperator/api-docs>
 
 ### Example
 
 Example usage in `.github/workflows/run-k8s-validation.yml`:
+
 ```yaml
 name: Verify Kubernetes Manifest Validity
 
@@ -113,14 +113,13 @@ jobs:
         path: env
         skipctl-version: 'v1.3.1'
 ```
+
 ### Inputs
 
 | Key                   | Type             | Required | Description                                                                                             |
 |-----------------------|------------------|----------|---------------------------------------------------------------------------------------------------------|
 | path                  | string           |          | The path for a specific file or a directory in which to look for manifests to validate (default: 'env') |
 | skipctl-version       | string           |          | The version of `skipctl` to use (default: 'latest')                                                     |
-
-
 
 ## manifest-diff-to-pr-comment
 
@@ -139,6 +138,7 @@ Uses `skipctl` under the hood. For more info see the [`skipctl` documentation](h
 ### Example
 
 Add the workflow with this simple variant with default values. (Defaults are specified below in the inputs-section)
+
 ```yaml
 name: Manifests diff to PR comment
 
@@ -151,7 +151,9 @@ jobs:
       pull-requests: write
     uses: kartverket/github-workflows/.github/workflows/manifest-diff-to-pr-comment.yaml@latest
 ```
+
 Alternatively, add the workflow with arguments for `path`, `ref` and `skipctl-version`
+
 ```yaml
 name: Manifests diff to PR comment
 
@@ -177,7 +179,6 @@ jobs:
 | ref                   | string           |          | Which git ref to compare against (default: origin/main)                         |
 | skipctl-version       | string           |          | The version of `skipctl` to use (default: 'latest')                             |
 
-
 ## auto-merge-dependabot
 
 Allows auto-merging dependabot PRs that match given patterns. Useful when you are drowning in PRs and have built up trust in a set of dependencies that release often and never break. It's recommended to have a sane CI setup so that anything merged to main at least passes CI tests before going into prod
@@ -198,9 +199,11 @@ A few requirements are necessary in order to make this work in addition to the e
 3. A trust file called `.github/chainguard/auto-update.sts.yaml` needs to exist to allow the workflow to get a valid GitHub token
 4. If you use branch protection rules, and `Restrict who can push to matching branches` is checked, then you must add the octo-sts app to the allowlist.
 5. If you use branch protection rules, and `Require a pull request before merging` is checked, then you must add octo-sts to `Allow specified actors to bypass required pull requests`.
+
 ### Example
 
 Example usage in `.github/workflows/auto-merge.yml`:
+
 ```yaml
 name: Dependabot auto-merge
 on: pull_request_target
@@ -215,6 +218,7 @@ jobs:
 ```
 
 Example configfile in `.github/auto-merge.json`:
+
 ```json
 [{
   "match": {
@@ -237,6 +241,7 @@ Example configfile in `.github/auto-merge.json`:
 ```
 
 Example STS trust file in `.github/chainguard/auto-update.sts.yaml`:
+
 ```yaml
 issuer: https://token.actions.githubusercontent.com
 subject: repo:kartverket/gcp-service-accounts:pull_request
@@ -278,6 +283,7 @@ Automatically creates a pull request for updating documentation on skip.kartverk
 ### Example
 
 Example usage in `.github/workflows/update-docs.yml`:
+
 ```yaml
 name: Update documentation
 
@@ -407,7 +413,35 @@ If the `cyrilgdn/postgresql` provider is present, the `secrets: inherit` input i
 The provider will set the environment variable `NEED_TAILSCALE` to true, which will trigger the tailscale login.
 As long as your repository is internal, the tailscale secrets should be present on your repository.
 
-<br />
+## synthetic-monitoring
+
+This workflow validates a YAML file using [schema.yaml](https://github.com/kartverket/blackbox-exporter/tree/main/configs/schema.yaml) on PR and then creates a PR for the validated file to [`blackbox-exporter`](https://github.com/kartverket/blackbox-exporter) on push to your default branch (main or other).
+
+### Features
+
+- Uses Octo STS for auth repo to repo
+- YAML validation with Yamale via nrkno/yaml-schema-validator-github-action
+- Automatically creates a PR in the wanted/remote repo, but only on push to your default branch for a well behaved PR process in local repo
+
+### Example
+
+```yaml
+name: Validate Synthetic Monitoring Config
+
+on:
+  push:
+    branches:
+      - main  # Change this if you use another name for the default branch
+  pull_request:
+
+jobs:
+  call-synthetic-monitoring:
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+  uses: kartverket/github-workflows/.github/workflows/synthetic-monitoring.yaml@<release tag>
+```
 
 # Example Usage
 
