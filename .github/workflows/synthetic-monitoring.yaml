@@ -31,7 +31,7 @@ jobs:
 
   delete-config-from-blackbox-exporter:
     needs: file-exists
-    if: needs.file-exists.outputs.file_exists == 'false'
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && needs.file-exists.outputs.file_exists == 'false'
     runs-on: ubuntu-latest
     name: Delete existing config from blackbox-exporter
     permissions:
