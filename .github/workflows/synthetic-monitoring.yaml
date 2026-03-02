@@ -1,22 +1,4 @@
 # Reusable workflow: Validate and push synthetic monitoring config
-#
-# Usage example:
-#
-#name: Validate Synthetic Monitoring Config
-#
-#on:
-#  push:
-#    branches:
-#      - main
-#  pull_request:
-#
-#jobs:
-#  call-synthetic-monitoring:
-#    permissions:
-#      contents: read
-#      pull-requests: write
-#      id-token: write
-#    uses: kartverket/github-workflows/.github/workflows/synthetic-monitoring.yaml@<release tag>
 
 name: Synthetic Monitoring Reusable Workflow
 
@@ -24,7 +6,81 @@ on:
   workflow_call:
 
 jobs:
+  file-exists:
+    runs-on: ubuntu-latest
+    name: Check if config file exists
+    permissions:
+      contents: read
+    outputs:
+      file_exists: ${{ steps.check.outputs.file_exists }}
+    steps:
+      - name: Checkout repository
+        # actions/checkout@v6.0.1 (SHA: 8e8c483db84b4bee98b60c0593521ed34d9990e8)
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          persist-credentials: false
+
+      - name: Check if synthetic-monitoring.yaml exists
+        id: check
+        run: |
+          if [ -f "synthetic-monitoring.yaml" ]; then
+            echo "file_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "file_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  delete-config-from-blackbox-exporter:
+    needs: file-exists
+    if: needs.file-exists.outputs.file_exists == 'false'
+    runs-on: ubuntu-latest
+    name: Delete existing config from blackbox-exporter
+    permissions:
+      id-token: write # Needed for OIDC token for octo-sts
+    steps:
+      - name: Set repo name variable
+        id: vars
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch octo-sts token for blackbox-exporter
+        # octo-sts/action@v1.1.1 (SHA: f603d3be9d8dd9871a265776e625a27b00effe05)
+        uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05
+        id: octo-sts
+        with:
+          scope: kartverket/blackbox-exporter
+          identity: ${{ steps.vars.outputs.REPO_NAME }}
+
+      - name: Checkout blackbox-exporter repo
+        # actions/checkout@v6.0.1 (SHA: 8e8c483db84b4bee98b60c0593521ed34d9990e8)
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          repository: kartverket/blackbox-exporter
+          token: ${{ steps.octo-sts.outputs.token }}
+          path: blackbox-exporter
+          persist-credentials: false
+
+      - name: Delete config from blackbox-exporter
+        run: |
+          rm "blackbox-exporter/configs/http_2xx_get_10s/${REPO_NAME}.yaml"
+        env:
+          REPO_NAME: ${{ steps.vars.outputs.REPO_NAME }}
+
+      - name: Create PR to kartverket/blackbox-exporter
+        # peter-evans/create-pull-request@v8.1.0 (SHA: c0f553fe549906ede9cf27b5156039d195d2ece0)
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
+          path: blackbox-exporter
+          title: Delete synthetic monitoring config for ${{ steps.vars.outputs.REPO_NAME }}
+          body: Delete configs from ${{ github.repository }}.
+          commit-message: Delete configs/http_2xx_get_10s/${{ steps.vars.outputs.REPO_NAME }}.yaml from ${{ github.repository }}
+          branch: update-configs-${{ steps.vars.outputs.REPO_NAME }}
+          base: main
+          add-paths: configs/http_2xx_get_10s/${{ steps.vars.outputs.REPO_NAME }}.yaml
+          delete-branch: true
+
   validate:
+    needs: file-exists
+    if: needs.file-exists.outputs.file_exists == 'true'
     runs-on: ubuntu-latest
     name: Validate config
     permissions:
@@ -77,8 +133,8 @@ jobs:
           retention-days: 2
 
   export-to-blackbox:
-    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
-    needs: validate
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && needs.file-exists.outputs.file_exists == 'true'
+    needs: [validate, file-exists]
     runs-on: ubuntu-latest
     name: Export config to blackbox-exporter
     permissions:
