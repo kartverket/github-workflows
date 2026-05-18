@@ -1,0 +1,210 @@
+name: Build and Push OPA Bundle
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: 'Name of the resulting OPA bundle'
+        required: true
+        type: string
+      rego-path:
+        description: |
+          Path(s) to the OPA rules directory. Supports multiline for several paths,
+          and `*` / `**` glob syntax.
+        required: true
+        type: string
+      test-path:
+        description: |
+          Path(s) to the OPA test directory. Supports multiline for several paths,
+          and `*` / `**` glob syntax.
+        required: false
+        type: string
+        default: ''
+      additional-tags:
+        description: |
+          Extra tags to apply to the bundle, one per line. The bundle is always
+          tagged with `sha-<commit>` in addition to these.
+        required: false
+        type: string
+        default: ''
+
+env:
+  REGISTRY: ghcr.io
+  BUNDLE_NAME: ${{ inputs.name }}
+
+jobs:
+  build:
+    name: Build and push OPA bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@b2b258e089860efaadaaf71bf6e3aecb4a3eeff1 # v2.4.0
+        with:
+          version: latest
+
+      # TODO: Verify with accesserator if we need to use old signature format or not
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: 'v2.4.1'
+
+      - name: Test OPA rules
+        if: inputs.test-path != ''
+        env:
+          TEST_PATHS: ${{ inputs.test-path }}
+        run: |
+          shopt -s globstar nullglob
+          paths=()
+          while IFS= read -r line; do
+            line="${line%"${line##*[![:space:]]}"}"
+            line="${line#"${line%%[![:space:]]*}"}"
+            [[ -z "$line" ]] && continue
+            for p in $line; do
+              [[ -e "$p" ]] && paths+=("$p")
+            done
+          done <<< "$TEST_PATHS"
+
+          # `--format=json` with `--coverage` returns only the coverage report,
+          # so we run twice: once for test results, once for coverage.
+          opa test --fail-on-empty --format=json "${paths[@]}" > opa-test-results.json
+          TEST_EXIT=$?
+          opa test --coverage --format=json "${paths[@]}" > opa-coverage.json || true
+
+          # Echo a human-readable summary to the job log.
+          jq -r '.[] | "\(.location.file)::\(.name) [\(if .fail then "FAIL" elif .error then "ERROR" else "PASS" end)] (\(.duration)ns)"' opa-test-results.json
+          jq -r '"Overall coverage: \(.coverage)%"' opa-coverage.json
+
+          exit $TEST_EXIT
+
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+
+      - name: Build OPA bundle
+        env:
+          REGO_PATHS: ${{ inputs.rego-path }}
+        run: |
+          shopt -s globstar nullglob
+          args=()
+          while IFS= read -r line; do
+            line="${line%"${line##*[![:space:]]}"}"
+            line="${line#"${line%%[![:space:]]*}"}"
+            [[ -z "$line" ]] && continue
+            for p in $line; do
+              [[ -e "$p" ]] && args+=(-b "$p")
+            done
+          done <<< "$REGO_PATHS"
+          if [[ ${#args[@]} -eq 0 ]]; then
+            echo "No rego paths matched: $REGO_PATHS" >&2
+            exit 1
+          fi
+          opa build "${args[@]}" -o bundle.tar.gz
+          tar -tzf bundle.tar.gz
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push bundle to GHCR
+        id: push
+        env:
+          ADDITIONAL_TAGS: ${{ inputs.additional-tags }}
+          SHA_TAG: sha-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tag_list="${SHA_TAG}"
+          while IFS= read -r t; do
+            t="${t//[[:space:]]/}"
+            [[ -z "$t" ]] && continue
+            tag_list="${tag_list},${t}"
+          done <<< "$ADDITIONAL_TAGS"
+
+          DIGEST=$(oras push "${REGISTRY}/${BUNDLE_NAME}:${tag_list}" \
+            bundle.tar.gz:application/vnd.oci.image.layer.v1.tar+gzip \
+            --format json | jq -r '.digest')
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "tags=$tag_list" >> "$GITHUB_OUTPUT"
+
+      # TODO: Verify with accesserator if we need to use old signature format or not
+      - name: Sign bundle with cosign
+        id: sign
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.BUNDLE_NAME }}@${{ steps.push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign sign --yes "$IMAGE_REF" 2>&1 | tee cosign-output.log
+          SIG_REF=$(cosign triangulate "$IMAGE_REF" 2>/dev/null || echo "")
+          TLOG_INDEX=$(grep -oE 'tlog entry created with index: [0-9]+' cosign-output.log | grep -oE '[0-9]+$' | head -1 || echo "")
+          echo "signature_ref=$SIG_REF" >> "$GITHUB_OUTPUT"
+          echo "tlog_index=$TLOG_INDEX" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        if: always()
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.BUNDLE_NAME }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+          TAGS: ${{ steps.push.outputs.tags }}
+          SIG_REF: ${{ steps.sign.outputs.signature_ref }}
+          TLOG_INDEX: ${{ steps.sign.outputs.tlog_index }}
+        run: |
+          {
+            echo "## OPA Bundle"
+            echo ""
+            if [[ -n "$DIGEST" ]]; then
+              echo "**Image:** \`${IMAGE}@${DIGEST}\`"
+              echo ""
+              echo "**Tags:**"
+              IFS=',' read -ra TAG_ARR <<< "$TAGS"
+              for t in "${TAG_ARR[@]}"; do
+                echo "- \`${IMAGE}:${t}\`"
+              done
+              echo ""
+            fi
+
+            if [[ -f opa-test-results.json ]]; then
+              echo "### Test results"
+              echo ""
+              echo "| File | Test | Result | Duration |"
+              echo "|------|------|--------|----------|"
+              jq -r '.[] | "| `\(.location.file)` | `\(.name)` | \(if .fail then "FAIL" elif .error then "ERROR" else "PASS" end) | \(.duration)ns |"' opa-test-results.json
+              echo ""
+              PASS=$(jq '[.[] | select(.fail != true and .error == null)] | length' opa-test-results.json)
+              FAIL=$(jq '[.[] | select(.fail == true)] | length' opa-test-results.json)
+              ERR=$(jq '[.[] | select(.error != null)] | length' opa-test-results.json)
+              echo "**Totals:** ${PASS} passed, ${FAIL} failed, ${ERR} errored"
+              echo ""
+            fi
+
+            if [[ -f opa-coverage.json ]]; then
+              echo "### Coverage"
+              echo ""
+              echo "| File | Coverage | Covered lines | Not covered |"
+              echo "|------|----------|---------------|-------------|"
+              jq -r '.files | to_entries[] | "| `\(.key)` | \(.value.coverage // 0)% | \(.value.covered_lines // 0) | \(.value.not_covered_lines // 0) |"' opa-coverage.json
+              echo ""
+              echo "**Overall:** $(jq -r '.coverage // 0' opa-coverage.json)%"
+              echo ""
+            fi
+
+            if [[ -n "$SIG_REF" || -n "$TLOG_INDEX" ]]; then
+              echo "### Signature"
+              echo ""
+              echo "**Signed by:** \`${{ github.server_url }}/${{ github.repository }}/.github/workflows/${{ github.workflow }}@${{ github.ref }}\`"
+              if [[ -n "$SIG_REF" ]]; then
+                echo "**Signature artifact:** \`${SIG_REF}\`"
+              fi
+              if [[ -n "$TLOG_INDEX" ]]; then
+                echo "**Rekor tlog index:** [${TLOG_INDEX}](https://search.sigstore.dev/?logIndex=${TLOG_INDEX})"
+              fi
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
