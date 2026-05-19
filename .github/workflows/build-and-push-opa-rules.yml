@@ -187,11 +187,24 @@ jobs:
             if [[ -f opa-coverage.json ]]; then
               echo "### Coverage"
               echo ""
+              echo "_Excludes \`*_test.rego\` files._"
+              echo ""
               echo "| File | Coverage | Covered lines | Not covered |"
               echo "|------|----------|---------------|-------------|"
-              jq -r '.files | to_entries[] | "| `\(.key)` | \(.value.coverage // 0)% | \(.value.covered_lines // 0) | \(.value.not_covered_lines // 0) |"' opa-coverage.json
+              jq -r '
+                .files | to_entries[]
+                | select(.key | endswith("_test.rego") | not)
+                | "| `\(.key)` | \(.value.coverage // 0)% | \(.value.covered_lines // 0) | \(.value.not_covered_lines // 0) |"
+              ' opa-coverage.json
               echo ""
-              echo "**Overall:** $(jq -r '.coverage // 0' opa-coverage.json)%"
+              echo "**Overall:** $(jq -r '
+                [.files | to_entries[] | select(.key | endswith("_test.rego") | not) | .value] as $f
+                | ($f | map(.covered_lines // 0) | add // 0) as $c
+                | ($f | map(.not_covered_lines // 0) | add // 0) as $n
+                | if ($c + $n) == 0 then "0"
+                  else ((($c * 1000 / ($c + $n)) | floor) / 10 | tostring)
+                  end
+              ' opa-coverage.json)%"
               echo ""
             fi
 
