@@ -3,8 +3,8 @@ name: Build and Push OPA Bundle
 on:
   workflow_call:
     inputs:
-      name:
-        description: 'Name of the resulting OPA bundle'
+      artifactName:
+        description: 'Name of the OPA bundle pushed to GHCR as an artifact.'
         required: true
         type: string
       rego-path:
@@ -30,10 +30,10 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BUNDLE_NAME: ${{ inputs.name }}
+  BUNDLE_NAME: ${{ inputs.artifactName }}
 
 jobs:
-  build:
+  build-and-push:
     name: Build and push OPA bundle
     runs-on: ubuntu-latest
     permissions:
@@ -41,6 +41,18 @@ jobs:
       packages: write
       id-token: write
     steps:
+      - name: Validate artifactName
+        id: validate
+        env:
+          ARTIFACT_NAME: ${{ inputs.artifactName }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [[ "$ARTIFACT_NAME" != "$REPO" && "$ARTIFACT_NAME" != "$REPO/"* ]]; then
+            echo "::error::artifactName ('$ARTIFACT_NAME') must equal '$REPO' or start with '$REPO/'." >&2
+            echo "::error::This keeps bundles inside the calling repository's GHCR namespace." >&2
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -155,10 +167,19 @@ jobs:
           TAGS: ${{ steps.push.outputs.tags }}
           SIG_REF: ${{ steps.sign.outputs.signature_ref }}
           TLOG_INDEX: ${{ steps.sign.outputs.tlog_index }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          ARTIFACT_NAME: ${{ inputs.artifactName }}
+          REPO: ${{ github.repository }}
         run: |
           {
             echo "## OPA Bundle"
             echo ""
+            if [[ "$VALIDATE_OUTCOME" == "failure" ]]; then
+              echo "> [!CAUTION]"
+              echo "> **artifactName validation failed.** \`$ARTIFACT_NAME\` must equal \`$REPO\` or start with \`$REPO/\`."
+              echo "> The bundle was not built or pushed."
+              echo ""
+            fi
             if [[ -n "$DIGEST" ]]; then
               echo "**Image:** \`${IMAGE}@${DIGEST}\`"
               echo ""
