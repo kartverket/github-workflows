@@ -65,7 +65,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
-          cosign-release: 'v2.4.1'
+          cosign-release: 'v3.0.6'
 
       - name: Test OPA rules
         if: inputs.test-path != ''
@@ -153,10 +153,12 @@ jobs:
           IMAGE_REF: ${{ env.REGISTRY }}/${{ env.BUNDLE_NAME }}@${{ steps.push.outputs.digest }}
         run: |
           set -euo pipefail
-          cosign sign --yes "$IMAGE_REF" 2>&1 | tee cosign-output.log
-          SIG_REF=$(cosign triangulate "$IMAGE_REF" 2>/dev/null || echo "")
+          cosign sign --yes --new-bundle-format "$IMAGE_REF" 2>&1 | tee cosign-output.log
+
+          # Bundle is stored as an OCI 1.1 referrer of the image digest — there's no
+          # separate ".sig" tag. Verifiers fetch it via the referrers API using IMAGE_REF.
           TLOG_INDEX=$(grep -oE 'tlog entry created with index: [0-9]+' cosign-output.log | grep -oE '[0-9]+$' | head -1 || echo "")
-          echo "signature_ref=$SIG_REF" >> "$GITHUB_OUTPUT"
+          echo "signed_image_ref=$IMAGE_REF" >> "$GITHUB_OUTPUT"
           echo "tlog_index=$TLOG_INDEX" >> "$GITHUB_OUTPUT"
 
       - name: Summary
@@ -165,7 +167,8 @@ jobs:
           IMAGE: ${{ env.REGISTRY }}/${{ env.BUNDLE_NAME }}
           DIGEST: ${{ steps.push.outputs.digest }}
           TAGS: ${{ steps.push.outputs.tags }}
-          SIG_REF: ${{ steps.sign.outputs.signature_ref }}
+          SIGN_OUTCOME: ${{ steps.sign.outcome }}
+          SIGNED_IMAGE_REF: ${{ steps.sign.outputs.signed_image_ref }}
           TLOG_INDEX: ${{ steps.sign.outputs.tlog_index }}
           VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
           ARTIFACT_NAME: ${{ inputs.artifactName }}
@@ -229,16 +232,23 @@ jobs:
               echo ""
             fi
 
-            if [[ -n "$SIG_REF" || -n "$TLOG_INDEX" ]]; then
+            if [[ "$SIGN_OUTCOME" == "success" ]]; then
               echo "### Signature"
               echo ""
+              echo "**Signed image:** \`${SIGNED_IMAGE_REF}\`"
+              echo "**Format:** Sigstore bundle (stored as OCI 1.1 referrer of the image digest)"
               echo "**Signed by:** \`${{ github.server_url }}/${{ github.repository }}/.github/workflows/${{ github.workflow }}@${{ github.ref }}\`"
-              if [[ -n "$SIG_REF" ]]; then
-                echo "**Signature artifact:** \`${SIG_REF}\`"
-              fi
               if [[ -n "$TLOG_INDEX" ]]; then
                 echo "**Rekor tlog index:** [${TLOG_INDEX}](https://search.sigstore.dev/?logIndex=${TLOG_INDEX})"
               fi
+              echo ""
+              echo "Verify with:"
+              echo '```bash'
+              echo "cosign verify --new-bundle-format \\"
+              echo "  --certificate-identity-regexp '^${{ github.server_url }}/${{ github.repository }}/\\.github/workflows/.*' \\"
+              echo "  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \\"
+              echo "  ${SIGNED_IMAGE_REF}"
+              echo '```'
               echo ""
             fi
           } >> "$GITHUB_STEP_SUMMARY"
