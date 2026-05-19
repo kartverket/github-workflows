@@ -20,6 +20,12 @@ on:
         required: false
         type: string
         default: ''
+      lint:
+        description: |
+          Whether to run regal linting on the OPA rules.
+        required: false
+        type: boolean
+        default: false
       additional-tags:
         description: |
           Extra tags to apply to the bundle, one per line. The bundle is always
@@ -40,6 +46,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     steps:
       - name: Validate artifactName
         id: validate
@@ -59,13 +66,43 @@ jobs:
       - name: Setup OPA
         uses: open-policy-agent/setup-opa@b2b258e089860efaadaaf71bf6e3aecb4a3eeff1 # v2.4.0
         with:
-          version: latest
+          version: '1.16.1'
 
       # TODO: Verify with accesserator if we need to use old signature format or not
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           cosign-release: 'v3.0.6'
+
+      - name: Setup Regal
+        if: inputs.lint
+        uses: open-policy-agent/setup-regal@761188c3b435761fa254beca508a44875619648f # v2.0.0
+
+      - name: Lint with Regal
+        if: inputs.lint
+        env:
+          REGO_PATHS: ${{ inputs.rego-path }}
+        run: |
+          shopt -s globstar nullglob
+          paths=()
+          while IFS= read -r line; do
+            line="${line%"${line##*[![:space:]]}"}"
+            line="${line#"${line%%[![:space:]]*}"}"
+            [[ -z "$line" ]] && continue
+            for p in $line; do
+              [[ -e "$p" ]] && paths+=("$p")
+            done
+          done <<< "$REGO_PATHS"
+          if [[ ${#paths[@]} -eq 0 ]]; then
+            echo "No rego paths matched: $REGO_PATHS" >&2
+            exit 1
+          fi
+          # `bash -e` would abort here on a non-zero exit, so capture exit code via `||`.
+          LINT_EXIT=0
+          regal lint --format json "${paths[@]}" > regal-results.json || LINT_EXIT=$?
+          # Always print human-readable output to the log.
+          regal lint "${paths[@]}" || true
+          exit $LINT_EXIT
 
       - name: Test OPA rules
         if: inputs.test-path != ''
@@ -85,8 +122,9 @@ jobs:
 
           # `--format=json` with `--coverage` returns only the coverage report,
           # so we run twice: once for test results, once for coverage.
-          opa test --fail-on-empty --format=json "${paths[@]}" > opa-test-results.json
-          TEST_EXIT=$?
+          # `bash -e` would abort on failing tests, so capture exit code via `||`.
+          TEST_EXIT=0
+          opa test --fail-on-empty --format=json "${paths[@]}" > opa-test-results.json || TEST_EXIT=$?
           opa test --coverage --format=json "${paths[@]}" > opa-coverage.json || true
 
           # Echo a human-readable summary to the job log.
@@ -116,7 +154,7 @@ jobs:
             echo "No rego paths matched: $REGO_PATHS" >&2
             exit 1
           fi
-          opa build "${args[@]}" -o bundle.tar.gz
+          opa build -b "${args[@]}" --ignore '*_test.rego' -o bundle.tar.gz
           tar -tzf bundle.tar.gz
 
       - name: Log into registry ${{ env.REGISTRY }}
@@ -161,6 +199,14 @@ jobs:
           echo "signed_image_ref=$IMAGE_REF" >> "$GITHUB_OUTPUT"
           echo "tlog_index=$TLOG_INDEX" >> "$GITHUB_OUTPUT"
 
+      - name: Generate SLSA provenance attestation
+        id: provenance
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.BUNDLE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
       - name: Summary
         if: always()
         env:
@@ -170,6 +216,8 @@ jobs:
           SIGN_OUTCOME: ${{ steps.sign.outcome }}
           SIGNED_IMAGE_REF: ${{ steps.sign.outputs.signed_image_ref }}
           TLOG_INDEX: ${{ steps.sign.outputs.tlog_index }}
+          PROVENANCE_OUTCOME: ${{ steps.provenance.outcome }}
+          ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
           VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
           ARTIFACT_NAME: ${{ inputs.artifactName }}
           REPO: ${{ github.repository }}
@@ -191,6 +239,22 @@ jobs:
               for t in "${TAG_ARR[@]}"; do
                 echo "- \`${IMAGE}:${t}\`"
               done
+              echo ""
+            fi
+
+            if [[ -f regal-results.json ]]; then
+              echo "### Lint results (Regal)"
+              echo ""
+              violations=$(jq '.violations | length' regal-results.json 2>/dev/null || echo 0)
+              if [[ "$violations" == "0" ]]; then
+                echo "No violations."
+              else
+                echo "| File | Rule | Level | Message |"
+                echo "|------|------|-------|---------|"
+                jq -r '.violations[] | "| `\(.location.file)` | \(.title) | \(.level) | \(.description) |"' regal-results.json
+              fi
+              echo ""
+              echo "**Total violations:** ${violations}"
               echo ""
             fi
 
@@ -233,11 +297,19 @@ jobs:
             fi
 
             if [[ "$SIGN_OUTCOME" == "success" ]]; then
+              # When signing happens inside a reusable workflow, the certificate SAN
+              # is the reusable workflow's path (this file), not the caller's.
+              # `github.job_workflow_ref` gives us `<org>/<repo>/.github/workflows/<file>.yml@<ref>`.
+              workflow_ref="${{ github.job_workflow_ref }}"
+              workflow_path="${workflow_ref%@*}"
+              san="https://github.com/${workflow_ref}"
+              identity_regex="^https://github.com/${workflow_path//./\\.}@.*"
+
               echo "### Signature"
               echo ""
               echo "**Signed image:** \`${SIGNED_IMAGE_REF}\`"
               echo "**Format:** Sigstore bundle (stored as OCI 1.1 referrer of the image digest)"
-              echo "**Signed by:** \`${{ github.server_url }}/${{ github.repository }}/.github/workflows/${{ github.workflow }}@${{ github.ref }}\`"
+              echo "**Signed by:** \`${san}\`"
               if [[ -n "$TLOG_INDEX" ]]; then
                 echo "**Rekor tlog index:** [${TLOG_INDEX}](https://search.sigstore.dev/?logIndex=${TLOG_INDEX})"
               fi
@@ -245,9 +317,25 @@ jobs:
               echo "Verify with:"
               echo '```bash'
               echo "cosign verify --new-bundle-format \\"
-              echo "  --certificate-identity-regexp '^${{ github.server_url }}/${{ github.repository }}/\\.github/workflows/.*' \\"
+              echo "  --certificate-identity-regexp '${identity_regex}' \\"
               echo "  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \\"
               echo "  ${SIGNED_IMAGE_REF}"
+              echo '```'
+              echo ""
+            fi
+
+            if [[ "$PROVENANCE_OUTCOME" == "success" ]]; then
+              echo "### SLSA provenance"
+              echo ""
+              echo "**Predicate type:** \`https://slsa.dev/provenance/v1\`"
+              echo "**Stored as:** OCI 1.1 referrer of \`${SIGNED_IMAGE_REF}\`"
+              if [[ -n "$ATTESTATION_URL" ]]; then
+                echo "**Attestation:** [${ATTESTATION_URL}](${ATTESTATION_URL})"
+              fi
+              echo ""
+              echo "Verify with:"
+              echo '```bash'
+              echo "gh attestation verify oci://${SIGNED_IMAGE_REF} --repo ${{ github.repository }}"
               echo '```'
               echo ""
             fi
