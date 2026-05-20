@@ -66,9 +66,8 @@ jobs:
       - name: Setup OPA
         uses: open-policy-agent/setup-opa@b2b258e089860efaadaaf71bf6e3aecb4a3eeff1 # v2.4.0
         with:
-          version: '1.16.1'
+          version: '1.16.2'
 
-      # TODO: Verify with accesserator if we need to use old signature format or not
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
@@ -184,7 +183,6 @@ jobs:
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
           echo "tags=$tag_list" >> "$GITHUB_OUTPUT"
 
-      # TODO: Verify with accesserator if we need to use old signature format or not
       - name: Sign bundle with cosign
         id: sign
         env:
