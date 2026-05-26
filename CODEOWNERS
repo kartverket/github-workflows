@@ -1,2 +1,3 @@
 * @kartverket/skip
 .github/workflows/synthetic-monitoring.yaml @kartverket/skoop
+.github/workflows/build-and-push-opa-rules.yml @kartverket/tilgangsstyring
