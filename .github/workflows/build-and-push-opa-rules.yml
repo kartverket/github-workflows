@@ -1,18 +1,3 @@
-# Reusable workflow that builds an OPA policy bundle, runs tests + optional Regal
-# linting, pushes the bundle to GHCR as an OCI artifact, then keyless-signs it
-# with cosign and attaches a SLSA v1 provenance attestation.
-#
-# Caller-facing contract:
-#   - artifact-name is a full OCI reference of the form `ghcr.io/<owner>/<repo>[/...]`,
-#     where `<owner>/<repo>` must match the calling repo (GHCR namespacing).
-#   - rego-path / test-path accept multiline + glob patterns; the workflow does the
-#     glob expansion itself (callers don't pass pre-expanded lists).
-#   - sha-<commit> is always added as a tag; additional-tags appends to it.
-#
-# Trust model: the cosign certificate's SAN is THIS workflow's path (not the caller).
-# Consumers verify against `kartverket/github-workflows/...@<ref>` plus the caller-repo
-# claim embedded in the cert / SLSA predicate. See the Summary step for the exact
-# verify command emitted per build.
 name: Build and Push OPA Bundle
 
 on:
@@ -26,22 +11,23 @@ on:
           `ghcr.io/kartverket/accesserator/opa-bundle`.
         required: true
         type: string
-      rego-path:
+      path:
         description: |
-          Path(s) to the OPA rules directory. Supports multiline for several paths,
-          and `*` / `**` glob syntax.
+          Path to the OPA rules directory. Resolves relative to the caller's
+          workspace.
         required: true
         type: string
-      test-path:
+      test:
         description: |
-          Path(s) to the OPA test directory. Supports multiline for several paths,
-          and `*` / `**` glob syntax.
+          Whether to run `opa test` against the OPA rules. Test files
+          (`*_test.rego`) are expected to be colocated with the policies under
+          `path`, following OPA convention.
         required: false
-        type: string
-        default: ''
+        type: boolean
+        default: false
       lint:
         description: |
-          Whether to run regal linting on the OPA rules.
+          Whether to run Regal linting on the OPA rules.
         required: false
         type: boolean
         default: false
@@ -53,11 +39,6 @@ on:
         type: string
         default: ''
 
-# REGISTRY is used only for the docker login step. ARTIFACT_NAME is the full OCI
-# reference (registry + path, no tag) that every later step composes refs from
-# as `${ARTIFACT_NAME}:<tag>` or `${ARTIFACT_NAME}@<digest>`. The validate step
-# enforces that ARTIFACT_NAME starts with `ghcr.io/<caller-repo>` so refs can't
-# escape the calling repository's GHCR namespace.
 env:
   REGISTRY: ghcr.io
   ARTIFACT_NAME: ${{ inputs.artifact-name }}
@@ -68,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     # contents: read        checkout the caller repo
     # packages: write       push to GHCR
-    # id-token: write       request the GitHub OIDC token (cosign keyless flow + attest action)
+    # id-token: write       request the GitHub OIDC token (cosign keyless + attest action)
     # attestations: write   register the SLSA attestation with GitHub's attestation store
     permissions:
       contents: read
@@ -76,12 +57,10 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      # Refuse to build if artifact-name isn't a valid GHCR ref inside the caller's
-      # namespace. Their GITHUB_TOKEN couldn't push elsewhere anyway, but failing fast
-      # here surfaces the misconfiguration with a clear message rather than an oras
-      # 403 later. We accept `ghcr.io/<repo>` exactly, or anything starting with
-      # `ghcr.io/<repo>/`. The `${REGISTRY}` env is used so the message reflects whatever
-      # registry the workflow targets if we ever generalize beyond GHCR.
+      # Refuse to build if artifact-name isn't a valid GHCR ref inside the
+      # caller's namespace. Their GITHUB_TOKEN couldn't push elsewhere anyway,
+      # but failing fast here surfaces the misconfiguration with a clear
+      # message rather than an oras 403 later.
       - name: Validate Artifact Name
         id: validate
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -99,155 +78,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Setup OPA
-        uses: open-policy-agent/setup-opa@b2b258e089860efaadaaf71bf6e3aecb4a3eeff1 # v2.4.0
-        with:
-          version: '1.16.2'
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-        with:
-          cosign-release: 'v3.0.6'
-
-      # Regal is the OPA linter. Only installed when the caller opted in with `lint: true`
-      - name: Setup Regal
-        if: inputs.lint
-        uses: open-policy-agent/setup-regal@761188c3b435761fa254beca508a44875619648f # v2.0.0
-
-      # Run Regal twice over the same paths:
-      #   1. JSON output captured to disk → consumed by the Summary step's table.
-      #   2. Default (pretty) output streamed to the job log → useful while watching
-      #      a run in real time, before the summary is rendered.
-      # We `ignoreReturnCode` on both calls so we can capture results either way,
-      # then `core.setFailed` to fail the step if violations were found.
       - name: Lint with Regal
         if: inputs.lint
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          REGO_PATHS: ${{ inputs.rego-path }}
+        uses: kartverket/actions/opa/lint@9a3059a2fdf1aefa44e14c97587e74fd0c96195e
         with:
-          script: |
-            const exec = require('@actions/exec');
-            const glob = require('@actions/glob');
-            const path = require('path');
-            const fs = require('fs');
+          path: ${{ inputs.path }}
 
-            // `@actions/glob` accepts newline-separated patterns and expands them
-            // honoring `*` / `**`. We convert results back to repo-relative paths
-            // so the JSON output below references readable filenames.
-            const globber = await glob.create(process.env.REGO_PATHS);
-            const paths = (await globber.glob()).map(p => path.relative(process.cwd(), p));
-            if (paths.length === 0) {
-              core.setFailed(`No rego paths matched: ${process.env.REGO_PATHS}`);
-              return;
-            }
-
-            // Capture JSON output for the summary.
-            const json = await exec.getExecOutput(
-              'regal', ['lint', '--format', 'json', ...paths],
-              { ignoreReturnCode: true, silent: true },
-            );
-            fs.writeFileSync('regal-results.json', json.stdout);
-
-            // Print human-readable output to the job log.
-            await exec.exec('regal', ['lint', ...paths], { ignoreReturnCode: true });
-
-            // Regal exits non-zero when violations are found. We translate that into
-            // a step failure (which stops the workflow before push/sign).
-            if (json.exitCode !== 0) {
-              core.setFailed(`Regal found violations (exit ${json.exitCode}).`);
-            }
-
-      # Skipped entirely when the caller doesn't pass `test-path`. With it set, we
-      # run `opa test` twice (see comment inside) and persist both outputs to disk
-      # so the Summary step can render results + coverage tables.
       - name: Test OPA rules
-        if: inputs.test-path != ''
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          TEST_PATHS: ${{ inputs.test-path }}
+        if: inputs.test
+        uses: kartverket/actions/opa/test@9a3059a2fdf1aefa44e14c97587e74fd0c96195e
         with:
-          script: |
-            const exec = require('@actions/exec');
-            const glob = require('@actions/glob');
-            const path = require('path');
-            const fs = require('fs');
-
-            const globber = await glob.create(process.env.TEST_PATHS);
-            const paths = (await globber.glob()).map(p => path.relative(process.cwd(), p));
-            if (paths.length === 0) {
-              core.setFailed(`No test paths matched: ${process.env.TEST_PATHS}`);
-              return;
-            }
-
-            // OPA quirk: `--coverage` combined with `--format=json` REPLACES the
-            // test-result JSON with a coverage-only JSON. To get both, we have to
-            // invoke `opa test` twice. The first invocation determines step
-            // success; the second is best-effort (`ignoreReturnCode` + `|| ...`).
-            const testRun = await exec.getExecOutput(
-              'opa', ['test', '--fail-on-empty', '--format=json', ...paths],
-              { ignoreReturnCode: true, silent: true },
-            );
-            fs.writeFileSync('opa-test-results.json', testRun.stdout);
-
-            const coverageRun = await exec.getExecOutput(
-              'opa', ['test', '--coverage', '--format=json', ...paths],
-              { ignoreReturnCode: true, silent: true },
-            );
-            fs.writeFileSync('opa-coverage.json', coverageRun.stdout);
-
-            // Echo a per-test line + overall coverage to the job log for live viewing.
-            // Wrapped in try/catch because malformed/empty JSON shouldn't fail the step.
-            try {
-              for (const t of JSON.parse(testRun.stdout)) {
-                const status = t.fail ? 'FAIL' : t.error ? 'ERROR' : 'PASS';
-                core.info(`${t.location.file}::${t.name} [${status}] (${t.duration}ns)`);
-              }
-            } catch (_) {}
-            try {
-              core.info(`Overall coverage: ${JSON.parse(coverageRun.stdout).coverage}%`);
-            } catch (_) {}
-
-            // Bubble up the test-run exit code as a step failure (coverage run is ignored).
-            if (testRun.exitCode !== 0) {
-              core.setFailed(`opa test failed (exit ${testRun.exitCode}).`);
-            }
-
-      # ORAS is the OCI artifact CLI; we use it to push bundle.tar.gz with the
-      # OPA-bundle media type so it shows up correctly in GHCR.
-      - name: Setup ORAS
-        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
-
-      # Builds bundle.tar.gz. Each glob-expanded path becomes a separate `-b <path>`
-      # arg so callers can pass multiple roots (e.g. shared rules + repo-specific
-      # rules) and have them merged into one bundle. Test files are excluded via
-      # `--ignore '*_test.rego'` so the production bundle stays lean.
-      - name: Build OPA bundle
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          REGO_PATHS: ${{ inputs.rego-path }}
-        with:
-          script: |
-            const exec = require('@actions/exec');
-            const glob = require('@actions/glob');
-            const path = require('path');
-
-            const globber = await glob.create(process.env.REGO_PATHS);
-            const paths = (await globber.glob()).map(p => path.relative(process.cwd(), p));
-            if (paths.length === 0) {
-              core.setFailed(`No rego paths matched: ${process.env.REGO_PATHS}`);
-              return;
-            }
-
-            // opa build expects `-b` per path
-            const bundleArgs = paths.flatMap(p => ['-b', p]);
-            await exec.exec('opa', [
-              'build',
-              ...bundleArgs,
-              '--ignore', '*_test.rego',
-              '-o', 'bundle.tar.gz',
-            ]);
-            await exec.exec('tar', ['-tzf', 'bundle.tar.gz']);
+          path: ${{ inputs.path }}
 
       - name: Log into registry ${{ env.REGISTRY }}
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
@@ -256,98 +97,47 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Pushes bundle.tar.gz with one or more tags. `sha-<commit>` is always present;
-      # `additional-tags` (one per line) appends to it. ORAS accepts a comma-joined
-      # tag list inside the ref (`...:tag1,tag2,tag3`) and pushes once, applying
-      # all of them to the same manifest digest.
-      #
-      # Outputs:
-      #   digest — the manifest's content digest (consumed by sign + provenance steps).
-      #   tags   — comma-joined tag list (consumed by the Summary step's tag list).
-      - name: Push bundle to GHCR
-        id: push
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          ADDITIONAL_TAGS: ${{ inputs.additional-tags }}
-          SHA_TAG: sha-${{ github.sha }}
+      - name: Build and push bundle
+        id: build-push
+        uses: kartverket/actions/opa/build-push@9a3059a2fdf1aefa44e14c97587e74fd0c96195e
         with:
-          script: |
-            const exec = require('@actions/exec');
+          path: ${{ inputs.path }}
+          artifact-name: ${{ inputs.artifact-name }}
+          additional-tags: ${{ inputs.additional-tags }}
 
-            // Strip all whitespace per line so callers can pass YAML block scalars
-            // (`additional-tags: |\n  latest\n  v1\n`) without surprises.
-            const extraTags = (process.env.ADDITIONAL_TAGS || '')
-              .split('\n')
-              .map(s => s.replace(/\s+/g, ''))
-              .filter(Boolean);
+      - name: Setup cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: 'v3.0.6'
 
-            const tagList = [process.env.SHA_TAG, ...extraTags].join(',');
-            const ref = `${process.env.ARTIFACT_NAME}:${tagList}`;
-
-            const result = await exec.getExecOutput('oras', [
-              'push',
-              ref,
-              'bundle.tar.gz:application/vnd.oci.image.layer.v1.tar+gzip',
-              '--format', 'json',
-            ]);
-
-            // oras --format json emits a single object with a `.digest` field.
-            core.setOutput('digest', JSON.parse(result.stdout).digest);
-            core.setOutput('tags', tagList);
-
-      # Keyless cosign signing. With `--new-bundle-format` the signature is stored
-      # as an OCI 1.1 referrer of the image digest (no `.sig` tag). The Fulcio cert
-      # SAN identifies THIS reusable workflow's path; the caller repo/ref/sha live
-      # in cert extensions (verifiable via `--certificate-github-workflow-*` flags).
-      #
-      # We grep stderr for the Rekor tlog index purely for the summary's "view in
-      # search.sigstore.dev" link — verification doesn't need it.
       - name: Sign bundle with cosign
         id: sign
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        shell: bash
         env:
-          IMAGE_REF: ${{ env.ARTIFACT_NAME }}@${{ steps.push.outputs.digest }}
-        with:
-          script: |
-            const exec = require('@actions/exec');
+          IMAGE_REF: ${{ steps.build-push.outputs.image-ref }}
+        run: |
+          set -euo pipefail
 
-            const imageRef = process.env.IMAGE_REF;
-            const result = await exec.getExecOutput('cosign', [
-              'sign', '--yes', '--new-bundle-format', imageRef,
-            ]);
+          cosign sign --yes --new-bundle-format "$IMAGE_REF" 2>&1 | tee cosign-output.log
 
-            // Cosign prints "tlog entry created with index: N" to stderr during keyless signing.
-            // Best-effort: this regex may need updating if cosign's wording shifts.
-            const match = (result.stderr + result.stdout).match(/tlog entry created with index:\s*(\d+)/);
+          tlog_index=$(grep -oE 'tlog entry created with index: [0-9]+' cosign-output.log \
+            | grep -oE '[0-9]+$' | head -1 || true)
 
-            core.setOutput('signed_image_ref', imageRef);
-            core.setOutput('tlog_index', match ? match[1] : '');
+          echo "signed_image_ref=$IMAGE_REF" >> "$GITHUB_OUTPUT"
+          echo "tlog_index=${tlog_index:-}" >> "$GITHUB_OUTPUT"
 
-      # SLSA v1 provenance attestation: a signed JSON document describing how this
-      # digest was built (caller repo/ref/sha, builder, inputs, materials).
-      # `push-to-registry: true` stores it as another OCI 1.1 referrer of the bundle
-      # digest, alongside the cosign signature. Verifiable with `gh attestation verify`
-      # or `cosign verify-attestation --type slsaprovenance1`.
       - name: Generate SLSA provenance attestation
         id: provenance
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-name: ${{ env.ARTIFACT_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.build-push.outputs.digest }}
           push-to-registry: true
 
-      # Renders the GitHub Actions step summary. `if: always()` so it runs even when
-      # earlier steps failed — e.g. a failed validate step still surfaces a clear
-      # callout in the run UI. The summary reads JSON files written by earlier
-      # steps (regal-results.json, opa-test-results.json, opa-coverage.json) and
-      # passes step outputs/outcomes via env so they're easy to reason about.
       - name: Summary
         if: always()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v8.0.0
+        shell: bash
         env:
-          IMAGE: ${{ env.ARTIFACT_NAME }}
-          DIGEST: ${{ steps.push.outputs.digest }}
-          TAGS: ${{ steps.push.outputs.tags }}
           SIGN_OUTCOME: ${{ steps.sign.outcome }}
           SIGNED_IMAGE_REF: ${{ steps.sign.outputs.signed_image_ref }}
           TLOG_INDEX: ${{ steps.sign.outputs.tlog_index }}
@@ -355,162 +145,61 @@ jobs:
           ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
           VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
           JOB_WORKFLOW_REF: ${{ github.job_workflow_ref }}
-        with:
-          script: |
-            const fs = require('fs');
+          REPO: ${{ github.repository }}
+        run: |
+          expected_prefix="${REGISTRY}/${REPO}"
 
-            const env = process.env;
-            const repo = `${context.repo.owner}/${context.repo.repo}`;
-            const expectedPrefix = `${env.REGISTRY}/${repo}`;
-            const tags = (env.TAGS || '').split(',').filter(Boolean);
+          {
+            # Validation failure callout — only shown when validate failed, and
+            # rendered at the top so it's the first thing reviewers see.
+            if [[ "$VALIDATE_OUTCOME" == "failure" ]]; then
+              echo "> [!CAUTION]"
+              echo "> **artifact-name validation failed.** \`${ARTIFACT_NAME}\` must equal \`${expected_prefix}\` or start with \`${expected_prefix}/\`."
+              echo "> The bundle was not built or pushed."
+              echo ""
+            fi
 
-            const readJson = (p) => {
-              try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; }
-            };
+            # Signature section — emits the SAN used by Fulcio + a copy-paste
+            # verification recipe that consumers can run locally.
+            if [[ "$SIGN_OUTCOME" == "success" ]]; then
+              workflow_path="${JOB_WORKFLOW_REF%@*}"
+              san="https://github.com/${JOB_WORKFLOW_REF}"
+              # Escape dots in the workflow path so they're literal in the regex.
+              identity_regex="^https://github.com/${workflow_path//./\\.}@.*"
 
-            const sections = ['## OPA Bundle'];
+              echo "### Signature"
+              echo ""
+              echo "**Signed image:** \`${SIGNED_IMAGE_REF}\`"
+              echo "**Format:** Sigstore bundle (stored as OCI 1.1 referrer of the image digest)"
+              echo "**Signed by:** \`${san}\`"
+              if [[ -n "$TLOG_INDEX" ]]; then
+                echo "**Rekor tlog index:** [${TLOG_INDEX}](https://search.sigstore.dev/?logIndex=${TLOG_INDEX})"
+              fi
+              echo ""
+              echo "Verify with:"
+              echo '```bash'
+              echo "cosign verify --new-bundle-format \\"
+              echo "  --certificate-identity-regexp '${identity_regex}' \\"
+              echo "  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \\"
+              echo "  ${SIGNED_IMAGE_REF}"
+              echo '```'
+              echo ""
+            fi
 
-            // Validation failure callout
-            if (env.VALIDATE_OUTCOME === 'failure') {
-              sections.push(
-                '> [!CAUTION]\n' +
-                `> **artifact-name validation failed.** \`${env.ARTIFACT_NAME}\` ` +
-                `must equal \`${expectedPrefix}\` or start with \`${expectedPrefix}/\`.\n` +
-                `> The bundle was not built or pushed.`
-              );
-            }
-
-            // Image + tags
-            if (env.DIGEST) {
-              sections.push(`**Image:** \`${env.IMAGE}@${env.DIGEST}\``);
-              sections.push(
-                ['**Tags:**', ...tags.map(t => `- \`${env.IMAGE}:${t}\``)].join('\n')
-              );
-            }
-
-            // Regal lint
-            const regal = readJson('regal-results.json');
-            if (regal) {
-              const violations = regal.violations || [];
-              const body = violations.length === 0
-                ? ['No violations.']
-                : [
-                    '| File | Rule | Level | Message |',
-                    '|------|------|-------|---------|',
-                    ...violations.map(v =>
-                      `| \`${v.location.file}\` | ${v.title} | ${v.level} | ${v.description} |`
-                    ),
-                  ];
-              sections.push([
-                '### Lint results (Regal)',
-                '',
-                ...body,
-                '',
-                `**Total violations:** ${violations.length}`,
-              ].join('\n'));
-            }
-
-            // Test results
-            const tests = readJson('opa-test-results.json');
-            if (tests) {
-              const rows = tests.map(t => {
-                const status = t.fail ? 'FAIL' : t.error ? 'ERROR' : 'PASS';
-                return `| \`${t.location.file}\` | \`${t.name}\` | ${status} | ${t.duration}ns |`;
-              });
-              const pass = tests.filter(t => !t.fail && !t.error).length;
-              const fail = tests.filter(t => t.fail).length;
-              const err = tests.filter(t => t.error).length;
-              sections.push([
-                '### Test results',
-                '',
-                '| File | Test | Result | Duration |',
-                '|------|------|--------|----------|',
-                ...rows,
-                '',
-                `**Totals:** ${pass} passed, ${fail} failed, ${err} errored`,
-              ].join('\n'));
-            }
-
-            // Coverage (excluding *_test.rego)
-            const cov = readJson('opa-coverage.json');
-            if (cov) {
-              const files = Object.entries(cov.files || {})
-                .filter(([f]) => !f.endsWith('_test.rego'));
-              const rows = files.map(([file, d]) =>
-                `| \`${file}\` | ${d.coverage ?? 0}% | ${d.covered_lines ?? 0} | ${d.not_covered_lines ?? 0} |`
-              );
-              const covered = files.reduce((s, [, d]) => s + (d.covered_lines || 0), 0);
-              const notCovered = files.reduce((s, [, d]) => s + (d.not_covered_lines || 0), 0);
-              const overall = covered + notCovered === 0
-                ? '0.0'
-                : (Math.floor((covered * 1000) / (covered + notCovered)) / 10).toFixed(1);
-              sections.push([
-                '### Coverage',
-                '',
-                '_Excludes `*_test.rego` files._',
-                '',
-                '| File | Coverage | Covered lines | Not covered |',
-                '|------|----------|---------------|-------------|',
-                ...rows,
-                '',
-                `**Overall:** ${overall}%`,
-              ].join('\n'));
-            }
-
-            // Signature
-            if (env.SIGN_OUTCOME === 'success') {
-              // `github.job_workflow_ref` gives `<org>/<repo>/.github/workflows/<file>.yml@<ref>`.
-              // The Fulcio cert SAN is `https://github.com/` + that string.
-              // For the verify recipe, we strip the `@<ref>` and produce a regex that
-              // matches any ref of THIS workflow (consumers can tighten it to a tag/SHA).
-              // The `replace(/\./g, '\\.')` escapes dots so they're literal in the regex.
-              const workflowRef = env.JOB_WORKFLOW_REF || '';
-              const workflowPath = workflowRef.replace(/@.*$/, '');
-              const san = `https://github.com/${workflowRef}`;
-              const identityRegex = `^https://github.com/${workflowPath.replace(/\./g, '\\.')}@.*`;
-
-              const lines = [
-                '### Signature',
-                '',
-                `**Signed image:** \`${env.SIGNED_IMAGE_REF}\``,
-                '**Format:** Sigstore bundle (stored as OCI 1.1 referrer of the image digest)',
-                `**Signed by:** \`${san}\``,
-              ];
-              if (env.TLOG_INDEX) {
-                lines.push(`**Rekor tlog index:** [${env.TLOG_INDEX}](https://search.sigstore.dev/?logIndex=${env.TLOG_INDEX})`);
-              }
-              lines.push(
-                '',
-                'Verify with:',
-                '```bash',
-                'cosign verify --new-bundle-format \\',
-                `  --certificate-identity-regexp '${identityRegex}' \\`,
-                `  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \\`,
-                `  ${env.SIGNED_IMAGE_REF}`,
-                '```',
-              );
-              sections.push(lines.join('\n'));
-            }
-
-            // Provenance
-            if (env.PROVENANCE_OUTCOME === 'success') {
-              const lines = [
-                '### SLSA provenance',
-                '',
-                '**Predicate type:** `https://slsa.dev/provenance/v1`',
-                `**Stored as:** OCI 1.1 referrer of \`${env.SIGNED_IMAGE_REF}\``,
-              ];
-              if (env.ATTESTATION_URL) {
-                lines.push(`**Attestation:** [${env.ATTESTATION_URL}](${env.ATTESTATION_URL})`);
-              }
-              lines.push(
-                '',
-                'Verify with:',
-                '```bash',
-                `gh attestation verify oci://${env.SIGNED_IMAGE_REF} --repo ${repo}`,
-                '```',
-              );
-              sections.push(lines.join('\n'));
-            }
-
-            await core.summary.addRaw(sections.join('\n\n')).write();
+            # SLSA provenance section.
+            if [[ "$PROVENANCE_OUTCOME" == "success" ]]; then
+              echo "### SLSA provenance"
+              echo ""
+              echo "**Predicate type:** \`https://slsa.dev/provenance/v1\`"
+              echo "**Stored as:** OCI 1.1 referrer of \`${SIGNED_IMAGE_REF}\`"
+              if [[ -n "$ATTESTATION_URL" ]]; then
+                echo "**Attestation:** [${ATTESTATION_URL}](${ATTESTATION_URL})"
+              fi
+              echo ""
+              echo "Verify with:"
+              echo '```bash'
+              echo "gh attestation verify oci://${SIGNED_IMAGE_REF} --repo ${REPO}"
+              echo '```'
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
