@@ -47,15 +47,17 @@ jobs:
   build-and-push:
     name: Build and push OPA bundle
     runs-on: ubuntu-latest
-    # contents: read        checkout the caller repo
-    # packages: write       push to GHCR
-    # id-token: write       request the GitHub OIDC token (cosign keyless + attest action)
-    # attestations: write   register the SLSA attestation with GitHub's attestation store
+    # contents: read          checkout the caller repo
+    # packages: write         push to GHCR
+    # id-token: write         request the GitHub OIDC token (cosign keyless + attest action)
+    # attestations: write     register the SLSA attestation with GitHub's attestation store
+    # security-events: write  upload regal linting results as security events
     permissions:
       contents: read
       packages: write
       id-token: write
       attestations: write
+      security-events: write
     steps:
       # Refuse to build if artifact-name isn't a valid GHCR ref inside the
       # caller's namespace. Their GITHUB_TOKEN couldn't push elsewhere anyway,
