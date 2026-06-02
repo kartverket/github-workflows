@@ -161,33 +161,6 @@ jobs:
               echo ""
             fi
 
-            # Signature section — emits the SAN used by Fulcio + a copy-paste
-            # verification recipe that consumers can run locally.
-            if [[ "$SIGN_OUTCOME" == "success" ]]; then
-              workflow_path="${JOB_WORKFLOW_REF%@*}"
-              san="https://github.com/${JOB_WORKFLOW_REF}"
-              # Escape dots in the workflow path so they're literal in the regex.
-              identity_regex="^https://github.com/${workflow_path//./\\.}@.*"
-
-              echo "### Signature"
-              echo ""
-              echo "**Signed image:** \`${SIGNED_IMAGE_REF}\`"
-              echo "**Format:** Sigstore bundle (stored as OCI 1.1 referrer of the image digest)"
-              echo "**Signed by:** \`${san}\`"
-              if [[ -n "$TLOG_INDEX" ]]; then
-                echo "**Rekor tlog index:** [${TLOG_INDEX}](https://search.sigstore.dev/?logIndex=${TLOG_INDEX})"
-              fi
-              echo ""
-              echo "Verify with:"
-              echo '```bash'
-              echo "cosign verify --new-bundle-format \\"
-              echo "  --certificate-identity-regexp '${identity_regex}' \\"
-              echo "  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \\"
-              echo "  ${SIGNED_IMAGE_REF}"
-              echo '```'
-              echo ""
-            fi
-
             # SLSA provenance section.
             if [[ "$PROVENANCE_OUTCOME" == "success" ]]; then
               echo "### SLSA provenance"
