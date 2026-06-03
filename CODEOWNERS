@@ -1,3 +1,2 @@
 * @kartverket/skip
 .github/workflows/synthetic-monitoring.yaml @kartverket/skoop
-/.security/ @omaen
