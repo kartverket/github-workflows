@@ -31,6 +31,28 @@ on:
         required: false
         type: boolean
         default: false
+      lint-config-file:
+        description: |
+          Optional path to the Regal config file to use when linting with Regal. Resolves 
+          relative to the caller's workspace.
+        required: false
+        type: string
+        default: ''
+      check:
+        description: |
+          Whether to run `opa check` on the policies to check Rego 
+          source files for parse and compilation errors.
+        required: false
+        type: boolean
+        default: false
+      check-schema-path:
+        description: |
+          Optional path to a JSON Schema file or schema-set directory passed to
+          `opa check -s`. When set, OPA type-checks references to `input` (and any
+          mapped data documents) against the schema(s).
+        required: false
+        type: string
+        default: ''
       additional-tags:
         description: |
           Extra tags to apply to the bundle, one per line. The bundle is always
@@ -82,13 +104,21 @@ jobs:
 
       - name: Lint with Regal
         if: inputs.lint
-        uses: kartverket/actions/opa/lint@9a3059a2fdf1aefa44e14c97587e74fd0c96195e
+        uses: kartverket/actions/opa/lint@34a83c6a619669ddab1bc94f30c67e66ac356329
         with:
           path: ${{ inputs.path }}
+          config-file: ${{ inputs.lint-config-file }}
+
+      - name: Check Rego source files
+        if: inputs.check
+        uses: kartverket/actions/opa/check@34a83c6a619669ddab1bc94f30c67e66ac356329
+        with:
+          path: ${{ inputs.path }}
+          schemas: ${{ inputs.check-schema-path }}
 
       - name: Test OPA rules
         if: inputs.test
-        uses: kartverket/actions/opa/test@9a3059a2fdf1aefa44e14c97587e74fd0c96195e
+        uses: kartverket/actions/opa/test@34a83c6a619669ddab1bc94f30c67e66ac356329
         with:
           path: ${{ inputs.path }}
 
@@ -101,7 +131,7 @@ jobs:
 
       - name: Build and push bundle
         id: build-push
-        uses: kartverket/actions/opa/build-push@9a3059a2fdf1aefa44e14c97587e74fd0c96195e
+        uses: kartverket/actions/opa/build-push@34a83c6a619669ddab1bc94f30c67e66ac356329
         with:
           path: ${{ inputs.path }}
           artifact-name: ${{ inputs.artifact-name }}
