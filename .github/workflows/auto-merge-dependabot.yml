@@ -14,21 +14,24 @@ jobs:
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     steps:
       - uses: actions/checkout@v6
+
       - uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05 # v1.1.1
         id: octo-sts
         with:
-            scope: ${{ github.repository }}
-            identity: auto-update
+          scope: ${{ github.repository }}
+          identity: auto-update
+
       - name: Dependabot metadata
         id: dependabot-metadata
         uses: dependabot/fetch-metadata@v2
+
       - name: Read configfile
         id: read-configfile
         uses: actions/github-script@v8
         env:
-            DEPENDENCY_NAMES: ${{steps.dependabot-metadata.outputs.dependency-names}}
-            UPDATE_TYPE: ${{steps.dependabot-metadata.outputs.update-type}}
-            PACKAGE_ECOSYSTEM: ${{steps.dependabot-metadata.outputs.package-ecosystem}}
+          DEPENDENCY_NAMES: ${{steps.dependabot-metadata.outputs.dependency-names}}
+          UPDATE_TYPE: ${{steps.dependabot-metadata.outputs.update-type}}
+          PACKAGE_ECOSYSTEM: ${{steps.dependabot-metadata.outputs.package-ecosystem}}
         with:
           script: |
             const fs = require('fs');
@@ -36,7 +39,7 @@ jobs:
             const dependencyNames = DEPENDENCY_NAMES?.split();
             console.log({ dependencyNames, UPDATE_TYPE, PACKAGE_ECOSYSTEM })
                         
-            // [{ match: { dependency_name: "..", update_type: "semver:.."}}]
+            // [{ match: { dependency_name: "..", update_type: "semver:..", merge_method: ".."}}]
             const data = fs.readFileSync(CONFIG_FILE, 'utf8');
             if (!data) return false;
             let json;
@@ -45,32 +48,42 @@ jobs:
             } catch (e) {
               console.error('Failed to parse configfile ' + CONFIG_FILE);
               throw e;
-            }
-            
-            // Set this to true if we find a matching dependency update
-            const shouldMerge = !!json?.some(({ match }) => {
-                if (!dependencyNames?.includes(match?.dependency_name) && !(PACKAGE_ECOSYSTEM?.includes(match?.package_ecosystem))) return false;
-                switch (match?.update_type) {
-                  // Fallthrough until we hit a result. Major also matches minor and so on.
-                  case 'semver:major': if (UPDATE_TYPE === 'version-update:semver-major') return true;
-                  case 'semver:minor': if (UPDATE_TYPE === 'version-update:semver-minor') return true;
-                  case 'semver:patch': if (UPDATE_TYPE === 'version-update:semver-patch') return true;
-                  default: return false;
-                }
-            });
+            };
 
-            console.log({ shouldMerge });
-            return shouldMerge;
+            // Find matching dependency update and desired merge type:
+            let shouldMerge = false;
+            let mergeMethod = 'merge';
+
+            for (const { match } of json) {
+              const dependencyMatches = dependencyNames?.includes(match?.dependency_name);
+              const ecosystemMatches = PACKAGE_ECOSYSTEM?.includes(match?.package_ecosystem);
+
+              if (!dependencyMatches || !ecosystemMatches) continue;
+
+              if (`version-update:${match?.update_type}` === UPDATE_TYPE) {
+                shouldMerge = true;
+                mergeMethod = match?.merge_method || 'merge';
+                break;
+              }
+            };
+
+            console.log({ shouldMerge, mergeMethod });
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `should-merge=${shouldMerge}\n`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `merge-method=${mergeMethod}\n`);
 
       - name: Enable auto-merge for Dependabot PRs
-        if: ${{fromJSON(steps.read-configfile.outputs.result)}}
+        if: ${{ steps.read-configfile.outputs.should-merge == 'true' }}
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          MERGE_METHOD: ${{steps.read-configfile.outputs.merge-method}}
         run: |
           set -e
           sleep 10
-          
+
           echo "Check if PR is mergeable..."
           mergeable=$(gh pr view "$PR_URL" --json mergeable --jq '.mergeable')
-  
+
           case "$mergeable" in
             MERGEABLE)
               echo "✅ No merge conflicts."
@@ -84,38 +97,38 @@ jobs:
               exit 1
               ;;
           esac
-  
+
           echo "Waiting for all checks to complete..."
 
           while true; do
             # Get all check runs excluding "Dependabot auto-merge"
             checks=$(gh pr checks "$PR_URL" --json workflow,state --jq '[.[] | select(.workflow != "Dependabot auto-merge")]')
-          
+
             # Extract all states
             states=$(echo "$checks" | jq -r '.[].state')
-          
+
             echo "Current check states: $states"
-          
+
             if echo "$states" | grep -q 'FAILURE'; then
               echo "❌ One or more checks failed."
               exit 1
             fi
-          
+
             if echo "$states" | grep -Eq 'PENDING|IN_PROGRESS|QUEUED'; then
               echo "🔄 Checks still running. Sleeping 10s..."
               sleep 10
               continue
             fi
-          
+
             if echo "$states" | grep -Ev '^(SUCCESS|SKIPPED|NEUTRAL)$' | grep -q .; then
               echo "⚠️ Unknown or unexpected check state detected. Failing."
               exit 1
             fi
-          
+
             echo "✅ All checks succeeded."
             break
           done
-          
+
           echo "Checking if any terraform changes are present..."
           tf_bot_commented_changes=$(gh pr view "$PR_URL" --json comments \
               --jq '.comments
@@ -124,22 +137,19 @@ jobs:
                     | contains("Changes detected.")')
             
           echo "Terraform changes detected: $tf_bot_commented_changes"
-          
+
           if [[ "$tf_bot_commented_changes" == "true" ]]; then
             echo "❌ Changes detected in Terraform plan. Aborting merge."
             exit 1
           else
             echo "✅ No changes detected. Proceeding."
           fi
-          
+
           echo "Approving PR..."
           gh pr review --approve -b "Dependency matches pattern found in auto-merge config, merging" "$PR_URL"
-      
-          echo "Attempting to merge directly..."
-          if ! gh pr merge --admin --merge "$PR_URL"; then
+
+          echo "Attempting to merge directly with method «${MERGE_METHOD}»..."
+          if ! gh pr merge --admin --${MERGE_METHOD} "$PR_URL"; then
             echo "Direct merge failed — adding to merge queue instead..."
-            gh pr merge --merge "$PR_URL"
+            gh pr merge --${MERGE_METHOD} "$PR_URL"
           fi
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
