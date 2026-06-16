@@ -161,9 +161,9 @@ jobs:
         run: |
           expected_prefix="${REGISTRY}/${REPO}"
 
-          # Prefer the full image-ref from build-push; fall back to
-          # artifact-name@digest if the action didn't surface one.
           image_ref="${IMAGE_REF:-${ARTIFACT_NAME}@${IMAGE_DIGEST}}"
+          
+          signer_workflow="${JOB_WORKFLOW_REF%@*}"
 
           {
             # Validation failure callout — only shown when validate failed, and
@@ -187,7 +187,7 @@ jobs:
               echo ""
               echo "Verify with:"
               echo '```bash'
-              echo "gh attestation verify oci://${image_ref} --repo ${REPO}"
+              echo "gh attestation verify oci://${image_ref} --repo ${REPO} --signer-workflow kartverket/github-workflows/.github/workflows/build-and-push-opa-rules.yml"          
               echo '```'
               echo ""
             fi
