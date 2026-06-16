@@ -181,13 +181,14 @@ jobs:
 
 ## auto-merge-dependabot
 
-Allows auto-merging dependabot PRs that match given patterns. Useful when you are drowning in PRs and have built up trust in a set of dependencies that release often and never break. It's recommended to have a sane CI setup so that anything merged to main at least passes CI tests before going into prod
+Allows auto-merging dependabot PRs that match given patterns. Useful when you are drowning in PRs and have built up trust in a set of dependencies that release often and never break.
+It's recommended to have a sane CI setup so that anything merged to main at least passes CI tests before going into prod
 
 ### Features
 
 - Allows configuring a set of dependencies in a configfile that can be merged
-- Can also configure ecosystems to merge automatically, for example go_modules
-- Each dependency will allow either major, minor or patch updates (only supports semver)
+- Can also configure ecosystems to merge automatically, for example `go_modules`
+- Each dependency will allow either major, minor or patch updates (only supports `semver`)
 - A bot approves and merges the PR
 
 ### Requirements
@@ -197,8 +198,8 @@ A few requirements are necessary in order to make this work in addition to the e
 1. Legacy branch protection rules are not supported. Your repo needs to use the more modern branch rulesets
 2. The Octo STS app needs to be added to the rulesets bypass list so that it can merge the PR
 3. A trust file called `.github/chainguard/auto-update.sts.yaml` needs to exist to allow the workflow to get a valid GitHub token
-4. If you use branch protection rules, and `Restrict who can push to matching branches` is checked, then you must add the octo-sts app to the allowlist.
-5. If you use branch protection rules, and `Require a pull request before merging` is checked, then you must add octo-sts to `Allow specified actors to bypass required pull requests`.
+4. If you use branch protection rules, and *Restrict who can push to matching branches* is checked, then you must add the octo-sts app to the allowlist.
+5. If you use branch protection rules, and *Require a pull request before merging* is checked, then you must add octo-sts to *Allow specified actors to bypass required pull requests*.
 
 ### Example
 
@@ -220,24 +221,28 @@ jobs:
 Example configfile in `.github/auto-merge.json`:
 
 ```json
-[{
-  "match": {
-    "dependency_name": "hashicorp/google",
-    "update_type": "semver:minor"
-  }
-},
+[
   {
     "match": {
+      "dependency_name": "hashicorp/google",
+      "update_type": "semver:minor"
+    }
+  },
+  {
+    "match": {
+      "merge_method": "rebase",
       "dependency_name": "hashicorp/google-beta",
       "update_type": "semver:minor"
     }
   },
   {
-   "match": {
-     "package_ecosystem": "golang",
-     "update_type": "semver:minor"
-   }
-}]
+    "match": {
+      "merge_method": "squash",
+      "package_ecosystem": "golang",
+      "update_type": "semver:minor"
+    }
+  }
+]
 ```
 
 Example STS trust file in `.github/chainguard/auto-update.sts.yaml`:
@@ -257,11 +262,12 @@ permissions:
 
 The configfile is currently the only input. The configfile at `.github/auto-merge.json` supports the following values:
 
-| Key                          | Type   | Required | Description                                                                                                                                                                                |
-|------------------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `[].match.dependency_name`   | string | true     | The name of the dependency as it appears on the Dependabot PR                                                                                                                              |
-| `[].match.update_type`       | string | true     | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
-| `[].match.package_ecosystem` | string | true     | The name of the package ecosystem which the update belongs to, examples; terraform, golang                                                                                                 |
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `[].match.dependency_name` | string | true | The name of the dependency as it appears on the Dependabot PR |
+| `[].match.update_type` | string | true | Which changes should be merged. Currently supports `semver:patch`, `semver:minor` and `semver:major`. The type includes all lower tiers, for example `semver:minor` includes patch changes |
+| `[].match.package_ecosystem` | string | true | The name of the package ecosystem which the update belongs to, examples; terraform, golang |
+| `[].match.merge_method` | string | false | Git merge method. One of: `merge`, `squash`, `rebase`. Defaults to `merge` |
 
 ## update-skip-docs
 
