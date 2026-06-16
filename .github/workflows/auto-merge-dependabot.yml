@@ -86,6 +86,13 @@ jobs:
           set -e
           sleep 10
 
+          echo "Validating merge method..."
+          if [[ ! "$MERGE_METHOD" =~ ^(merge|squash|rebase)$ ]]; then
+            echo "❌ Invalid merge method: $MERGE_METHOD. Must be one of: merge, squash, rebase."
+            exit 1
+          fi
+          echo "✅ Valid merge method: $MERGE_METHOD"
+
           echo "Check if PR is mergeable..."
           mergeable=$(gh pr view "$PR_URL" --json mergeable --jq '.mergeable')
 
