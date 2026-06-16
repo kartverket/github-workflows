@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     # contents: read          checkout the caller repo
     # packages: write         push to GHCR
-    # id-token: write         request the GitHub OIDC token (cosign keyless + attest action)
+    # id-token: write         request the GitHub OIDC token (attest action keyless signing)
     # attestations: write     register the SLSA attestation with GitHub's attestation store
     # security-events: write  upload regal linting results as security events
     # actions: read           needed by codeql-action/upload-sarif if caller repo is not public
@@ -139,27 +139,6 @@ jobs:
           artifact-name: ${{ inputs.artifact-name }}
           additional-tags: ${{ inputs.additional-tags }}
 
-      - name: Setup cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-        with:
-          cosign-release: 'v3.0.6'
-
-      - name: Sign bundle with cosign
-        id: sign
-        shell: bash
-        env:
-          IMAGE_REF: ${{ steps.build-push.outputs.image-ref }}
-        run: |
-          set -euo pipefail
-
-          cosign sign --yes --new-bundle-format "$IMAGE_REF" 2>&1 | tee cosign-output.log
-
-          tlog_index=$(grep -oE 'tlog entry created with index: [0-9]+' cosign-output.log \
-            | grep -oE '[0-9]+$' | head -1 || true)
-
-          echo "signed_image_ref=$IMAGE_REF" >> "$GITHUB_OUTPUT"
-          echo "tlog_index=${tlog_index:-}" >> "$GITHUB_OUTPUT"
-
       - name: Generate SLSA provenance attestation
         id: provenance
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
@@ -172,9 +151,8 @@ jobs:
         if: always()
         shell: bash
         env:
-          SIGN_OUTCOME: ${{ steps.sign.outcome }}
-          SIGNED_IMAGE_REF: ${{ steps.sign.outputs.signed_image_ref }}
-          TLOG_INDEX: ${{ steps.sign.outputs.tlog_index }}
+          IMAGE_REF: ${{ steps.build-push.outputs.image-ref }}
+          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
           PROVENANCE_OUTCOME: ${{ steps.provenance.outcome }}
           ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
           VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
@@ -182,6 +160,10 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           expected_prefix="${REGISTRY}/${REPO}"
+
+          # Prefer the full image-ref from build-push; fall back to
+          # artifact-name@digest if the action didn't surface one.
+          image_ref="${IMAGE_REF:-${ARTIFACT_NAME}@${IMAGE_DIGEST}}"
 
           {
             # Validation failure callout — only shown when validate failed, and
@@ -198,14 +180,14 @@ jobs:
               echo "### SLSA provenance"
               echo ""
               echo "**Predicate type:** \`https://slsa.dev/provenance/v1\`"
-              echo "**Stored as:** OCI 1.1 referrer of \`${SIGNED_IMAGE_REF}\`"
+              echo "**Stored as:** OCI 1.1 referrer of \`${image_ref}\`"
               if [[ -n "$ATTESTATION_URL" ]]; then
                 echo "**Attestation:** [${ATTESTATION_URL}](${ATTESTATION_URL})"
               fi
               echo ""
               echo "Verify with:"
               echo '```bash'
-              echo "gh attestation verify oci://${SIGNED_IMAGE_REF} --repo ${REPO}"
+              echo "gh attestation verify oci://${image_ref} --repo ${REPO}"
               echo '```'
               echo ""
             fi
