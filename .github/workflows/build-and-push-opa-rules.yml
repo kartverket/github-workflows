@@ -11,6 +11,13 @@ on:
           `ghcr.io/kartverket/accesserator/opa-bundle`.
         required: true
         type: string
+      push:
+        description: |
+          Whether to push the built bundle to the registry. Set to `false` to
+          build only — useful for PR validation where the push happens on merge.
+        required: false
+        type: boolean
+        default: true
       path:
         description: |
           Path to the OPA rules directory. Resolves relative to the caller's
@@ -138,9 +145,11 @@ jobs:
           path: ${{ inputs.path }}
           artifact-name: ${{ inputs.artifact-name }}
           additional-tags: ${{ inputs.additional-tags }}
+          push: ${{ inputs.push }}
 
       - name: Generate SLSA provenance attestation
         id: provenance
+        if: ${{ inputs.push }} # Provenance is only meaningful if we pushed (and thus have a digest to attest)
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-name: ${{ env.ARTIFACT_NAME }}
