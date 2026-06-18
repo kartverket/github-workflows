@@ -62,8 +62,9 @@ on:
         default: ''
       additional-tags:
         description: |
-          Extra tags to apply to the bundle, one per line. The bundle is always
-          tagged with `sha-<commit>` in addition to these.
+          Comma-separated list of extra tags to apply on top of the always-included
+          `sha256-<content-hash>` tag (e.g. `latest,v1`). Whitespace around each
+          tag is stripped. Ignored when `push` is `'false'`.
         required: false
         type: string
         default: ''
@@ -113,21 +114,21 @@ jobs:
 
       - name: Lint with Regal
         if: inputs.lint
-        uses: kartverket/actions/opa/lint@652b0d043781d0766bc3c87504026f8ae6b3254b
+        uses: kartverket/actions/opa/lint@305dac132968510edfc6e6e570db91d0db84cce5
         with:
           path: ${{ inputs.path }}
           config-file: ${{ inputs.lint-config-file }}
 
       - name: Check Rego source files
         if: inputs.check
-        uses: kartverket/actions/opa/check@652b0d043781d0766bc3c87504026f8ae6b3254b
+        uses: kartverket/actions/opa/check@305dac132968510edfc6e6e570db91d0db84cce5
         with:
           path: ${{ inputs.path }}
           schemas: ${{ inputs.check-schema-path }}
 
       - name: Test OPA rules
         if: inputs.test
-        uses: kartverket/actions/opa/test@652b0d043781d0766bc3c87504026f8ae6b3254b
+        uses: kartverket/actions/opa/test@305dac132968510edfc6e6e570db91d0db84cce5
         with:
           path: ${{ inputs.path }}
 
@@ -140,7 +141,7 @@ jobs:
 
       - name: Build and push bundle
         id: build-push
-        uses: kartverket/actions/opa/build-push@652b0d043781d0766bc3c87504026f8ae6b3254b
+        uses: kartverket/actions/opa/build-push@305dac132968510edfc6e6e570db91d0db84cce5
         with:
           path: ${{ inputs.path }}
           artifact-name: ${{ inputs.artifact-name }}
