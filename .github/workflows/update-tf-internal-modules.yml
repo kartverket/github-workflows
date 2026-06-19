@@ -1,0 +1,174 @@
+name: Update Internal Terraform Module
+
+on:
+  workflow_dispatch:
+    inputs:
+      terraform_module_repo:
+        required: true
+        type: string
+        default: "kartverket/terraform-modules"
+      working_directory:
+        required: false
+        type: string
+        default: "/"
+      branch:
+        required: false
+        type: string
+        default: "main"
+
+jobs:
+  update-module:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05 # v1.1.1
+        id: octo-sts
+        with:
+          scope: kartverket
+          identity: kartverket_repos
+
+      - name: Checkout source repository
+        uses: actions/checkout@v6
+        with:
+          path: source-repo
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Checkout Terraform module repo
+        uses: actions/checkout@v6
+        with:
+          path: terraform-modules
+          repository: ${{ inputs.terraform_module_repo }}
+          token: ${{ steps.octo-sts.outputs.token }}
+          fetch-depth: 0
+
+      - name: List new tags
+        id: tags
+        working-directory: terraform-modules
+        run: |
+          git tag --list \
+            | jq -R '
+                split("/") as $p
+                | { module: $p[0], version: ($p[1] // "") }
+              ' \
+            | jq -s '
+                group_by(.module)
+                | map({key: .[0].module,
+                      value: (map(.version | ltrimstr("v"))
+                              | sort_by(split(".") | map(tonumber))
+                              | last
+                              | "v" + .) })
+                | from_entries
+              ' > ../new_versions.json
+              echo "Newest terraform modules versions found:"
+              cat ../new_versions.json
+
+      - name: Extract current module
+        working-directory: source-repo
+        id: current_modules
+        run: |
+          set -e
+
+          # Extract module 
+          refs=$(grep -rhoE 'ref=[^"]+' . --include="*.tf" || true)
+
+          echo "$refs" | \
+          awk -F'[=/]' '{print $2 " " $3}' | \
+          while read model version; do
+            jq -n --arg m "$model" --arg v "$version" '{($m): $v}'
+          done | jq -s 'add' > ../found_modules.json
+
+          echo "Current repository terraform modules found:"
+          cat ../found_modules.json
+      - name: Check versions
+        id: version_check
+        run: |
+          set -e
+
+          # terraform-modules/new_versions.json = expected versions
+          # source-repo/found_modules.json = current versions in terraform files
+
+          # Create updates.json
+          echo "[]" > updates.json
+
+          # Loop over all modules in new_versions.json
+          jq -r 'keys[]' new_versions.json | while read -r module; do
+            expected=$(jq -r --arg m "$module" '.[$m]' new_versions.json)
+            current=$(jq -r --arg m "$module" '.[$m] // empty' found_modules.json)
+
+            # Skip if module not in terraform files
+            if [ -z "$current" ]; then
+              continue
+            fi
+
+            # Compare versions
+            if [ "$expected" != "$current" ]; then
+              old_source="$module/$current"
+              new_source="$module/$expected"
+
+              # Add entry to updates.json
+              tmp=$(mktemp)
+              jq --arg m "$module" --arg o "$old_source" --arg n "$new_source" \
+                '. + [{"module": $m, "old_source": $o, "new_source": $n}]' updates.json > "$tmp"
+              mv "$tmp" updates.json
+            fi
+          done
+
+          echo "Modules that need updates:"
+          cat updates.json
+
+          if [ "$(jq length updates.json)" -gt 0 ]; then
+            echo "updates_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "updates_needed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update module versions
+        working-directory: source-repo
+        if: steps.version_check.outputs.updates_needed == 'true'
+        run: |
+          jq -c '.[]' ../updates.json | while read -r entry; do
+            old=$(echo "$entry" | jq -r '.old_source')
+            new=$(echo "$entry" | jq -r '.new_source')
+
+            git grep -l -- "$old" -- '*.tf' | while read -r file; do
+              sed -i "s|$old|$new|g" "$file"
+              echo "Replacing $old → $new in:"
+              echo "$file"
+            done
+          done
+
+      - name: Create PR Body
+        working-directory: source-repo
+        if: steps.version_check.outputs.updates_needed == 'true'
+        id: pr_body
+        run: |
+          echo "Generating PR body..."
+
+          body="This PR updates the following Terraform modules from [${{ inputs.terraform_module_repo}}](https://github.com/${{ inputs.terraform_module_repo }}):"$'\n\n'
+
+          while read -r entry; do
+            module=$(echo "$entry" | jq -r '.module')
+            old=$(echo "$entry" | jq -r '.old_source')
+            new=$(echo "$entry" | jq -r '.new_source')
+            body+="- **$module**: \`$old\` → \`$new\`"$'\n'
+          done < <(jq -c '.[]' ../updates.json)
+
+          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Create Pull Request
+        if: steps.version_check.outputs.updates_needed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          path: source-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update ${{ inputs.terraform_module_repo }} versions"
+          branch: "chore/update-${{ inputs.terraform_module_repo }}@${{ github.run_id }}"
+          title: "Update Terraform modules from ${{ inputs.terraform_module_repo }}"
+          body: |
+            ${{ steps.pr_body.outputs.pr_body }}
+          labels: "terraform update"
