@@ -60,7 +60,7 @@ jobs:
             echo "KUBECTL_VERSION=latest" >> $GITHUB_ENV
           fi
 
-      - uses: azure/setup-kubectl@v4
+      - uses: azure/setup-kubectl@v5
         with:
           version: ${{ env.KUBECTL_VERSION }}
         id: install
