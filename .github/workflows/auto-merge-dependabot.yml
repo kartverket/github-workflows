@@ -23,11 +23,10 @@ jobs:
 
       - name: Dependabot metadata
         id: dependabot-metadata
-        uses: dependabot/fetch-metadata@v2
-
+        uses: dependabot/fetch-metadata@v3
       - name: Read configfile
         id: read-configfile
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           DEPENDENCY_NAMES: ${{steps.dependabot-metadata.outputs.dependency-names}}
           UPDATE_TYPE: ${{steps.dependabot-metadata.outputs.update-type}}

@@ -190,7 +190,7 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3.1.2
+        uses: hashicorp/setup-terraform@v4.0.0
         with:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
@@ -256,7 +256,7 @@ jobs:
 
         run: |
           echo 'Run format check' | tee -a $GITHUB_STEP_SUMMARY
-          terraform fmt -check -recursive -no-color || { echo "
+          terraform fmt -check -recursive -no-color -diff || { echo "
           FAILURE! The above files are not properly formatted.
           Run `terraform fmt` in $WORKING_DIRECTORY, commit the changed files and push to fix the issue" | tee -a $GITHUB_STEP_SUMMARY ; exit 1; }
 
@@ -329,7 +329,7 @@ jobs:
           retention-days: 5
 
       - name: Update Pull Request
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
         env:
           # Passing via env vars to sanitize untrusted inputs
@@ -488,7 +488,7 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3.1.2
+        uses: hashicorp/setup-terraform@v4.0.0
         with:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
