@@ -1,0 +1,204 @@
+name: Build and Push OPA Bundle
+
+on:
+  workflow_call:
+    inputs:
+      artifact-name:
+        description: |
+          Full OCI reference (without tag) where the OPA bundle will be pushed.
+          Must be of the form `ghcr.io/owner/repo[/sub-path]`, where
+          `owner/repo` matches the calling repository. Example:
+          `ghcr.io/kartverket/accesserator/opa-bundle`.
+        required: true
+        type: string
+      push:
+        description: |
+          Whether to push the built bundle to the registry. Set to `false` to
+          build only — useful for PR validation where the push happens on merge.
+        required: false
+        type: boolean
+        default: true
+      path:
+        description: |
+          Path to the OPA rules directory. Resolves relative to the caller's
+          workspace.
+        required: true
+        type: string
+      test:
+        description: |
+          Whether to run `opa test` against the OPA rules. Test files
+          (`*_test.rego`) are expected to be colocated with the policies under
+          `path`, following OPA convention.
+        required: false
+        type: boolean
+        default: false
+      lint:
+        description: |
+          Whether to run Regal linting on the OPA rules.
+        required: false
+        type: boolean
+        default: false
+      lint-config-file:
+        description: |
+          Optional path to the Regal config file to use when linting with Regal. Resolves 
+          relative to the caller's workspace.
+        required: false
+        type: string
+        default: ''
+      check:
+        description: |
+          Whether to run `opa check` on the policies to check Rego 
+          source files for parse and compilation errors.
+        required: false
+        type: boolean
+        default: false
+      check-schema-path:
+        description: |
+          Optional path to a JSON Schema file or schema-set directory passed to
+          `opa check -s`. When set, OPA type-checks references to `input` (and any
+          mapped data documents) against the schema(s).
+        required: false
+        type: string
+        default: ''
+      additional-tags:
+        description: |
+          Comma-separated list of extra tags to apply on top of the always-included
+          `sha256-<content-hash>` tag (e.g. `latest,v1`). Whitespace around each
+          tag is stripped. Ignored when `push` is `'false'`.
+        required: false
+        type: string
+        default: ''
+
+env:
+  REGISTRY: ghcr.io
+  ARTIFACT_NAME: ${{ inputs.artifact-name }}
+
+jobs:
+  build-and-push:
+    name: Build and push OPA bundle
+    runs-on: ubuntu-latest
+    # contents: read          checkout the caller repo
+    # packages: write         push to GHCR
+    # id-token: write         request the GitHub OIDC token (attest action keyless signing)
+    # attestations: write     register the SLSA attestation with GitHub's attestation store
+    # security-events: write  upload regal linting results as security events
+    # actions: read           needed by codeql-action/upload-sarif if caller repo is not public
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      security-events: write
+      actions: read
+    steps:
+      # Refuse to build if artifact-name isn't a valid GHCR ref inside the
+      # caller's namespace. Their GITHUB_TOKEN couldn't push elsewhere anyway,
+      # but failing fast here surfaces the misconfiguration with a clear
+      # message rather than an oras 403 later.
+      - name: Validate Artifact Name
+        id: validate
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const artifactName = process.env.ARTIFACT_NAME;
+            const expectedPrefix = `${process.env.REGISTRY}/${context.repo.owner}/${context.repo.repo}`;
+            if (artifactName !== expectedPrefix && !artifactName.startsWith(`${expectedPrefix}/`)) {
+              core.setFailed(
+                `artifact-name ('${artifactName}') must equal '${expectedPrefix}' or start with '${expectedPrefix}/'. ` +
+                `This keeps bundles inside the calling repository's GHCR namespace.`
+              );
+            }
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Lint with Regal
+        if: inputs.lint
+        uses: kartverket/actions/opa/lint@3ea80554902b093d825238e35d9f019b904546da
+        with:
+          path: ${{ inputs.path }}
+          config-file: ${{ inputs.lint-config-file }}
+
+      - name: Check Rego source files
+        if: inputs.check
+        uses: kartverket/actions/opa/check@3ea80554902b093d825238e35d9f019b904546da
+        with:
+          path: ${{ inputs.path }}
+          schemas: ${{ inputs.check-schema-path }}
+
+      - name: Test OPA rules
+        if: inputs.test
+        uses: kartverket/actions/opa/test@3ea80554902b093d825238e35d9f019b904546da
+        with:
+          path: ${{ inputs.path }}
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push bundle
+        id: build-push
+        uses: kartverket/actions/opa/build-push@3ea80554902b093d825238e35d9f019b904546da
+        with:
+          path: ${{ inputs.path }}
+          artifact-name: ${{ inputs.artifact-name }}
+          additional-tags: ${{ inputs.additional-tags }}
+          push: ${{ inputs.push }}
+
+      - name: Generate SLSA provenance attestation
+        id: provenance
+        if: ${{ inputs.push }} # Provenance is only meaningful if we pushed (and thus have a digest to attest)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: ${{ env.ARTIFACT_NAME }}
+          subject-digest: ${{ steps.build-push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Summary
+        if: always()
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.build-push.outputs.image-ref }}
+          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
+          PROVENANCE_OUTCOME: ${{ steps.provenance.outcome }}
+          ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          JOB_WORKFLOW_REF: ${{ github.job_workflow_ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          expected_prefix="${REGISTRY}/${REPO}"
+
+          image_ref="${IMAGE_REF:-${ARTIFACT_NAME}@${IMAGE_DIGEST}}"
+          
+          signer_workflow="${JOB_WORKFLOW_REF%@*}"
+
+          {
+            # Validation failure callout — only shown when validate failed, and
+            # rendered at the top so it's the first thing reviewers see.
+            if [[ "$VALIDATE_OUTCOME" == "failure" ]]; then
+              echo "> [!CAUTION]"
+              echo "> **artifact-name validation failed.** \`${ARTIFACT_NAME}\` must equal \`${expected_prefix}\` or start with \`${expected_prefix}/\`."
+              echo "> The bundle was not built or pushed."
+              echo ""
+            fi
+
+            # SLSA provenance section.
+            if [[ "$PROVENANCE_OUTCOME" == "success" ]]; then
+              echo "### SLSA provenance"
+              echo ""
+              echo "**Predicate type:** \`https://slsa.dev/provenance/v1\`"
+              echo "**Stored as:** OCI 1.1 referrer of \`${image_ref}\`"
+              if [[ -n "$ATTESTATION_URL" ]]; then
+                echo "**Attestation:** [${ATTESTATION_URL}](${ATTESTATION_URL})"
+              fi
+              echo ""
+              echo "Verify with:"
+              echo '```bash'
+              echo "gh attestation verify oci://${image_ref} --repo ${REPO} --signer-workflow kartverket/github-workflows/.github/workflows/build-and-push-opa-bundle.yml"          
+              echo '```'
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
