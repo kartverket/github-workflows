@@ -114,21 +114,21 @@ jobs:
 
       - name: Lint with Regal
         if: inputs.lint
-        uses: kartverket/actions/opa/lint@305dac132968510edfc6e6e570db91d0db84cce5
+        uses: kartverket/actions/opa/lint@3ea80554902b093d825238e35d9f019b904546da
         with:
           path: ${{ inputs.path }}
           config-file: ${{ inputs.lint-config-file }}
 
       - name: Check Rego source files
         if: inputs.check
-        uses: kartverket/actions/opa/check@305dac132968510edfc6e6e570db91d0db84cce5
+        uses: kartverket/actions/opa/check@3ea80554902b093d825238e35d9f019b904546da
         with:
           path: ${{ inputs.path }}
           schemas: ${{ inputs.check-schema-path }}
 
       - name: Test OPA rules
         if: inputs.test
-        uses: kartverket/actions/opa/test@305dac132968510edfc6e6e570db91d0db84cce5
+        uses: kartverket/actions/opa/test@3ea80554902b093d825238e35d9f019b904546da
         with:
           path: ${{ inputs.path }}
 
@@ -141,7 +141,7 @@ jobs:
 
       - name: Build and push bundle
         id: build-push
-        uses: kartverket/actions/opa/build-push@305dac132968510edfc6e6e570db91d0db84cce5
+        uses: kartverket/actions/opa/build-push@3ea80554902b093d825238e35d9f019b904546da
         with:
           path: ${{ inputs.path }}
           artifact-name: ${{ inputs.artifact-name }}
@@ -197,7 +197,7 @@ jobs:
               echo ""
               echo "Verify with:"
               echo '```bash'
-              echo "gh attestation verify oci://${image_ref} --repo ${REPO} --signer-workflow kartverket/github-workflows/.github/workflows/build-and-push-opa-rules.yml"          
+              echo "gh attestation verify oci://${image_ref} --repo ${REPO} --signer-workflow kartverket/github-workflows/.github/workflows/build-and-push-opa-bundle.yml"          
               echo '```'
               echo ""
             fi
