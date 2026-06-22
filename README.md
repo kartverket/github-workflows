@@ -10,6 +10,7 @@ Shared reusable workflows for GitHub Actions.
   - [update-skip-docs](#update-skip-docs)
   - [run-terraform](#run-terraform)
   - [synthetic-monitoring](#synthetic-monitoring)
+  - [build-and-push-opa-bundle](#build-and-push-opa-bundle)
 - [Example usage](#example-usage)
   - [Ideal Use of Reusable Workflows](#ideal-use-of-reusable-workflows)
   - [Deploy on workflow dispatch](#deploy-on-workflow-dispatch)
@@ -441,6 +442,77 @@ jobs:
       pull-requests: write
       id-token: write
   uses: kartverket/github-workflows/.github/workflows/synthetic-monitoring.yaml@<release tag>
+```
+
+## build-and-push-opa-bundle
+
+This workflow builds an OPA-bundle and pushes it to GitHub Container Registry.
+
+### Features
+
+- Builds OPA bundle using `opa build` and pushes it to GitHub Container Registry
+- Supports testing the policies with `opa test`
+- Supports liniting with [Regal](https://www.openpolicyagent.org/projects/regal)
+- Supports validation with `opa check`
+- Generates a SLSA provenance attestation for the built bundle
+
+### Example
+
+```yaml
+name: Build and push OPA bundle
+
+on: [push]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+  security-events: write
+  actions: read
+
+jobs:
+  build:
+    uses: kartverket/github-workflows/.github/workflows/build-and-push-opa-bundle.yml@<release tag>
+    with:
+      # artifact-name (**required**) is the name of the resulting artifact in GHCR (without tag).
+      # It must start with `ghcr.io/kartverket/<repo>`.
+      artifact-name: ghcr.io/${{ github.repository }}/opa-policies
+
+      # path (**required**) specifies which directory the OPA bundle should be built from.
+      # The directory can contain policies written in Rego and
+      path: opa/policies
+
+      # push is a boolean specifying whether the built bundle should be pushed to GHCR or not.
+      # Defaults to `true`.
+      push: true
+
+      # additional-tags is a comma-separated list of extra tags that the artifact pushed to GHCR should be tagged with.
+      # The workflow will always tag the artifact with `sha256-<sha256sum of built bundle>` to avoid uploading duplicate bundles.
+      additional-tags: ${{ github.ref_name }}
+
+      # test is a boolean specifying whether `opa test` should run before building.
+      # All tests defined in files ending in `_test.rego` in the `path` directory will then be run.
+      # Defaults to `false`.
+      test: true
+
+      # lint is a boolean specifying whether `regal lint` should run before building.
+      # All Rego files defined in the `path` directory will then be linted.
+      # Defaults to `false`.
+      lint: true
+
+      # lint-config-file specifies a file path to a Regal configuration file used during linting.
+      # You can read more about how to configure Regal through such a file at https://www.openpolicyagent.org/projects/regal/configuration.
+      lint-config-file: .regal/config.yaml
+
+      # check is a boolean specifying whether `opa check` should run before building.
+      # All files defined in the `path` directory will then be statically validated.
+      # Defaults to `false`.
+      check: true
+
+      # check-schema-path is a path to a JSON Schema directory or file used during `opa check` to
+      # validate that your rules conform to the schema for `input` and `data`.
+      check-schema-path: opa/schemas
 ```
 
 # Example Usage
