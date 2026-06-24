@@ -190,7 +190,7 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4.0.0
+        uses: hashicorp/setup-terraform@v4.0.1
         with:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
@@ -488,7 +488,7 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4.0.0
+        uses: hashicorp/setup-terraform@v4.0.1
         with:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
