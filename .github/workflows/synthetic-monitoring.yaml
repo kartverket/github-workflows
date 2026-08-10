@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Checkout repository
         # actions/checkout@v6.0.1 (SHA: 8e8c483db84b4bee98b60c0593521ed34d9990e8)
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           persist-credentials: false
 
@@ -51,7 +51,7 @@ jobs:
 
       - name: Checkout blackbox-exporter repo
         # actions/checkout@v6.0.1 (SHA: 8e8c483db84b4bee98b60c0593521ed34d9990e8)
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           repository: kartverket/blackbox-exporter
           token: ${{ steps.octo-sts.outputs.token }}
@@ -89,7 +89,7 @@ jobs:
     steps:
       - name: Checkout repository
         # actions/checkout@v6.0.1 (SHA: 8e8c483db84b4bee98b60c0593521ed34d9990e8)
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           persist-credentials: false
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Checkout validation schema from blackbox-exporter repo
         # actions/checkout@v6.0.1 (SHA: 8e8c483db84b4bee98b60c0593521ed34d9990e8)
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           sparse-checkout: |
             configs/schema.yaml
@@ -160,7 +160,7 @@ jobs:
 
       - name: Checkout blackbox-exporter repo
         # actions/checkout@v6.0.1 (SHA: 8e8c483db84b4bee98b60c0593521ed34d9990e8)
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           repository: kartverket/blackbox-exporter
           token: ${{ steps.octo-sts.outputs.token }}
