@@ -179,7 +179,7 @@ jobs:
 
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: ${{ inputs.checkout_submodules == true && 'recursive' || 'false' }}
           token: ${{ inputs.checkout_submodules == true && steps.octo-sts.outputs.token || github.token }}
@@ -190,12 +190,12 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4.0.0
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
@@ -204,7 +204,7 @@ jobs:
       # Install the Gcloud suite in order to install gke-gcloud-auth-plugin plugin
       - name: Set up Cloud SDK
         if: env.KUBERNETES_CLUSTER != ''
-        uses: google-github-actions/setup-gcloud@v3
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
       - name: Authenticate with Kubernetes
         if: env.KUBERNETES_CLUSTER != ''
@@ -274,7 +274,7 @@ jobs:
 
       - name: Tailscale
         if: env.NEED_TAILSCALE == 'true'
-        uses: tailscale/github-action@v4
+        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
         with:
           oauth-client-id: ${{ secrets.TS_CLOUDSQL_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_CLOUDSQL_OAUTH_SECRET }}
@@ -322,14 +322,14 @@ jobs:
           echo "stdout=$STDOUT" >> $GITHUB_OUTPUT
 
       - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: plan-${{ env.ENVIRONMENT }}.tfplan
           path: ${{ env.WORKING_DIRECTORY }}/plan-${{ env.ENVIRONMENT }}.tfplan
           retention-days: 5
 
       - name: Update Pull Request
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         if: (always() && inputs.add_comment_on_pr == true && github.event_name == 'pull_request')
         env:
           # Passing via env vars to sanitize untrusted inputs
@@ -477,7 +477,7 @@ jobs:
           identity: kartverket_repos
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: ${{ inputs.checkout_submodules == true && 'recursive' || 'false' }}
           token: ${{ inputs.checkout_submodules == true && steps.octo-sts.outputs.token || github.token }}
@@ -488,12 +488,12 @@ jobs:
 
       # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4.0.0
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
           terraform_version: ${{ inputs.use_platform_modules == true && '1.6.6' || 'latest' }}
 
       - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT }}
@@ -501,7 +501,7 @@ jobs:
 
       - name: Set up Cloud SDK
         if: env.KUBERNETES_CLUSTER != ''
-        uses: google-github-actions/setup-gcloud@v3
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
       - name: Authenticate with Kubernetes
         if: env.KUBERNETES_CLUSTER != ''
@@ -510,7 +510,7 @@ jobs:
           gcloud container hub memberships get-credentials $KUBERNETES_CLUSTER --verbosity debug --location global
 
       - name: Download Plan Artifact
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: plan-${{ env.ENVIRONMENT }}.tfplan
           path: ${{ env.WORKING_DIRECTORY }}
@@ -537,7 +537,7 @@ jobs:
 
       - name: Tailscale
         if: env.NEED_TAILSCALE == 'true'
-        uses: tailscale/github-action@v4
+        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
         with:
           oauth-client-id: ${{ secrets.TS_CLOUDSQL_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_CLOUDSQL_OAUTH_SECRET }}
@@ -559,7 +559,7 @@ jobs:
 
       - name: Upload output artifact
         if: ${{ inputs.output_file_path != '' }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: output-file
           path: ${{ inputs.output_file_path }}
