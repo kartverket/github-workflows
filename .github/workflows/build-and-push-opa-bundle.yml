@@ -72,6 +72,8 @@ on:
 env:
   REGISTRY: ghcr.io
   ARTIFACT_NAME: ${{ inputs.artifact-name }}
+  OPA_VERSION: 1.19.0
+  REGAL_VERSION: v0.43.0
 
 jobs:
   build-and-push:
@@ -114,23 +116,26 @@ jobs:
 
       - name: Lint with Regal
         if: inputs.lint
-        uses: kartverket/actions/opa/lint@3ea80554902b093d825238e35d9f019b904546da
+        uses: kartverket/actions/opa/lint@0107e7389548996de3cadc095af7c947dc56fc92
         with:
           path: ${{ inputs.path }}
+          regal-version: ${{ env.REGAL_VERSION }}
           config-file: ${{ inputs.lint-config-file }}
 
       - name: Check Rego source files
         if: inputs.check
-        uses: kartverket/actions/opa/check@3ea80554902b093d825238e35d9f019b904546da
+        uses: kartverket/actions/opa/check@0107e7389548996de3cadc095af7c947dc56fc92
         with:
           path: ${{ inputs.path }}
+          opa-version: ${{ env.OPA_VERSION }}
           schemas: ${{ inputs.check-schema-path }}
 
       - name: Test OPA rules
         if: inputs.test
-        uses: kartverket/actions/opa/test@3ea80554902b093d825238e35d9f019b904546da
+        uses: kartverket/actions/opa/test@0107e7389548996de3cadc095af7c947dc56fc92
         with:
           path: ${{ inputs.path }}
+          opa-version: ${{ env.OPA_VERSION }}
 
       - name: Log into registry ${{ env.REGISTRY }}
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
@@ -141,9 +146,10 @@ jobs:
 
       - name: Build and push bundle
         id: build-push
-        uses: kartverket/actions/opa/build-push@3ea80554902b093d825238e35d9f019b904546da
+        uses: kartverket/actions/opa/build-push@0107e7389548996de3cadc095af7c947dc56fc92
         with:
           path: ${{ inputs.path }}
+          opa-version: ${{ env.OPA_VERSION }}
           artifact-name: ${{ inputs.artifact-name }}
           additional-tags: ${{ inputs.additional-tags }}
           push: ${{ inputs.push }}
