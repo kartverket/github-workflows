@@ -468,6 +468,7 @@ permissions:
   packages: write
   id-token: write
   attestations: write
+  artifact-metadata: write
   security-events: write
   actions: read
 
