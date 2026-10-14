@@ -79,17 +79,19 @@ jobs:
   build-and-push:
     name: Build and push OPA bundle
     runs-on: ubuntu-latest
-    # contents: read          checkout the caller repo
-    # packages: write         push to GHCR
-    # id-token: write         request the GitHub OIDC token (attest action keyless signing)
-    # attestations: write     register the SLSA attestation with GitHub's attestation store
-    # security-events: write  upload regal linting results as security events
-    # actions: read           needed by codeql-action/upload-sarif if caller repo is not public
+    # contents: read            checkout the caller repo
+    # packages: write           push to GHCR
+    # id-token: write           request the GitHub OIDC token (attest action keyless signing)
+    # attestations: write       register the SLSA attestation with GitHub's attestation store
+    # artifact-metadata: write  create artifact storage record
+    # security-events: write    upload regal linting results as security events
+    # actions: read             needed by codeql-action/upload-sarif if caller repo is not public
     permissions:
       contents: read
       packages: write
       id-token: write
       attestations: write
+      artifact-metadata: write
       security-events: write
       actions: read
     steps:
@@ -157,7 +159,7 @@ jobs:
       - name: Generate SLSA provenance attestation
         id: provenance
         if: ${{ inputs.push }} # Provenance is only meaningful if we pushed (and thus have a digest to attest)
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-name: ${{ env.ARTIFACT_NAME }}
           subject-digest: ${{ steps.build-push.outputs.digest }}
@@ -170,7 +172,6 @@ jobs:
           IMAGE_REF: ${{ steps.build-push.outputs.image-ref }}
           IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
           PROVENANCE_OUTCOME: ${{ steps.provenance.outcome }}
-          ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
           VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
           JOB_WORKFLOW_REF: ${{ github.job_workflow_ref }}
           REPO: ${{ github.repository }}
@@ -193,15 +194,8 @@ jobs:
 
             # SLSA provenance section.
             if [[ "$PROVENANCE_OUTCOME" == "success" ]]; then
-              echo "### SLSA provenance"
+              echo "### Verify SLSA provenance"
               echo ""
-              echo "**Predicate type:** \`https://slsa.dev/provenance/v1\`"
-              echo "**Stored as:** OCI 1.1 referrer of \`${image_ref}\`"
-              if [[ -n "$ATTESTATION_URL" ]]; then
-                echo "**Attestation:** [${ATTESTATION_URL}](${ATTESTATION_URL})"
-              fi
-              echo ""
-              echo "Verify with:"
               echo '```bash'
               echo "gh attestation verify oci://${image_ref} --repo ${REPO} --signer-workflow kartverket/github-workflows/.github/workflows/build-and-push-opa-bundle.yml"          
               echo '```'
