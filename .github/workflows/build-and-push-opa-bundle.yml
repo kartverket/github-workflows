@@ -72,7 +72,7 @@ on:
 env:
   REGISTRY: ghcr.io
   ARTIFACT_NAME: ${{ inputs.artifact-name }}
-  OPA_VERSION: 1.19.0
+  OPA_VERSION: 1.21.2
   REGAL_VERSION: v0.43.0
 
 jobs:
