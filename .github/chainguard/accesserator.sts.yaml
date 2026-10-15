@@ -6,3 +6,4 @@ subject_pattern: "repo:kartverket/accesserator:ref:refs/tags/v.*"
 permissions:
   contents: write
   pull_requests: write
+  workflows: write
