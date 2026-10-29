@@ -68,6 +68,17 @@ on:
         required: false
         type: string
         default: ''
+    outputs:
+      digest:
+        description: |
+          Manifest digest of the pushed bundle (e.g. `sha256:...`). Empty when
+          `push` is `false`.
+        value: ${{ jobs.build-and-push.outputs.digest }}
+      image-ref:
+        description: |
+          Fully qualified `<artifact-name>@<digest>` reference. Empty when
+          `push` is `false`.
+        value: ${{ jobs.build-and-push.outputs.image-ref }}
 
 env:
   REGISTRY: ghcr.io
@@ -79,6 +90,9 @@ jobs:
   build-and-push:
     name: Build and push OPA bundle
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build-push.outputs.digest }}
+      image-ref: ${{ steps.build-push.outputs.image-ref }}
     # contents: read            checkout the caller repo
     # packages: write           push to GHCR
     # id-token: write           request the GitHub OIDC token (attest action keyless signing)
