@@ -455,6 +455,14 @@ This workflow builds an OPA-bundle and pushes it to GitHub Container Registry.
 - Supports liniting with [Regal](https://www.openpolicyagent.org/projects/regal)
 - Supports validation with `opa check`
 - Generates a SLSA provenance attestation for the built bundle
+- Exposes the pushed bundle's manifest `digest` and `image-ref` as workflow outputs
+
+### Outputs
+
+| Output      | Description                                                         |
+|-------------|---------------------------------------------------------------------|
+| `digest`    | Manifest digest of the pushed bundle (`sha256:...`). Empty if `push` is `false`. |
+| `image-ref` | `<artifact-name>@<digest>`. Empty if `push` is `false`.             |
 
 ### Example
 
