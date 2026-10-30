@@ -132,7 +132,7 @@ jobs:
 
       - name: Lint with Regal
         if: inputs.lint
-        uses: kartverket/actions/opa/lint@402cf5210ce8d5b12677016c1c687853991e29df
+        uses: kartverket/actions/opa/lint@fd12b2263e4e92c65258bfa3781e22e7f8efe73e # v0.4.0
         with:
           path: ${{ inputs.path }}
           regal-version: ${{ env.REGAL_VERSION }}
@@ -140,7 +140,7 @@ jobs:
 
       - name: Check Rego source files
         if: inputs.check
-        uses: kartverket/actions/opa/check@402cf5210ce8d5b12677016c1c687853991e29df
+        uses: kartverket/actions/opa/check@fd12b2263e4e92c65258bfa3781e22e7f8efe73e # v0.4.0
         with:
           path: ${{ inputs.path }}
           opa-version: ${{ env.OPA_VERSION }}
@@ -148,7 +148,7 @@ jobs:
 
       - name: Test OPA rules
         if: inputs.test
-        uses: kartverket/actions/opa/test@402cf5210ce8d5b12677016c1c687853991e29df
+        uses: kartverket/actions/opa/test@fd12b2263e4e92c65258bfa3781e22e7f8efe73e # v0.4.0
         with:
           path: ${{ inputs.path }}
           opa-version: ${{ env.OPA_VERSION }}
@@ -162,7 +162,7 @@ jobs:
 
       - name: Build and push bundle
         id: build-push
-        uses: kartverket/actions/opa/build-push@402cf5210ce8d5b12677016c1c687853991e29df
+        uses: kartverket/actions/opa/build-push@fd12b2263e4e92c65258bfa3781e22e7f8efe73e # v0.4.0
         with:
           path: ${{ inputs.path }}
           opa-version: ${{ env.OPA_VERSION }}
