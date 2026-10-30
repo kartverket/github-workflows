@@ -162,7 +162,7 @@ jobs:
 
       - name: Build and push bundle
         id: build-push
-        uses: kartverket/actions/opa/build-push@402cf5210ce8d5b12677016c1c687853991e29df
+        uses: kartverket/actions/opa/build-push@fd12b2263e4e92c65258bfa3781e22e7f8efe73e
         with:
           path: ${{ inputs.path }}
           opa-version: ${{ env.OPA_VERSION }}
