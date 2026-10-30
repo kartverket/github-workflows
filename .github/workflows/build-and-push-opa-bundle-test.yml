@@ -1,0 +1,29 @@
+name: "[TEST] Build and Push OPA Bundle"
+
+on:
+  push:
+    paths:
+      - .github/workflows/build-and-push-opa-bundle*
+      - test/build-and-push-opa-bundle/**
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+  security-events: write
+  actions: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/build-and-push-opa-bundle.yml
+    with:
+      artifact-name: ghcr.io/${{ github.repository }}/opa-bundle-test
+      path: test/build-and-push-opa-bundle/policies
+      push: false
+      test: true
+      lint: true
+      check: true
+      check-schema-path: test/build-and-push-opa-bundle/schemas

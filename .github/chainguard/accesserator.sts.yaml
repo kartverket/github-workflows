@@ -1,0 +1,9 @@
+# Allows Accesserator to create PR for updating OPA and Regal versions in .github/workflows/build-and-push-opa-bundle.yml
+
+issuer: https://token.actions.githubusercontent.com
+subject_pattern: "repo:kartverket/accesserator:ref:refs/tags/v.*"
+
+permissions:
+  contents: write
+  pull_requests: write
+  workflows: write

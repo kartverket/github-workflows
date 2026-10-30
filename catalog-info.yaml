@@ -1,12 +1,26 @@
-# nonk8s
-apiVersion: "backstage.io/v1alpha1"
-kind: "Component"
+apiVersion: backstage.io/v1alpha1
+kind: Component
 metadata:
-  name: "github-workflows"
+  name: github-workflows
   tags:
-  - "public"
+    - public
 spec:
-  type: "library"
-  lifecycle: "production"
-  owner: "skip"
-  system: "skip"
+  type: library
+  lifecycle: production
+  owner: skip
+  system: system:default/skip
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: build-and-push-opa-bundle
+  title: Build OPA bundle workflow
+  description: Reusable Github workflow that can be used to build and push OPA
+    bundles to GHCR. Used by teams to build and push both policies and data
+    bundles.
+spec:
+  type: library
+  owner: group:default/tilgangsstyring
+  lifecycle: production
+  system: system:default/finkornet-autorisasjon
