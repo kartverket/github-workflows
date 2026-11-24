@@ -561,7 +561,7 @@ jobs:
       image_tag_url: ${{ steps.setOutput.outputs.image_tag_url }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Sets tag 'latest' for images built on main/master branch and tag 'prebuild-temp' on all other image builds
       - name: Set tag
