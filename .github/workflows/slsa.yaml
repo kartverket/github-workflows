@@ -1,0 +1,83 @@
+name: SLSA Attestation Workflow
+
+on:
+  workflow_call:
+    inputs:
+      digest:
+        description: SHA-256 digest of the published container image
+        type: string
+        required: true
+    outputs:
+      image-ref:
+        description: Immutable signed container image reference
+        value: ${{ jobs.attest-and-sign.outputs.image-ref }}
+
+permissions: {}
+
+jobs:
+  attest-and-sign:
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
+    outputs:
+      image-ref: ${{ steps.metadata.outputs.image-ref }}
+
+    steps:
+      - name: Validate digest and prepare image reference
+        id: metadata
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+          DIGEST: ${{ inputs.digest }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+            echo "::error::Invalid SHA-256 digest"
+            exit 1
+          fi
+
+          image="ghcr.io/${REPOSITORY,,}"
+
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          echo "image-ref=${image}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Attest image provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-name: ${{ steps.metadata.outputs.image }}
+          subject-digest: ${{ inputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532
+        with:
+          cosign-release: v3.1.4
+
+      - name: Sign container image
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.metadata.outputs.image-ref }}
+        run: |
+          set -euo pipefail
+
+          cosign sign \
+            --yes \
+            --use-signing-config=false \
+            --new-bundle-format=false \
+            --registry-referrers-mode=legacy \
+            --oidc-issuer=https://token.actions.githubusercontent.com \
+            "$IMAGE_REF"
