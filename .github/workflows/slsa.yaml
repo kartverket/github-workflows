@@ -1,3 +1,4 @@
+name: On-Bårding SLSA Attestation Workflow
 on:
   workflow_call:
     inputs:
